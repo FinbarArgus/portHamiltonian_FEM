@@ -1,5 +1,6 @@
 shell/curved_init/output
 shell/flat_init/output
 shell/kirchoff_love_approach/output
-wave_eqn/output
+wave_eqn/output*
 wave_eqn/old_versions
+.idea
