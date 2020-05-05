@@ -9,12 +9,12 @@ import mshr
 
 """wave_2D_V1 Solves the wave eqn for the seperated wave equation with boundary conditions applied 
 with DirichletBC. The neumann type condition is applied as a dirichletBC in the split eqns, as q = (0,0)
-
+This version uses explicit euler
  This code implents a rectangle domain and a more complicated domain where the sinusoidal wave
  starts on an input rectangle then travels into the main rectangle.
  The circular wavefront is seen in the main square part of the domain."""
 
-version = 'V1'
+version = 'V2'
 
 # Find initial time
 tic = time.time()
@@ -29,8 +29,8 @@ case = 'rectangle'
 
 if case == 'rectangle':
     # time and time step
-    tFinal = 1.5
-    numSteps = 3000
+    tFinal = 1.0
+    numSteps = 2000
     dt_value = tFinal / numSteps
 
     # Create mesh
@@ -122,11 +122,11 @@ dt = Constant(dt_value)
 
 # Define variational problem
 # Explicit
-# F = (p - p_n)*v_p*dx - dt*c_squared*div(q_n)*v_p*dx + \
-#      dot(q - q_n, v_q)*dx - dt*dot(grad(p_n),v_q)*dx
+F = (p - p_n)*v_p*dx - dt*c_squared*div(q_n)*v_p*dx + \
+     dot(q - q_n, v_q)*dx - dt*dot(grad(p_n),v_q)*dx
 # Implicit
-F = (p - p_n)*v_p*dx + dt*c_squared*div(q)*v_p*dx + \
-     dot(q - q_n, v_q)*dx + dt*dot(grad(p),v_q)*dx
+# F = (p - p_n)*v_p*dx + dt*c_squared*div(q)*v_p*dx + \
+#     dot(q - q_n, v_q)*dx + dt*dot(grad(p),v_q)*dx
 a = lhs(F)
 L = rhs(F)
 
@@ -155,7 +155,7 @@ line, = ax.plot([], lw=1, color='k')
 # text = ax.text(0.001, 0.001, "")
 ax.set_xlim(0 , tFinal)
 if case == 'rectangle':
-    ax.set_ylim(0, 500)
+    ax.set_ylim(0, 600)
 elif case == 'squareWInput':
     ax.set_ylim(0, 300)
 

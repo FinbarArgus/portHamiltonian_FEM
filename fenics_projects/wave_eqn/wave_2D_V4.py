@@ -18,8 +18,8 @@ with DirichletBC for the p input and right boundary.
 
 version = 'V4'
 # Choose operating case
-case = 'rectangle'
-# case = 'squareWInput'
+# case = 'rectangle'
+case = 'squareWInput'
 #Define boundary type where the 4 letters are eith D for Dirchlet or N for Neumann
 # The ordering is Left, Right, Bottom, Top
 boundaryType = 'DDNN'
@@ -41,8 +41,8 @@ c_squared = Constant(c**2)
 
 if case == 'rectangle':
     # time and time step
-    tFinal = 0.5
-    numSteps = 1000
+    tFinal = 1.5
+    numSteps = 3000
     dt_value = tFinal/numSteps
     dt = Constant(dt_value)
 
@@ -83,6 +83,10 @@ if not os.path.exists(outputDir):
 
 # V1 output dir for loading
 V1outputDir = 'output_' + 'V1' + '_' + case
+# V2 output dir for loading
+V2outputDir = 'output_' + 'V2' + '_' + case
+# V3 output dir for loading
+V3outputDir = 'output_' + 'V3' + '_' + case
 
 plotDir = os.path.join(outputDir, 'plots')
 if not os.path.exists(plotDir):
@@ -222,12 +226,21 @@ t_vec = [0]
 # Create plot for hamiltonian
 fig, ax = plt.subplots(1, 1)
 
-# Load hamiltonian values from V1
-H_array_V1 = np.load(os.path.join(V1outputDir, 'H_array.npy'))
+if case=='rectangle' and boundaryType == 'DDNN':
+    # Load hamiltonian values from V1
+    H_array_V1 = np.load(os.path.join(V1outputDir, 'H_array.npy'))
+    # Load hamiltonian values from V2
+    H_array_V2 = np.load(os.path.join(V2outputDir, 'H_array.npy'))
+    # Load hamiltonian values from V3
+    H_array_V3 = np.load(os.path.join(V3outputDir, 'H_array.npy'))
 
 # create line objects for plotting
-line, = ax.plot([], lw=2, color='k', linestyle='--', label='V2 Int by parts boundary')
-line_V1, = ax.plot([], lw=2, color='r', label='V1 Dirichlet q_boundary')
+line, = ax.plot([], lw=2, color='k', linestyle='--', label='Stormer-Verlet Symplectic')
+
+if case == 'rectangle' and boundaryType == 'DDNN':
+    line_V1, = ax.plot([], lw=2, color='b', label='Implicit 1st-order Euler')
+    line_V2, = ax.plot([], lw=2, color='r', label='Explicit 1st-order Euler')
+    line_V3, = ax.plot([], lw=2, color='g', label='Explicit 2nd-order Heuns')
 
 # text = ax.text(0.001, 0.001, "")
 ax.set_xlim(0, tFinal)
@@ -236,15 +249,23 @@ if case == 'rectangle':
 elif case == 'squareWInput':
     ax.set_ylim(0, 400)
 
+
 ax.legend()
 ax.set_ylabel('Hamiltonian [Joules]', fontsize=14)
 ax.set_xlabel('Time [s]', fontsize=14)
 
 ax.add_artist(line)
-ax.add_artist(line_V1)
+if case == 'rectangle' and boundaryType == 'DDNN':
+    ax.add_artist(line_V1)
+    ax.add_artist(line_V2)
+    ax.add_artist(line_V3)
+
 fig.canvas.draw()
 
-line_V1.set_data(H_array_V1[:,1], H_array_V1[:, 0])
+if case == 'rectangle' and boundaryType == 'DDNN':
+    line_V1.set_data(H_array_V1[:,1], H_array_V1[:, 0])
+    line_V2.set_data(H_array_V2[:,1], H_array_V2[:, 0])
+    line_V3.set_data(H_array_V3[:,1], H_array_V3[:, 0])
 
 # cache the background
 axBackground = fig.canvas.copy_from_bbox(ax.bbox)
@@ -300,7 +321,10 @@ for n in range(numSteps):
     fig.canvas.restore_region(axBackground)
 
     # Redraw the points
-    ax.draw_artist(line_V1)
+    if case == 'rectangle' and boundaryType == 'DDNN':
+        ax.draw_artist(line_V1)
+        ax.draw_artist(line_V2)
+        ax.draw_artist(line_V3)
     ax.draw_artist(line)
     # ax.draw_artist(text)
 
@@ -317,6 +341,10 @@ H_array[:,1] = np.array(t_vec)
 np.save(os.path.join(outputDir, 'H_array.npy'), H_array)
 
 plt.savefig(os.path.join(plotDir, 'Hamiltonian.png'), dpi=500)
+# overwrite limits if we want to zoom
+ax.set_xlim(0.25, tFinal)
+ax.set_ylim(425, 435)
+plt.savefig(os.path.join(plotDir, 'HamiltonianZoom.png'), dpi=500)
 
 if BOUNDARYPLOT:
     vtkplot(out_p)

@@ -9,12 +9,12 @@ import mshr
 
 """wave_2D_V1 Solves the wave eqn for the seperated wave equation with boundary conditions applied 
 with DirichletBC. The neumann type condition is applied as a dirichletBC in the split eqns, as q = (0,0)
-
+This version uses 2nd order Explicit euler
  This code implents a rectangle domain and a more complicated domain where the sinusoidal wave
  starts on an input rectangle then travels into the main rectangle.
  The circular wavefront is seen in the main square part of the domain."""
 
-version = 'V1'
+version = 'V3'
 
 # Find initial time
 tic = time.time()
@@ -112,6 +112,8 @@ v_p, v_q = TestFunctions(U)
 # Define functions for solutions at previous and current time steps
 u_n = Function(U)
 p_n, q_n = split(u_n)
+u_temp= Function(U)
+p_temp, q_temp= split(u_temp)
 
 u_ = Function(U)
 p_, q_ = split(u_)
@@ -125,16 +127,29 @@ dt = Constant(dt_value)
 # F = (p - p_n)*v_p*dx - dt*c_squared*div(q_n)*v_p*dx + \
 #      dot(q - q_n, v_q)*dx - dt*dot(grad(p_n),v_q)*dx
 # Implicit
-F = (p - p_n)*v_p*dx + dt*c_squared*div(q)*v_p*dx + \
-     dot(q - q_n, v_q)*dx + dt*dot(grad(p),v_q)*dx
+# F = (p - p_n)*v_p*dx + dt*c_squared*div(q)*v_p*dx + \
+#     dot(q - q_n, v_q)*dx + dt*dot(grad(p),v_q)*dx
+# 2nd Order Heuns method
+F_temp = (p - p_n)*v_p*dx + dt*c_squared*div(q_n)*v_p*dx + \
+    dot(q - q_n, v_q)*dx + dt*dot(grad(p_n),v_q)*dx
+F = (p - p_n)*v_p*dx + 0.5*(dt*c_squared*div(q_n)*v_p*dx + \
+    dt*c_squared*div(q_temp)*v_p*dx) + \
+    dot(q - q_n, v_q)*dx + 0.5*(dt*dot(grad(p_n),v_q)*dx + \
+    dt*dot(grad(p_temp), v_q)*dx)
+
+a_temp = lhs(F)
+L_temp = rhs(F)
 a = lhs(F)
 L = rhs(F)
 
 # Assemble matrices
+A_temp = assemble(a_temp)
+B_temp = assemble(L_temp)
 A = assemble(a)
 B = assemble(L)
 
 # Apply boundary conditions to matrices
+[bc.apply(A_temp, B_temp) for bc in bcs]
 [bc.apply(A, B) for bc in bcs]
 
 # Create xdmf Files for visualisation
@@ -155,7 +170,7 @@ line, = ax.plot([], lw=1, color='k')
 # text = ax.text(0.001, 0.001, "")
 ax.set_xlim(0 , tFinal)
 if case == 'rectangle':
-    ax.set_ylim(0, 500)
+    ax.set_ylim(0, 600)
 elif case == 'squareWInput':
     ax.set_ylim(0, 300)
 
@@ -177,6 +192,16 @@ for n in range(numSteps):
     t += dt_value
 
     force_expression.t = t
+    # set up 1st step of Heuns method solve
+    A_temp = assemble(a_temp)
+    B_temp = assemble(L_temp)
+
+    # Apply boundary conditions to matrices for first step
+    [bc.apply(A_temp, B_temp) for bc in bcs]
+
+    # solve heuns first step
+    solve(A_temp, u_temp.vector(), B_temp)
+
     A = assemble(a)
     B = assemble(L)
 
