@@ -155,9 +155,9 @@ line, = ax.plot([], lw=1, color='k')
 # text = ax.text(0.001, 0.001, "")
 ax.set_xlim(0 , tFinal)
 if case == 'rectangle':
-    ax.set_ylim(0, 500)
+    ax.set_ylim(0, 0.1)
 elif case == 'squareWInput':
-    ax.set_ylim(0, 300)
+    ax.set_ylim(0, 0.08)
 
 ax.set_ylabel('Hamiltonian [Joules]', fontsize=14)
 ax.set_xlabel('Time [s]', fontsize=14)
@@ -204,7 +204,7 @@ for n in range(numSteps):
     progress += 1
 
     # Calculate Hamiltonian and plot energy
-    H = out_p.vector().inner(out_p.vector()) + c**2*out_q.vector().inner(out_q.vector())
+    H = assemble((p_*p_ + c**2*inner(q_, q_))*dx)
     H_vec.append(H)
     t_vec.append(t)
 

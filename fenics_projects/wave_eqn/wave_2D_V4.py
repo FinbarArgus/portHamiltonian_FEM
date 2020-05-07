@@ -18,8 +18,8 @@ with DirichletBC for the p input and right boundary.
 
 version = 'V4'
 # Choose operating case
-# case = 'rectangle'
-case = 'squareWInput'
+case = 'rectangle'
+# case = 'squareWInput'
 #Define boundary type where the 4 letters are eith D for Dirchlet or N for Neumann
 # The ordering is Left, Right, Bottom, Top
 boundaryType = 'DDNN'
@@ -245,9 +245,9 @@ if case == 'rectangle' and boundaryType == 'DDNN':
 # text = ax.text(0.001, 0.001, "")
 ax.set_xlim(0, tFinal)
 if case == 'rectangle':
-    ax.set_ylim(0, 600)
+    ax.set_ylim(0, 0.1)
 elif case == 'squareWInput':
-    ax.set_ylim(0, 400)
+    ax.set_ylim(0, 0.08)
 
 
 ax.legend()
@@ -308,7 +308,7 @@ for n in range(numSteps):
     progress += 1
 
     # Calculate Hamiltonian and plot energy
-    H = out_p.vector().inner(out_p.vector()) + c**2*out_q.vector().inner(out_q.vector())
+    H = assemble((p_*p_ + c**2*inner(q_, q_))*dx)
     H_vec.append(H)
     t_vec.append(t)
 
