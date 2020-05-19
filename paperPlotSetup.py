@@ -1,7 +1,10 @@
 import matplotlib as mpl
 import numpy as np
 
-def Setup_Plot(numCols):
+def Setup_Plot(case):
+    #case=1 is for seperated column paper
+    #case=2 is for full size paper
+    #case=3 is for very large on page
     mpl.rcParams['xtick.direction'] = 'in'
     mpl.rcParams['ytick.direction'] = 'in'
     # fontPath = os.path.join('C:\\', 'Users', 'fargus', 'Documents', 'pycharm_projects', 'xfoil', 'venv', 'Lib',
@@ -20,8 +23,8 @@ def Setup_Plot(numCols):
     mpl.rcParams['legend.edgecolor'] = 'k'
     mpl.rcParams['legend.fancybox'] = False
     # calculate figure width and height for number of columns
-    assert(numCols in [1,2])
-    if numCols == 1:
+    assert(case in [1,2,3])
+    if case == 1:
         fig_width = 3.8
         mpl.rcParams['font.size'] = 8
         mpl.rcParams['xtick.labelsize'] = 8
@@ -29,7 +32,7 @@ def Setup_Plot(numCols):
         mpl.rcParams['axes.labelsize'] = 8
         mpl.rcParams['legend.fontsize'] = 6
         mpl.rcParams['lines.linewidth'] = 0.8
-    elif numCols ==2:
+    elif case ==2:
         fig_width = 6.9
         mpl.rcParams['font.size'] = 20
         mpl.rcParams['xtick.labelsize'] = 16
@@ -37,14 +40,14 @@ def Setup_Plot(numCols):
         mpl.rcParams['axes.labelsize'] = 20
         mpl.rcParams['legend.fontsize'] = 20
         mpl.rcParams['lines.linewidth'] = 1.8
-    elif(numCols ==3):
+    elif(case ==3):
         fig_width = 10
-        mpl.rcParams['font.size'] = 20
-        mpl.rcParams['xtick.labelsize'] = 16
-        mpl.rcParams['ytick.labelsize'] = 16
-        mpl.rcParams['axes.labelsize'] = 20
-        mpl.rcParams['legend.fontsize'] = 20
-        mpl.rcParams['lines.linewidth'] = 1.8
+        mpl.rcParams['font.size'] = 14
+        mpl.rcParams['xtick.labelsize'] = 12
+        mpl.rcParams['ytick.labelsize'] = 12
+        mpl.rcParams['axes.labelsize'] = 14
+        mpl.rcParams['legend.fontsize'] = 12
+        mpl.rcParams['lines.linewidth'] = 0.5
 
 
     # aesthetic ratio

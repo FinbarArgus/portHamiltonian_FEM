@@ -88,7 +88,7 @@ def fixed_boundary(x, on_boundary):
 
 # Define boundary on all other edges
 def general_boundary(x, on_boundary):
-    return on_boundary and not near(x[0], xInputStart) and not near(x[0], xLength)
+    return on_boundary and (near(x[1], 0) or near(x[1], yLength))
 
 
 # Forced boundary
@@ -205,7 +205,7 @@ for n in range(numSteps):
 
     # Calculate Hamiltonian and plot energy
     # H = out_p.vector().inner(out_p.vector()) + c**2*out_q.vector().inner(out_q.vector())
-    H = assemble((p_*p_ + c**2*inner(q_, q_))*dx)
+    H = assemble((0.5*p_*p_ + 0.5*c**2*inner(q_, q_))*dx)
     H_vec.append(H)
     t_vec.append(t)
 

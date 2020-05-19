@@ -138,7 +138,7 @@ class RightMarker(SubDomain):
 # all other boundaries for marking
 class GeneralMarker(SubDomain):
     def inside(self, x, on_boundary):
-        return on_boundary and not near(x[0], xInputStart) and not near(x[0], xLength)
+        return on_boundary and (near(x[1], 0) or near(x[1], yLength))
 
 
 # Initialise mesh function for neumann boundary. Facets are dim()-1, initialise subdomains to index 0
@@ -162,6 +162,8 @@ rightMark.mark(boundaryDomains, 2)
 
 # redefine ds so that ds[0] is the dirichlet boundaries and ds[1] are the neumann boundaries
 ds = Measure('ds', domain=mesh, subdomain_data=boundaryDomains)
+
+n = FacetNormal(mesh)
 
 # Make an expression for the boundary term, for now we just make it equal to zero
 q_bNormal = Constant(0.0)
@@ -208,6 +210,9 @@ B = assemble(L)
 # Apply boundary conditions to matrices
 [bc.apply(A, B) for bc in bcs]
 
+bEnergy = dt*c*dot(q_n, n)*forceExpression*(ds(0)) \
+        + dt*c*q_bNormal*p_*(ds(1)) \
+
 # -------------------------------# Set up output and plotting #---------------------------------#
 
 # Create xdmf Files for visualisation
@@ -220,6 +225,7 @@ xdmfFile_q.parameters["flush_output"] = True
 progress = Progress('Time-stepping', numSteps)
 
 # Create vector for hamiltonian
+E_vec = [0]
 H_vec = [0]
 t_vec = [0]
 
@@ -274,6 +280,7 @@ plt.show(block=False)
 
 # -------------------------------# Solve Loop #---------------------------------#
 
+boundaryEnergy = 0
 # Time Stepping
 t = 0
 for n in range(numSteps):
@@ -308,7 +315,13 @@ for n in range(numSteps):
     progress += 1
 
     # Calculate Hamiltonian and plot energy
-    H = assemble((p_*p_ + c**2*inner(q_, q_))*dx)
+    H = assemble((0.5*p_*p_ + 0.5*c**2*inner(q_, q_))*dx)
+    boundaryEnergy += assemble(bEnergy)
+    print('i = {}'.format(H))
+    print('b = {}'.format(boundaryEnergy))
+    E = boundaryEnergy + H
+    print('E = {}'.format(E))
+    E_vec.append(E)
     H_vec.append(H)
     t_vec.append(t)
 
@@ -339,6 +352,10 @@ H_array = np.zeros((numSteps + 1, 2))
 H_array[:,0] = np.array(H_vec)
 H_array[:,1] = np.array(t_vec)
 np.save(os.path.join(outputDir, 'H_array.npy'), H_array)
+E_array = np.zeros((numSteps + 1, 2))
+E_array[:,0] = np.array(E_vec)
+E_array[:,1] = np.array(t_vec)
+np.save(os.path.join(outputDir, 'E_array.npy'), E_array)
 
 plt.savefig(os.path.join(plotDir, 'Hamiltonian.png'), dpi=500)
 # overwrite limits if we want to zoom
