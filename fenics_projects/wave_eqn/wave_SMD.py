@@ -10,19 +10,8 @@ import paperPlotSetup
 
 paperPlotSetup.Setup_Plot(3)
 
-"""V6 applies the correct stormer-verlet integration
-
-V5 applies integration by parts to both equations and applies the boundary
-conditions to the boundary term in the parts.
-
-wave_2D_V4 has a choice of boundary conditions 
-"DDNN" Solves the seperated wave equation with boundary conditions applied
-with DirichletBC for the p input and right boundary.
-"NNNN" has all neumann with the left side a force input neumann, I think this is ill-posed
-
- This code implents a rectangle domain and a more complicated domain where the sinusoidal wave
- starts on an input rectangle then travels into the main rectangle.
- The circular wavefront is seen in the main square part of the domain."""
+""" wave_SMD combines the spring mass system (no damper yet) to the left boundary of the wave equation
+ """
 
 version = 'V7'
 # Choose operating case
