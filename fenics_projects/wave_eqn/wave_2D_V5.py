@@ -25,8 +25,8 @@ case = 'rectangle'
 # case = 'squareWInput'
 #Define boundary type where the 4 letters are eith D for Dirchlet or N for Neumann
 # The ordering is Left, Right, Bottom, Top
-boundaryType = 'DDNN'
 boundaryType = 'DDNN_PH'
+# boundaryType = 'DDNN_PH'
 # boundaryType = 'NNNN'
 
 BOUNDARYPLOT = False

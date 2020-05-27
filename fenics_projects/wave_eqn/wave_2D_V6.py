@@ -28,7 +28,7 @@ version = 'V6'
 # Choose operating case
 case = 'rectangle'
 # case = 'squareWInput'
-#Define boundary type where the 4 letters are eith D for Dirchlet or N for Neumann
+#Define boundary type where the 4 letters are either D for Dirchlet or N for Neumann
 # The ordering is Left, Right, Bottom, Top
 boundaryType = 'DDNN'
 # boundaryType = 'DDNN_PH'
@@ -213,13 +213,17 @@ if BOUNDARYPLOT:
 #     dot(q - q_n, v_q)*dx + dt*dot(grad(p), v_q)*dx
 # Symplectic Euler
 if boundaryType == 'DDNN':
-
     F_temp = (p - p_n)*v_p*dx + 0.5*dt*c_squared*(-dot(q_n, grad(v_p))*dx + q_bNormal*v_p*ds(1)) + \
              dot(q - q_n, v_q)*dx + 0.5*dt*dot(grad(p_n), v_q)*dx
+    # dot(q_n, n)*v_p*ds(0) + dot(q_n, n)*v_p*ds(2)) + \
     F = (p - p_n)*v_p*dx + dt*c_squared*(-dot(q_temp, grad(v_p))*dx + q_bNormal*v_p*ds(1)) + \
         dot(q - q_temp, v_q)*dx + 0.5*dt*dot(grad(p), v_q)*dx
-    # F = (p - p_n)*v_p*dx - dt*c_squared*dot(q_n, grad(v_p))*dx + dt*q_bNormal*v_p*ds(1) + \
-    #     dot(q - q_n, v_q)*dx + dt*dot(grad(p), v_q)*dx
+    # dot(q_temp, n)*v_p*ds(0) + dot(q_temp, n)*v_p*ds(2)) + \
+    #    F_temp = (p - p_n)*v_p*dx + 0.5*dt*c_squared*(-dot(q_n, grad(v_p))*dx + q_bNormal*v_p*ds(1)) + \
+    #             dot(q - q_n, v_q)*dx + 0.5*dt*dot(grad(p_n), v_q)*dx
+    #    F = (p - p_n)*v_p*dx + dt*c_squared*(-dot(q_temp, grad(v_p))*dx + q_bNormal*v_p*ds(1)) + \
+    #        dot(q - q_temp, v_q)*dx + 0.5*dt*dot(grad(p), v_q)*dx
+
 elif boundaryType == 'DDNN_PH':
     #TODO(only the q part of this temp equation (the first step of stormer-verlet
     # needs to be solved, for now just solve it all
@@ -255,7 +259,7 @@ B = assemble(L)
 
 # Create the L_p matrix from notes to calculate the boundary energy flow
 # These are the energy contributions from the left, general and right boundaries for the first half timestep
-pT_L_q_temp_left = 0.5*dt*c*dot(q_temp, n)*forceExpression*ds(0)
+pT_L_q_temp_left = 0.5*dt*c*dot(q_n, n)*forceExpression*ds(0)
 pT_L_q_temp_gen = 0.5*dt*c*q_bNormal*p_n*ds(1)
 pT_L_q_temp_right = 0.5*dt*c*dot(q_temp, n)*mirrorBoundary*ds(2)
 
@@ -265,7 +269,7 @@ pT_L_q_gen = pT_L_q_temp_gen + 0.5*dt*c*q_bNormal*p_*ds(1)
 pT_L_q_right = pT_L_q_temp_right+ 0.5*dt*c*dot(q_temp, n)*mirrorBoundary*ds(2)
 
 # Total energy contribution from the boundaries for the time step
-pT_L_q = pT_L_q_left + pT_L_q_gen + pT_L_q_right
+pT_L_q = pT_L_q_left # + pT_L_q_gen + pT_L_q_right
 
 # -------------------------------# Set up output and plotting #---------------------------------#
 
