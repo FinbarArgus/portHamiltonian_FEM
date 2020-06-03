@@ -42,26 +42,34 @@ if __name__ == '__main__':
 #                  ['R', 'SV', 'weak', 120],
 #                  ['R', 'SV', 'weak', 160],
 #                  ['R', 'SV', 'weak', 60]]
-    caseArray = [['R', 'SV', 'strong', 20],
-                ['R', 'SV', 'weak', 20]]
+#    caseArray = [['R', 'SV', 'strong', 20],
+#                ['R', 'SV', 'weak', 20]]
+    caseArray = [['R', 'SE', 'weak', 20, 'IC']]
 
     for caseVec in caseArray:
         domainShape = caseVec[0]
         timeIntScheme = caseVec[1]
         dirichletImp = caseVec[2]
 
-        assert len(caseVec) in [3, 4], 'caseArray should be vectors of length 3 or 4'
+        assert len(caseVec) in [3, 4, 5], 'caseArray should be vectors of length 3, 4 or 5'
         # ------------------------------# Setup Directories #-------------------------------#
 
         # Create output dir
         outputDir = 'output'
+        IC_BOOL = False
         if not os.path.exists(outputDir):
             os.mkdir(outputDir)
         subDir = 'output_' + domainShape + '_' + timeIntScheme + '_' + dirichletImp
-        if len(caseVec) > 3:
+        if len(caseVec) == 4:
             # we have a nx value to set
             subDir = subDir + '_nx' + str(caseVec[3])
-        outputSubDir= os.path.join(outputDir, subDir)
+        elif len(caseVec) == 5:
+            # add 'IC' to the subDir name to denote interconnection
+            subDir = subDir + '_' + caseVec[4]
+            # also set bool that specifies interconnection as true
+            IC_BOOL = (caseVec[4] == 'IC')
+
+        outputSubDir = os.path.join(outputDir, subDir)
         if not os.path.exists(outputSubDir):
             os.mkdir(outputSubDir)
 
@@ -83,7 +91,7 @@ if __name__ == '__main__':
         H_vec, E_vec, t_vec, numCells = wave_2D_solve(tFinal, numSteps, outputSubDir,
                                     nx, ny, xLength, yLength,
                                     domainShape=domainShape, timeIntScheme=timeIntScheme, dirichletImp=dirichletImp,
-                                    hookesK=hookesK, rho=rho)
+                                    hookesK=hookesK, rho=rho, interConnection=IC_BOOL)
 
         # -------------------------------# Set up output and plotting #---------------------------------#
 

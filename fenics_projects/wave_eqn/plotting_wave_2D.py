@@ -135,8 +135,8 @@ for count, dir in enumerate(outputSubDirArray):
     dataArray = np.load(os.path.join(dir, 'H_array.npy'))
     numCells = np.load(os.path.join(dir, 'numCells.npy'))[0]
     avCellSize = 0.25/numCells
-    avCellLength = 1/(2*np.sqrt(numCells))
-    numCell_Res[count, :] = [numCells, avCellSize, avCellLength, dataArray[-1,2]]
+    avCellLength = np.sqrt(avCellSize)
+    numCell_Res[count, :] = [numCells, avCellSize, avCellLength, np.sqrt(np.square(dataArray[-1,2]))]
 
 plt.plot(numCell_Res[0:7, 0], numCell_Res[0:7, 3], lw=1.5, color='b', linestyle='', marker='o',
         label='SV strong')
@@ -148,7 +148,7 @@ plt.grid()
 #plt.show()
 plt.savefig(os.path.join(plotDir, 'EnergyResVsNumCells.png'), dpi=500, bbox_inches='tight')
 ax.set_xlim(1e2, 1e5)
-ax.set_ylim(1e-5, 1e-2)
+ax.set_ylim(1e-7, 1e-2)
 plt.xscale('log')
 plt.yscale('log')
 plt.savefig(os.path.join(plotDir, 'EnergyResVsNumCellsLogScale.png'), dpi=500, bbox_inches='tight')
@@ -170,7 +170,7 @@ plt.grid()
 #plt.show()
 plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellSize.png'), dpi=500, bbox_inches='tight')
 ax.set_xlim(1e-5, 1e-2)
-ax.set_ylim(1e-5, 1e-2)
+ax.set_ylim(1e-7, 1e-2)
 plt.xscale('log')
 plt.yscale('log')
 plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellSizeLogScale.png'), dpi=500, bbox_inches='tight')
@@ -191,8 +191,8 @@ ax.legend()
 plt.grid()
 #plt.show()
 plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellLength.png'), dpi=500, bbox_inches='tight')
-ax.set_xlim(1e-4, 1e-1)
-ax.set_ylim(1e-5, 1e-2)
+ax.set_xlim(1e-3, 1e-1)
+ax.set_ylim(1e-7, 1e-2)
 plt.xscale('log')
 plt.yscale('log')
 plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellLengthLogScale.png'), dpi=500, bbox_inches='tight')
@@ -202,7 +202,5 @@ strongGradient = (np.log(numCell_Res[6,3]) - np.log(numCell_Res[1,3]))/ \
                  (np.log(numCell_Res[6,2]) - np.log(numCell_Res[1,2]))
 
 print(strongGradient)
-
-
 
 
