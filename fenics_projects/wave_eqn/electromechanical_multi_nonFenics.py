@@ -6,7 +6,9 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import scipy.linalg
 import os
+import paperPlotSetup
 
+paperPlotSetup.Setup_Plot(3)
 
 def lqr(A, B, Q, R):
     """Solve the continuous time lqr controller.
@@ -152,7 +154,8 @@ class ToyProblems:
 
         elif controlType == 'sin':
 
-            u1 = np.sin(3.14*t)
+            # u1 = np.sin(3.14159*t)
+            u1 = np.sin(3.14159*t) if (t < 10.0) else 0.0
             f = (J - R).dot(A_conv.dot(x)) + B*u1
 
 
@@ -196,7 +199,7 @@ controlType = 'sin'
 # gamma1 = 10
 # gamma2 = 0.1
 # gamma3 = 70
-colorVec = [ 'c', 'b', 'g', 'y', 'orange', 'r']
+colorVec = [ 'b', 'c', 'g', 'y', 'orange', 'r']
 
 ii = 0
 
@@ -208,7 +211,7 @@ gamma3 = 40
 toyP = ToyProblems(Bl, R1, R2, K, m, L, controlInputMax, r1, gamma1, gamma2, gamma3, controlType=controlType)
 x0 = np.array([0, 0, 0.0])
 tStop = 20.0
-nSteps = 2001
+nSteps = 20001
 tSpan = np.array([0, tStop])
 sol = solve_ivp(toyP.electromechanical, tSpan, x0, t_eval=np.linspace(0, tStop, nSteps),
                 method='RK45')
@@ -271,9 +274,9 @@ plt.xlabel('Time [s]', fontsize=14)
 plt.ylabel('Output Displacement [m]', fontsize=14)
 plt.ylim(-1.2, 1.2)
 plt.title("Step Response")
-plt.plot(sol.t, motorPos, color=colorVec[ii], linestyle=':', label='scipy')
+plt.plot(sol.t, motorPos, color=colorVec[ii], lw=1, linestyle='-', label='scipy')
 plt.xlim(0,20)
-plt.plot(dataArray[:, 0], dataArray[:, 3], color='r', linestyle='--', label='fenics')
+plt.plot(dataArray[:, 0], dataArray[:, 3], lw=1, color='r', linestyle='--', label='fenics')
 plt.legend(loc='lower right', fontsize=10)
 savePath = os.path.join('output', 'plots', 'em_disp_scipy.png')
 fig.savefig(savePath, dpi=1000, bbox_inches='tight')
@@ -285,8 +288,8 @@ plt.ylabel('Hamiltonian',fontsize=14)
 plt.ylim(0, 15)
 plt.title("Hamiltonian")
 
-plt.plot(sol.t, Hamiltonian, color=colorVec[ii], linestyle=':', label='scipy')
-plt.plot(dataArray[:, 0], dataArray[:, 1], color='r', linestyle='--', label='fenics')
+plt.plot(sol.t, Hamiltonian, color=colorVec[ii], lw=1, linestyle='-', label='scipy')
+plt.plot(dataArray[:, 0], dataArray[:, 1], color='r', lw=1, linestyle='--', label='fenics')
 plt.legend(loc='upper right', fontsize=10)
 savePath = os.path.join('output', 'plots', 'em_Hamiltonian_scipy.png')
 fig.savefig(savePath, dpi=1000, bbox_inches='tight')
@@ -296,7 +299,7 @@ fig = plt.figure()
 plt.xlabel('Time [s]', fontsize=14)
 plt.ylabel('displacement error', fontsize=14)
 plt.title("Error between fenics and scipy")
-plt.plot(dataArray[:, 0], np.sqrt(np.square(dataArray[:, 3]-motorPos)), color='r', linestyle='--')
+plt.plot(dataArray[:, 0], np.sqrt(np.square(dataArray[:, 3]-motorPos)), lw=1, color='r', linestyle='--')
 
 # plt.legend(loc='upper right', fontsize=10)
 savePath = os.path.join('output', 'plots', 'em_displacement_error_between_fenics_scipy.png')
@@ -306,8 +309,8 @@ fig.savefig(savePath, dpi=1000, bbox_inches='tight')
 fig = plt.figure()
 plt.xlabel('Time [s]', fontsize=14)
 plt.ylabel('Energy residual', fontsize=14)
-plt.title("Energy residual for fenics and scipy")
-plt.plot(dataArray[:, 0], np.sqrt(np.square(dataArray[:, 2])), color='r', linestyle='--',
+plt.title("Energy residual for fenics")
+plt.plot(dataArray[:, 0], np.sqrt(np.square(dataArray[:, 2])), color='r', lw=1, linestyle='--',
          label='fenics')
 
 # plt.legend(loc='upper right', fontsize=10)

@@ -17,10 +17,11 @@ if __name__ == '__main__':
 
     # -------------------------------# Define params #---------------------------------#
 
+    # TODO(Finbar) Make sure this still works when these are non-zero
     # stiffness
-    hookesK = 1.0
+    K_wave = 3.0
     # density
-    rho = 1.0
+    rho = 2.0 # 1.5
 
     # caseArray = [['R', 'IE', 'weak'],
     #             ['R', 'IE', 'strong'],
@@ -44,7 +45,7 @@ if __name__ == '__main__':
 #                  ['R', 'SV', 'weak', 60]]
 #    caseArray = [['R', 'SV', 'strong', 20],
 #                ['R', 'SV', 'weak', 20]]
-    caseArray = [['R', 'SE', 'weak', 20, 'IC']]
+    caseArray = [['R', 'SV', 'weak', 120, 'IC']]
 
     for caseVec in caseArray:
         domainShape = caseVec[0]
@@ -81,24 +82,31 @@ if __name__ == '__main__':
 
         ny = int(nx/4)
         xLength = 1.0
-        yLength = 0.25
+        yLength = 0.25 #0.25
 
 
         # solve the wave equation
-        tFinal = 1.5
-        numSteps = 3000
+        tFinal = 4.5 # 1.5
+        numSteps = 9000 #Change this back to 3000
 
-        H_vec, E_vec, t_vec, numCells = wave_2D_solve(tFinal, numSteps, outputSubDir,
+        H_vec, E_vec, t_vec, disp_vec, numCells, bEnergy_vec, inpEnergy_vec, H_em_vec, H_wave_vec  = \
+                                    wave_2D_solve(tFinal, numSteps, outputSubDir,
                                     nx, ny, xLength, yLength,
-                                    domainShape=domainShape, timeIntScheme=timeIntScheme, dirichletImp=dirichletImp,
-                                    hookesK=hookesK, rho=rho, interConnection=IC_BOOL)
+                                    domainShape=domainShape, timeIntScheme=timeIntScheme,
+                                    dirichletImp=dirichletImp,
+                                    K_wave=K_wave, rho=rho, interConnection=IC_BOOL)
 
         # -------------------------------# Set up output and plotting #---------------------------------#
 
-        H_array = np.zeros((numSteps + 1, 3))
+        H_array = np.zeros((numSteps + 1, 8))
         H_array[:, 0] = np.array(t_vec)
         H_array[:, 1] = np.array(H_vec)
         H_array[:, 2] = np.array(E_vec)
+        H_array[:, 3] = np.array(disp_vec)
+        H_array[:, 4] = np.array(bEnergy_vec)
+        H_array[:, 5] = np.array(inpEnergy_vec)
+        H_array[:, 6] = np.array(H_em_vec)
+        H_array[:, 7] = np.array(H_wave_vec)
         np.save(os.path.join(outputSubDir, 'H_array.npy'), H_array)
 
         numCells_save = np.zeros((1))

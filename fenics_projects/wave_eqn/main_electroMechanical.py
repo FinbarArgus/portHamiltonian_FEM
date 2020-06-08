@@ -16,7 +16,7 @@ if __name__ == '__main__':
     tic = time.time()
 
     domainShape = 'R'
-    timeIntScheme = 'SE'
+    timeIntScheme = 'SV'
     dirichletImp = 'weak'
     # ------------------------------# Setup Directories #-------------------------------#
 
@@ -39,7 +39,7 @@ if __name__ == '__main__':
 
     # solve the wave equation
     tFinal = 20
-    numSteps = 2000
+    numSteps = 20000
 
     H_vec, E_vec, t_vec, disp_vec = electromechanical_solve(tFinal, numSteps, outputSubDir,
                                 nx, ny, xLength, yLength,

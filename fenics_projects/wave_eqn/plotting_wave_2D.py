@@ -203,4 +203,77 @@ strongGradient = (np.log(numCell_Res[6,3]) - np.log(numCell_Res[1,3]))/ \
 
 print(strongGradient)
 
+# ------------# Plotting results for interconnection wave and electromechanical #---------------#
 
+
+subDir = 'output_R_SV_weak_IC'
+outputSubDirArray = [os.path.join(outputDir, subDir)]
+# ------------# Plot Hamiltonian and energy residual over time#---------------#
+
+tFinal = 4.5 #TODO get this from data array
+# Plot the energy residual
+fig, ax = plt.subplots(1, 1)
+ax.set_xlim(0, tFinal)
+# ax.set_ylim(-0.0002, 0.0008)
+ax.set_xlabel('Time [s]')
+ax.set_ylabel('Energy Residual [J]')
+for count, dir in enumerate(outputSubDirArray):
+    dataArray = np.load(os.path.join(dir, 'H_array.npy'))
+    plt.plot(dataArray[:, 0], dataArray[:, 2], lw=0.5, color='b', linestyle='-',
+             label='Total Residual')
+    # Plot wave equation residual
+    waveResid = np.sqrt(np.square(dataArray[:, 7] + dataArray[:,4]))
+    plt.plot(dataArray[:, 0], waveResid, lw=0.5, color='r', linestyle=lineStyleArray[count],
+             label='Wave Residual')
+    # Plot EM residual
+    emResid = np.sqrt(np.square(dataArray[:, 6] - dataArray[:,5] - dataArray[:,4]))
+    plt.plot(dataArray[:, 0], emResid, lw=0.5, color='g', linestyle=lineStyleArray[count],
+             label='em Residual')
+    #plot check
+    totalResid2 = dataArray[:, 6] +dataArray[:, 7] - dataArray[:,5]
+    plt.plot(dataArray[:, 0], totalResid2, lw=0.5, color='c', linestyle=lineStyleArray[count],
+             label='check TotalResidual')
+
+ax.legend()
+# plt.show()
+plt.savefig(os.path.join(plotDir, 'IC_EnergyRes.png'), dpi=500, bbox_inches='tight')
+plt.close(fig)
+
+# Plot the hamiltonian
+fig, ax = plt.subplots(1, 1)
+ax.set_xlim(0, tFinal)
+# ax.set_ylim(-0.01, 0.01)
+ax.set_xlabel('Time [s]')
+ax.set_ylabel('Hamiltonian [J]')
+for count, dir in enumerate(outputSubDirArray):
+    dataArray = np.load(os.path.join(dir, 'H_array.npy'))
+    plt.plot(dataArray[:, 0], dataArray[:, 1], lw=0.5, color=colorArray[count], linestyle=lineStyleArray[count],
+             label='Interconnection SV')
+ax.legend()
+# plt.show()
+plt.savefig(os.path.join(plotDir, 'IC_Hamiltonian.png'), dpi=500, bbox_inches='tight')
+# overwrite limits if we want to zoom
+ax.set_xlim(0.25, tFinal)
+ax.set_ylim(0.009, 0.011)
+plt.savefig(os.path.join(plotDir, 'IC_HamiltonianZoom.png'), dpi=500, bbox_inches='tight')
+# overwrite limits if we want to zoom
+ax.set_xlim(0.25, tFinal)
+ax.set_ylim(0.0002, 0.0003)
+# plt.savefig(os.path.join(plotDir, 'IC_HamiltonianZoomZoom.png'), dpi=500, bbox_inches='tight')
+plt.close(fig)
+
+#plot the motor displacement
+fig, ax = plt.subplots(1, 1)
+ax.set_xlim(0, tFinal)
+# ax.set_ylim(-0.0002, 0.0008)
+ax.set_xlabel('Time [s]')
+ax.set_ylabel('Displacement [m]')
+for count, dir in enumerate(outputSubDirArray):
+    dataArray = np.load(os.path.join(dir, 'H_array.npy'))
+    plt.plot(dataArray[:, 0], dataArray[:, 3], lw=0.5, color=colorArray[count], linestyle=lineStyleArray[count],
+             label='Interconnection SV')
+
+ax.legend()
+#plt.show()
+plt.savefig(os.path.join(plotDir, 'IC_Displacement.png'), dpi=500, bbox_inches='tight')
+plt.close(fig)

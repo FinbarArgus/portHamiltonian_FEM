@@ -129,24 +129,62 @@ def electromechanical_solve(tFinal, numSteps, outputDir,
     leftMark= LeftMarker()
     leftMark.mark(boundaryDomains, 0)
 
+    generalMark= GeneralMarker()
+    generalMark.mark(boundaryDomains, 1)
+
+    rightMark= RightMarker()
+    rightMark.mark(boundaryDomains, 2)
+
     # redefine ds so that ds[0] is the dirichlet boundaries and ds[1] are the neumann boundaries
     ds = Measure('ds', domain=mesh, subdomain_data=boundaryDomains)
 
     # Forced input
-    uInput = Expression('sin(3.14159*t)', degree=2, t=0)
+    # uInput = Expression('sin(3.14159*t)', degree=2, t=0)
+    uInput = Expression('(t<10.0) ? sin(3.14159*t) : 0.0', degree=2, t=0)
 
     bcs = []
 
     # -------------------------------# Problem Definition #---------------------------------#
 
-    if timeIntScheme == 'SE':
+    if timeIntScheme == 'SV':
+        #implement Stormer-Verlet Scheme
+
+        F_temp = (-dot(v_xode, xode - xode_n)/(0.5*dt) + \
+             v_xode[0]*(A_em[0, 0]*xode_n[0] + A_em[0, 1]*xode_n[1] + A_em[0, 2]*xode[2]) + \
+             v_xode[1]*(A_em[1, 0]*xode_n[0] + A_em[1, 1]*xode_n[1] + A_em[1, 2]*xode[2]) + \
+             v_xode[2]*(A_em[2, 0]*xode_n[0] + A_em[2, 1]*xode_n[1] + A_em[2, 2]*xode[2]) + \
+             v_xode[0]*uInput)*ds(0)
+
+        F = (-(v_xode[0]*(xode[0] - xode_n[0]) + \
+               v_xode[1]*(xode[1] - xode_n[1]) + \
+               v_xode[2]*(xode[2] - xode_temp[2]))/dt + \
+             0.5*v_xode[0]*(A_em[0, 0]*xode_n[0] + A_em[0, 1]*xode_n[1] + A_em[0, 2]*xode_temp[2] + \
+                        A_em[0, 0]*xode[0]   + A_em[0, 1]*xode[1]   + A_em[0, 2]*xode_temp[2]) + \
+             0.5*v_xode[1]*(A_em[1, 0]*xode_n[0] + A_em[1, 1]*xode_n[1] + A_em[1, 2]*xode_temp[2] + \
+                        A_em[1, 0]*xode[0]   + A_em[1, 1]*xode[1]   + A_em[1, 2]*xode_temp[2]) + \
+             0.5*v_xode[2]*(A_em[2, 0]*xode[0] + A_em[2, 1]*xode[1] + A_em[2, 2]*xode_temp[2]) + \
+             v_xode[0]*uInput)*ds(0) #don't multiply the input by a half because it is for a full step
+    elif timeIntScheme == 'SE':
         #implement Symplectic Euler
         xode_int = as_vector([xode[0], xode[1], xode_n[2]])
-        # xode_int = xode
-        F_em = (-dot(v_xode, xode - xode_n)/dt + dot(v_xode, A_em*xode_int) + \
-             v_xode[0]*uInput )*ds(0)
-        F = F_em
 
+        F = (-dot(v_xode, xode - xode_n)/dt + \
+             v_xode[0]*(A_em[0, 0]*xode_int[0] + A_em[0, 1]*xode_int[1] + A_em[0, 2]*xode_int[2]) + \
+             v_xode[1]*(A_em[1, 0]*xode_int[0] + A_em[1, 1]*xode_int[1] + A_em[1, 2]*xode_int[2]) + \
+             v_xode[2]*(A_em[2, 0]*xode_int[0] + A_em[2, 1]*xode_int[1] + A_em[2, 2]*xode_int[2]) + \
+             v_xode[0]*uInput)*ds(0)
+    elif timeIntScheme == 'EE':
+        # implement Explicit Euler
+        xode_int = as_vector([xode_n[0], xode_n[1], xode_n[2]])
+
+        F = (-dot(v_xode, xode - xode_n)/dt + dot(v_xode, dot(A_em, xode_int)) + \
+                v_xode[0]*uInput)*ds(0)
+    elif timeIntScheme == 'IE':
+        # implement Implicit Euler
+        xode_int = as_vector([xode[0], xode[1], xode[2]])
+
+        F = (-dot(v_xode, xode - xode_n)/dt + dot(v_xode, dot(A_em, xode_int)) + \
+             v_xode[0]*uInput)*ds(0)
     else:
         print('time integration scheme {} not implemented'.format(timeIntScheme))
         exit()
@@ -227,7 +265,7 @@ def electromechanical_solve(tFinal, numSteps, outputDir,
 
         # set up 1st sub-step if the timeIntScheme has 2 sub-steps
         if numIntSubSteps > 1:
-            A_temp = assemble(a_temp)
+            # A_temp = assemble(a_temp)
             B_temp = assemble(L_temp)
 
             # Apply boundary conditions to matrices for first sub-step
@@ -246,18 +284,18 @@ def electromechanical_solve(tFinal, numSteps, outputDir,
 
         solve(A, u_.vector(), B)
 
-        # split solution
-        out_xode_0, out_xode_1, out_xode_2 = u_.split()
-        # out_xode = as_vector([out_xode_0, out_xode_1, out_xode_2])
-        #split previous solution
-        # out_p_n, out_q_n, out_xode_0_n, out_xode_1_n, out_xode_2_n = u_n.split()
-
         # Update progress bar
         set_log_level(LogLevel.PROGRESS)
         progress += 1
 
         # Calculate Hamiltonian and plot energy
-        inpPowerXdt = dt*uInput*xode_0_*ds(0)
+        if timeIntScheme == 'SV':
+            inpPowerXdt = 0.5*(dt*uInput*(xode_0_n + xode_0_)/L_em)*ds(0)
+        elif timeIntScheme == 'SE' or 'IE':
+            inpPowerXdt = (dt*uInput*xode_0_/L_em)*ds(0)
+        elif timeIntScheme == 'IE':
+            inpPowerXdt = (dt*uInput*xode_0_n/L_em)*ds(0)
+
         boundaryEnergy += assemble(inpPowerXdt)/yLength
         H_em = assemble(0.5*(xode_[0]*xode_[0]/L_em + xode_[1]*xode_[1]/m_em + K_em*xode_[2]*xode_[2])*ds(0))/yLength
         print('boundary energy = {}'.format(boundaryEnergy))
