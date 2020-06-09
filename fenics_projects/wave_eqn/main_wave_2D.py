@@ -23,29 +23,29 @@ if __name__ == '__main__':
     # density
     rho = 2.0 # 1.5
 
-    # caseArray = [['R', 'IE', 'weak'],
-    #             ['R', 'IE', 'strong'],
-    #             ['R', 'EE', 'weak'],
-    #             ['R', 'EE', 'strong'],
-    #             ['R', 'SE', 'weak'],
-    #             ['R', 'SE', 'strong'],
-    #             ['R', 'EH', 'weak'],
-    #             ['R', 'EH', 'strong'],
-    #             ['R', 'SV', 'weak'],
-    #             ['R', 'SV', 'strong']]
-    # caseArray = [['R', 'SV', 'strong', 40],
-    #            ['R', 'SV', 'strong', 160],
-    #            ['R', 'SV', 'weak', 40]]
-#     caseArray = [['R', 'SV', 'strong', 60],
-#                  ['R', 'SV', 'strong', 100],
-#                  ['R', 'SV', 'strong', 120],
-#                  ['R', 'SV', 'weak', 100],
-#                  ['R', 'SV', 'weak', 120],
-#                  ['R', 'SV', 'weak', 160],
-#                  ['R', 'SV', 'weak', 60]]
-#    caseArray = [['R', 'SV', 'strong', 20],
-#                ['R', 'SV', 'weak', 20]]
-    caseArray = [['R', 'SV', 'weak', 120, 'IC']]
+    caseArray = [['R', 'IE', 'weak'],
+                ['R', 'IE', 'strong'],
+                ['R', 'EE', 'weak'],
+                ['R', 'EE', 'strong'],
+                ['R', 'SE', 'weak'],
+                ['R', 'SE', 'strong'],
+                ['R', 'EH', 'weak'],
+                ['R', 'EH', 'strong'],
+                ['R', 'SV', 'weak'],
+                ['R', 'SV', 'strong'],
+                ['R', 'SV', 'strong', 40],
+                ['R', 'SV', 'strong', 160],
+                ['R', 'SV', 'weak', 40],
+                ['R', 'SV', 'strong', 60],
+                ['R', 'SV', 'strong', 100],
+                ['R', 'SV', 'strong', 120],
+                ['R', 'SV', 'weak', 100],
+                ['R', 'SV', 'weak', 120],
+                ['R', 'SV', 'weak', 160],
+                ['R', 'SV', 'weak', 60],
+                ['R', 'SV', 'strong', 20],
+                ['R', 'SV', 'weak', 20]]
+    # caseArray = [['R', 'SV', 'weak', 120, 'IC']]
 
     for caseVec in caseArray:
         domainShape = caseVec[0]
@@ -86,8 +86,8 @@ if __name__ == '__main__':
 
 
         # solve the wave equation
-        tFinal = 4.5 # 1.5
-        numSteps = 9000 #Change this back to 3000
+        tFinal = 1.5 # 1.5
+        numSteps = 3000 #Change this back to 3000
 
         H_vec, E_vec, t_vec, disp_vec, numCells, bEnergy_vec, inpEnergy_vec, H_em_vec, H_wave_vec  = \
                                     wave_2D_solve(tFinal, numSteps, outputSubDir,
