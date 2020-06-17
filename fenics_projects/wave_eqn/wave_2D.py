@@ -11,7 +11,8 @@ import paperPlotSetup
 def wave_2D_solve(tFinal, numSteps, outputDir,
                   nx, ny, xLength, yLength,
                   domainShape='R', timeIntScheme='SV', dirichletImp='weak',
-                  K_wave=1, rho=1, BOUNDARYPLOT=False, interConnection=False):
+                  K_wave=1, rho=1, BOUNDARYPLOT=False, interConnection=False,
+                  analytical=False):
 
     """ function for solving the 2D wave equation in fenics
 
@@ -24,7 +25,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
     :param ny: [int] number of nodes in y direction
     :param xL: [float] x length of domain
     :param yL: [float] y length of domain
-    :param domainShape: [string] 'R' for rectangle or 'R_1C' for rectangle with 1 input channel
+    :param domainShape: [string] 'R' for rectangle or 'S_1C' for square with 1 input channel
     :param dirichletImplementation: [string] how the dirichlet BCs are implemented either 'strong' or 'weak'
     :param timeIntScheme: [string] what time integration scheme to use. List of possible below
                         'EH' = Explicit Heuns, 'SE' = Symplectic Euler, 'SV' = Stormer Verlet
@@ -43,18 +44,39 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
     if domainShape == 'R':
         xInputStart = 0.0  # at what x location is the input boundary
         mesh = RectangleMesh(Point(xLength, 0.0), Point(0.0, yLength), nx, ny)
-    elif domainShape == 'R_1C':
+    elif domainShape == 'S_1C':
 
         xInputStart = -0.10
-        inputRectanglePoint1 = Point(xInputStart, 0.45)
-        inputRectanglePoint2 = Point(0.0, 0.55)
-        mainRectangle = mshr.Rectangle(Point(0.0, 0.0), Point(xLength, yLength))
+        inputRectanglePoint1 = Point(xInputStart, xLength/2 - yLength/2)
+        inputRectanglePoint2 = Point(0.0, xLength/2 + yLength/2)
+        mainRectangle = mshr.Rectangle(Point(0.0, 0.0), Point(xLength, xLength))
         inputRectangle = mshr.Rectangle(inputRectanglePoint1, inputRectanglePoint2)
         domain = mainRectangle + inputRectangle
-        mesh = mshr.generate_mesh(domain, 64)
+        mesh = mshr.generate_mesh(domain, nx)
+
+        # Mark cells for refinement
+        inputPoint = Point(0, xLength/2)
+        for i in range(1):
+            cell_markers = MeshFunction("bool", mesh, mesh.topology().dim())
+            for c in cells(mesh):
+                if c.midpoint().distance(inputPoint) <= yLength:
+                    cell_markers[c] = True
+                else:
+                    cell_markers[c] = False
+
+            # Refine mesh
+            mesh = refine(mesh, cell_markers)
+
+        # plt.figure()
+        # plot(mesh)
+        # plt.show()
     else:
         print('domainShape \"{}\" hasnt been created'.format(domainShape))
         quit()
+
+    if analytical:
+        if not domainShape == 'R':
+            print('analytical solution for rectangle domain only')
 
     #get number of cells in mesh
     numCells = mesh.num_cells()
@@ -161,20 +183,39 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
 
     # Left edge boundary condition for marking
     class LeftMarker(SubDomain):
-        def inside(self, x, on_boundary):
-            return on_boundary and near(x[0], xInputStart)
-
+        if not analytical:
+            def inside(self, x, on_boundary):
+                return on_boundary and near(x[0], xInputStart)
+        else:
+            def inside(self, x, on_boundary):
+                return False
 
     # Right edge boundary condition for marking
     class RightMarker(SubDomain):
-        def inside(self, x, on_boundary):
-            return on_boundary and near(x[0], xLength)
-
+        if not analytical:
+            def inside(self, x, on_boundary):
+                return on_boundary and near(x[0], xLength)
+        else:
+            # If analytical we set all boundaries to be the 'Right" boundary, which is a
+            #Dirichlet Zero boundary, TODO rename this boundary to FixedZero
+            def inside(self, x, on_boundary):
+                return on_boundary
 
     # all other boundaries for marking
     class GeneralMarker(SubDomain):
-        def inside(self, x, on_boundary):
-            return on_boundary and (near(x[1], 0) or near(x[1], yLength))
+        if domainShape == 'R':
+            if not analytical:
+                def inside(self, x, on_boundary):
+                    return on_boundary and (near(x[1], 0) or near(x[1], yLength))
+            else:
+                def inside(self, x, on_boundary):
+                    return False
+        elif domainShape == 'S_1C':
+            def inside(self, x, on_boundary):
+                return on_boundary and (near(x[1], 0) or near(x[1], xLength) or
+                                        near(x[1], xLength/2 - yLength/2) or
+                                        near(x[1], xLength/2 + yLength/2) or
+                                        near(x[0], 0))
 
 
     # Initialise mesh function for neumann boundary. Facets are dim()-1, initialise subdomains to index 0
@@ -224,8 +265,10 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             # pLeftBoundary = xode_1_n/m_em
             # pLeftBoundary_temp = xode_1_n/m_em
 
-
-        uInput = Expression('(t<0.25) ? 10*sin(8*3.14159*t) : 0.0', degree=2, t=0)
+        if domainShape == 'R':
+            uInput = Expression('(t<0.25) ? 10*sin(8*3.14159*t) : 0.0', degree=2, t=0)
+        elif domainShape == 'S_1C':
+            uInput = Expression('(t<0.25) ? 10*sin(8*3.14159*t) : 0.0', degree=2, t=0)
 
     mirrorBoundary = Constant(0.0)
 
@@ -442,9 +485,9 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
 
     # Create xdmf Files for visualisation
     xdmfFile_p = XDMFFile(os.path.join(outputDir, 'p.xdmf'))
-    xdmfFile_q = XDMFFile(os.path.join(outputDir, 'q.xdmf'))
+    # xdmfFile_q = XDMFFile(os.path.join(outputDir, 'q.xdmf'))
     xdmfFile_p.parameters["flush_output"] = True
-    xdmfFile_q.parameters["flush_output"] = True
+    # xdmfFile_q.parameters["flush_output"] = True
 
     # Create progress bar
     progress = Progress('Time-stepping', numSteps)
@@ -474,9 +517,9 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
     ax.set_xlim(0, tFinal)
     if domainShape == 'R':
         # ax.set_ylim(0, 600)
-        ax.set_ylim(-0.5, 0.5)
-    elif domainShape == 'squareWInput':
-        ax.set_ylim(0, 0.03)
+        ax.set_ylim(-0.0001, 0.0001)
+    elif domainShape == 'S_1C':
+        ax.set_ylim(-0.001, 0.001)
 
     ax.legend()
     ax.set_ylabel('Energy Residual [J]')
@@ -542,7 +585,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
 
         # Save solution to file
         xdmfFile_p.write(out_p, t)
-        xdmfFile_q.write(out_q, t)
+        # xdmfFile_q.write(out_q, t)
 
         # Update progress bar
         set_log_level(LogLevel.PROGRESS)

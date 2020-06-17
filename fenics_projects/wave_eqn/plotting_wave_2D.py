@@ -185,7 +185,7 @@ plt.close(fig)
 fig, ax = plt.subplots(1, 1)
 ax.set_xlim(0, 0.04)
 ax.set_ylim(0, 0.16)
-ax.set_xlabel('Average Cell Length [$m$]')
+ax.set_xlabel('Characteristic Cell Length [$m$]')
 ax.set_ylabel('Energy Residual [J]')
 plt.plot(numCell_Res[0:7, 2], numCell_Res[0:7, 3], lw=1.5, color='b', linestyle='', marker='o',
          label='SV strong')
@@ -217,11 +217,11 @@ print(strongGradient)
 # ------------# Plotting results for interconnection wave and electromechanical #---------------#
 
 
-subDir = 'output_R_SV_weak_IC'
+subDir = 'output_R_SV_weak_IC_t20_steps40000'
 outputSubDirArray = [os.path.join(outputDir, subDir)]
 # ------------# Plot Hamiltonian and energy residual over time#---------------#
 
-tFinal = 4.5 #TODO get this from data array
+tFinal = 20.0 #TODO get this from data array
 # Plot the energy residual
 fig, ax = plt.subplots(1, 1)
 ax.set_xlim(0, tFinal)
@@ -247,7 +247,7 @@ for count, dir in enumerate(outputSubDirArray):
 
 ax.legend()
 # plt.show()
-plt.savefig(os.path.join(plotDir, 'IC_EnergyRes.png'), dpi=500, bbox_inches='tight')
+plt.savefig(os.path.join(plotDir, 'ICEnergyRes.png'), dpi=500, bbox_inches='tight')
 plt.close(fig)
 
 # Plot the hamiltonian
@@ -262,11 +262,11 @@ for count, dir in enumerate(outputSubDirArray):
              label='Interconnection SV')
 ax.legend()
 # plt.show()
-plt.savefig(os.path.join(plotDir, 'IC_Hamiltonian.png'), dpi=500, bbox_inches='tight')
+plt.savefig(os.path.join(plotDir, 'ICHamiltonian.png'), dpi=500, bbox_inches='tight')
 # overwrite limits if we want to zoom
 ax.set_xlim(0.25, tFinal)
 ax.set_ylim(0.009, 0.011)
-plt.savefig(os.path.join(plotDir, 'IC_HamiltonianZoom.png'), dpi=500, bbox_inches='tight')
+plt.savefig(os.path.join(plotDir, 'ICHamiltonianZoom.png'), dpi=500, bbox_inches='tight')
 # overwrite limits if we want to zoom
 ax.set_xlim(0.25, tFinal)
 ax.set_ylim(0.0002, 0.0003)
@@ -286,5 +286,105 @@ for count, dir in enumerate(outputSubDirArray):
 
 ax.legend()
 #plt.show()
-plt.savefig(os.path.join(plotDir, 'IC_Displacement.png'), dpi=500, bbox_inches='tight')
+plt.savefig(os.path.join(plotDir, 'ICDisplacement.png'), dpi=500, bbox_inches='tight')
 plt.close(fig)
+
+# ------------# Plot max energy residual over numtimesteps#---------------#
+
+caseArray = [['R', 'SV', 'weak', 120, 'IC', 4.5, 1500],
+             ['R', 'SV', 'weak', 120, 'IC', 4.5, 3000],
+             ['R', 'SV', 'weak', 120, 'IC', 4.5, 4500],
+             ['R', 'SV', 'weak', 120, 'IC', 4.5, 6000],
+             ['R', 'SV', 'weak', 120, 'IC', 4.5, 7500],
+             ['R', 'SV', 'weak', 120, 'IC', 4.5, 9000]]
+
+outputSubDirArray = []
+for caseVec in caseArray:
+    subDir = 'output_' + caseVec[0] + '_' + caseVec[1] + '_' +caseVec[2] +\
+                '_' + caseVec[4] + '_t' +\
+                str(caseVec[5]).replace('.','_') + '_steps' + str(caseVec[6])
+
+    outputSubDirArray.append(os.path.join(outputDir, subDir))
+
+numStepsRes = np.zeros((6,2))
+for count, dir in enumerate(outputSubDirArray):
+    dataArray = np.load(os.path.join(dir, 'H_array.npy'))
+    numStepsRes[count,0] = 4.5/caseArray[count][6]
+    numStepsRes[count,1] = np.max(dataArray[:,2])
+
+
+plt.plot(numStepsRes[0:6, 0], numStepsRes[0:6, 1], lw=1.5, color='r', linestyle='', marker='x',
+         label='SV wave-EM')
+#create quadratic line to plot
+xQuad = np.linspace(numStepsRes[0,0], numStepsRes[5,0], 1000)
+scale = 400
+yQuad = scale*np.square(xQuad)
+plt.plot(xQuad, yQuad, lw=1.0, color='k', label='Quadratic Trend ($400x^2$)')
+plt.xlabel('Time Step Size [s]')
+plt.ylabel('Maximum Energy Residual [J]')
+plt.legend()
+plt.grid()
+#plt.show()
+plt.savefig(os.path.join(plotDir, 'ICEnergyResVsNumSteps.png'), dpi=500, bbox_inches='tight')
+plt.xlim(3e-4, 4e-3)
+plt.ylim(9e-5, 1e-2)
+plt.xscale('log')
+plt.yscale('log')
+plt.savefig(os.path.join(plotDir, 'ICEnergyResVsNumStepsLogScale.png'), dpi=500, bbox_inches='tight')
+plt.close(fig)
+
+# ------------# Plotting results for square domain interconnection#---------------#
+
+subDir = 'output_S_1C_SV_weak_IC_t8_steps16000'
+outputSubDirArray = [os.path.join(outputDir, subDir)]
+# ------------# Plot Hamiltonian and energy residual over time#---------------#
+
+tFinal = 8.0 #TODO get this from data array
+# Plot the energy residual
+fig, ax = plt.subplots(1, 1)
+ax.set_xlim(0, tFinal)
+# ax.set_ylim(-0.0002, 0.0008)
+ax.set_xlabel('Time [s]')
+ax.set_ylabel('Energy Residual [J]')
+for count, dir in enumerate(outputSubDirArray):
+    dataArray = np.load(os.path.join(dir, 'H_array.npy'))
+    plt.plot(dataArray[:, 0], dataArray[:, 2], lw=0.5, color='b', linestyle='-',
+             label='Total Residual')
+    # Plot wave equation residual
+    waveResid = np.sqrt(np.square(dataArray[:, 7] + dataArray[:,4]))
+    plt.plot(dataArray[:, 0], waveResid, lw=0.5, color='r', linestyle=lineStyleArray[count],
+             label='Wave Residual')
+    # Plot EM residual
+    emResid = np.sqrt(np.square(dataArray[:, 6] - dataArray[:,5] - dataArray[:,4]))
+    plt.plot(dataArray[:, 0], emResid, lw=0.5, color='g', linestyle=lineStyleArray[count],
+             label='em Residual')
+    #plot check
+    totalResid2 = dataArray[:, 6] +dataArray[:, 7] - dataArray[:,5]
+    # plt.plot(dataArray[:, 0], totalResid2, lw=0.5, color='c', linestyle=lineStyleArray[count],
+    #         label='check TotalResidual')
+
+ax.legend()
+# plt.show()
+plt.savefig(os.path.join(plotDir, 'ICSquareEnergyRes.png'), dpi=500, bbox_inches='tight')
+plt.close(fig)
+
+# Plot the hamiltonian
+fig, ax = plt.subplots(1, 1)
+ax.set_xlim(0, tFinal)
+# ax.set_ylim(-0.01, 0.01)
+ax.set_xlabel('Time [s]')
+ax.set_ylabel('Hamiltonian [J]')
+for count, dir in enumerate(outputSubDirArray):
+    dataArray = np.load(os.path.join(dir, 'H_array.npy'))
+    plt.plot(dataArray[:, 0], dataArray[:, 1], lw=0.5, color=colorArray[count], linestyle=lineStyleArray[count],
+             label='Interconnection SV')
+ax.legend()
+# plt.show()
+plt.savefig(os.path.join(plotDir, 'ICSquareHamiltonian.png'), dpi=500, bbox_inches='tight')
+
+
+
+
+
+
+

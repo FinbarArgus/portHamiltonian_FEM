@@ -23,36 +23,42 @@ if __name__ == '__main__':
     # density
     rho = 2.0 # 1.5
 
-    caseArray = [['R', 'IE', 'weak'],
-                ['R', 'IE', 'strong'],
-                ['R', 'EE', 'weak'],
-                ['R', 'EE', 'strong'],
-                ['R', 'SE', 'weak'],
-                ['R', 'SE', 'strong'],
-                ['R', 'EH', 'weak'],
-                ['R', 'EH', 'strong'],
-                ['R', 'SV', 'weak'],
-                ['R', 'SV', 'strong'],
-                ['R', 'SV', 'strong', 40],
-                ['R', 'SV', 'strong', 160],
-                ['R', 'SV', 'weak', 40],
-                ['R', 'SV', 'strong', 60],
-                ['R', 'SV', 'strong', 100],
-                ['R', 'SV', 'strong', 120],
-                ['R', 'SV', 'weak', 100],
-                ['R', 'SV', 'weak', 120],
-                ['R', 'SV', 'weak', 160],
-                ['R', 'SV', 'weak', 60],
-                ['R', 'SV', 'strong', 20],
-                ['R', 'SV', 'weak', 20]]
-    # caseArray = [['R', 'SV', 'weak', 120, 'IC']]
-
+#    caseArray = [['R', 'IE', 'weak'],
+#                ['R', 'IE', 'strong'],
+#                ['R', 'EE', 'weak'],
+#                ['R', 'EE', 'strong'],
+#                ['R', 'SE', 'weak'],
+#                ['R', 'SE', 'strong'],
+#                ['R', 'EH', 'weak'],
+#                ['R', 'EH', 'strong'],
+#                ['R', 'SV', 'weak'],
+#                ['R', 'SV', 'strong'],
+#                ['R', 'SV', 'strong', 40],
+#                ['R', 'SV', 'strong', 160],
+#                ['R', 'SV', 'weak', 40],
+#                ['R', 'SV', 'strong', 60],
+#                ['R', 'SV', 'strong', 100],
+#                ['R', 'SV', 'strong', 120],
+#                ['R', 'SV', 'weak', 100],
+#                ['R', 'SV', 'weak', 120],
+#                ['R', 'SV', 'weak', 160],
+#                ['R', 'SV', 'weak', 60],
+#                ['R', 'SV', 'strong', 20],
+#                ['R', 'SV', 'weak', 20]]
+#    caseArray = [['R', 'SV', 'weak', 120, 'IC', 4.5, 1500],
+#                ['R', 'SV', 'weak', 120, 'IC', 4.5, 3000],
+#                ['R', 'SV', 'weak', 120, 'IC', 4.5, 4500],
+#                ['R', 'SV', 'weak', 120, 'IC', 4.5, 6000],
+#                ['R', 'SV', 'weak', 120, 'IC', 4.5, 7500]]
+#    caseArray = [['R', 'SV', 'weak', 120, 'IC', 20, 40000]]
+#    caseArray = [['S_1C', 'SV', 'weak', 60, 'IC', 8, 16000]]
+    caseArray = [['R', 'SV', 'weak', 60, 'analytical', 4, 8000]]
     for caseVec in caseArray:
         domainShape = caseVec[0]
         timeIntScheme = caseVec[1]
         dirichletImp = caseVec[2]
 
-        assert len(caseVec) in [3, 4, 5], 'caseArray should be vectors of length 3, 4 or 5'
+        assert len(caseVec) in [3, 4, 5, 7], 'caseArray should be vectors of length 3, 4, 5 or 7'
         # ------------------------------# Setup Directories #-------------------------------#
 
         # Create output dir
@@ -64,11 +70,15 @@ if __name__ == '__main__':
         if len(caseVec) == 4:
             # we have a nx value to set
             subDir = subDir + '_nx' + str(caseVec[3])
-        elif len(caseVec) == 5:
-            # add 'IC' to the subDir name to denote interconnection
-            subDir = subDir + '_' + caseVec[4]
+        elif len(caseVec) > 4:
             # also set bool that specifies interconnection as true
             IC_BOOL = (caseVec[4] == 'IC')
+            ANALYTICAL_BOOL = (caseVec[4] == 'analytical')
+            # add 'IC' to the subDir name to denote interconnection
+            subDir = subDir + '_' + caseVec[4]
+            if len(caseVec) > 6:
+                subDir = subDir + '_t' + str(caseVec[5]).replace('.','_') +\
+                        '_steps' + str(caseVec[6])
 
         outputSubDir = os.path.join(outputDir, subDir)
         if not os.path.exists(outputSubDir):
@@ -82,19 +92,27 @@ if __name__ == '__main__':
 
         ny = int(nx/4)
         xLength = 1.0
-        yLength = 0.25 #0.25
+        if caseVec[0] == 'R':
+            yLength = 0.25 #0.25
+        elif caseVec[0] == 'S_1C':
+            yLength = 0.1 #0.25
 
 
         # solve the wave equation
-        tFinal = 1.5 # 1.5
-        numSteps = 3000 #Change this back to 3000
+        if len(caseVec) > 6:
+            tFinal = caseVec[5]
+            numSteps = caseVec[6]
+        else:
+            tFinal = 1.5
+            numSteps = 3000
 
         H_vec, E_vec, t_vec, disp_vec, numCells, bEnergy_vec, inpEnergy_vec, H_em_vec, H_wave_vec  = \
                                     wave_2D_solve(tFinal, numSteps, outputSubDir,
                                     nx, ny, xLength, yLength,
                                     domainShape=domainShape, timeIntScheme=timeIntScheme,
                                     dirichletImp=dirichletImp,
-                                    K_wave=K_wave, rho=rho, interConnection=IC_BOOL)
+                                    K_wave=K_wave, rho=rho, interConnection=IC_BOOL,
+                                    analytical=ANALYTICAL_BOOL)
 
         # -------------------------------# Set up output and plotting #---------------------------------#
 
