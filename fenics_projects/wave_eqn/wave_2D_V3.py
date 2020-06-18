@@ -9,12 +9,12 @@ import mshr
 
 """wave_2D_V1 Solves the wave eqn for the seperated wave equation with boundary conditions applied 
 with DirichletBC. The neumann type condition is applied as a dirichletBC in the split eqns, as q = (0,0)
-
+This version uses 2nd order Explicit euler
  This code implents a rectangle domain and a more complicated domain where the sinusoidal wave
  starts on an input rectangle then travels into the main rectangle.
  The circular wavefront is seen in the main square part of the domain."""
 
-version = 'V1'
+version = 'V3'
 
 # Find initial time
 tic = time.time()
@@ -90,6 +90,44 @@ def fixed_boundary(x, on_boundary):
 def general_boundary(x, on_boundary):
     return on_boundary and (near(x[1], 0) or near(x[1], yLength))
 
+# In the current method
+
+# Left edge boundary condition for marking
+class LeftMarker(SubDomain):
+    def inside(self, x, on_boundary):
+        return on_boundary and near(x[0], xInputStart)
+
+
+# Right edge boundary condition for marking
+class RightMarker(SubDomain):
+    def inside(self, x, on_boundary):
+        return on_boundary and near(x[0], xLength)
+
+
+# all other boundaries for marking
+class GeneralMarker(SubDomain):
+    def inside(self, x, on_boundary):
+        return on_boundary and (near(x[1], 0) or near(x[1], yLength))
+
+
+# Initialise mesh function for neumann boundary. Facets are dim()-1, initialise subdomains to index 0
+boundaryDomains = MeshFunction('size_t', mesh, mesh.topology().dim()-1)
+boundaryDomains.set_all(0)
+
+leftMark= LeftMarker()
+leftMark.mark(boundaryDomains, 0)
+
+generalMark= GeneralMarker()
+generalMark.mark(boundaryDomains, 1)
+
+rightMark= RightMarker()
+rightMark.mark(boundaryDomains, 2)
+
+# redefine ds so that ds[0] is the dirichlet boundaries and ds[1] are the neumann boundaries
+ds = Measure('ds', domain=mesh, subdomain_data=boundaryDomains)
+
+# Get normal
+n = FacetNormal(mesh)
 
 # Forced boundary
 force_expression = Expression('(t<0.25) ? sin(8*3.14159*t) : 0.0', degree=2, t=0)
@@ -112,6 +150,8 @@ v_p, v_q = TestFunctions(U)
 # Define functions for solutions at previous and current time steps
 u_n = Function(U)
 p_n, q_n = split(u_n)
+u_temp= Function(U)
+p_temp, q_temp= split(u_temp)
 
 u_ = Function(U)
 p_, q_ = split(u_)
@@ -125,16 +165,32 @@ dt = Constant(dt_value)
 # F = (p - p_n)*v_p*dx - dt*c_squared*div(q_n)*v_p*dx + \
 #      dot(q - q_n, v_q)*dx - dt*dot(grad(p_n),v_q)*dx
 # Implicit
-F = (p - p_n)*v_p*dx + dt*c_squared*div(q)*v_p*dx + \
-     dot(q - q_n, v_q)*dx + dt*dot(grad(p),v_q)*dx
+# F = (p - p_n)*v_p*dx + dt*c_squared*div(q)*v_p*dx + \
+#     dot(q - q_n, v_q)*dx + dt*dot(grad(p),v_q)*dx
+# 2nd Order Heuns method
+F_temp = (p - p_n)*v_p*dx + dt*c_squared*div(q_n)*v_p*dx + \
+    dot(q - q_n, v_q)*dx + dt*dot(grad(p_n),v_q)*dx
+F = (p - p_n)*v_p*dx + 0.5*(dt*c_squared*div(q_n)*v_p*dx + \
+    dt*c_squared*div(q_temp)*v_p*dx) + \
+    dot(q - q_n, v_q)*dx + 0.5*(dt*dot(grad(p_n),v_q)*dx + \
+    dt*dot(grad(p_temp), v_q)*dx)
+
+a_temp = lhs(F_temp)
+L_temp = rhs(F_temp)
 a = lhs(F)
 L = rhs(F)
 
 # Assemble matrices
+A_temp = assemble(a_temp)
+B_temp = assemble(L_temp)
 A = assemble(a)
 B = assemble(L)
 
+bEnergy = 0.5*dt*c*dot(q_, n)*force_expression*(ds(0)) \
+            + 0.5*dt*c*dot(q_temp, n)*force_expression*(ds(0))
+
 # Apply boundary conditions to matrices
+[bc.apply(A_temp, B_temp) for bc in bcs]
 [bc.apply(A, B) for bc in bcs]
 
 # Create xdmf Files for visualisation
@@ -145,8 +201,8 @@ xdmfFile_q = XDMFFile(os.path.join(outputDir, 'q.xdmf'))
 progress = Progress('Time-stepping', numSteps)
 
 # Create vector for hamiltonian
-H_vec = [0]
 E_vec = [0]
+H_vec = [0]
 t_vec = [0]
 
 #Create plot for hamiltonian
@@ -171,6 +227,7 @@ axBackground = fig.canvas.copy_from_bbox(ax.bbox)
 
 plt.show(block=False)
 
+boundaryEnergy = 0
 # Time Stepping
 t = 0
 for n in range(numSteps):
@@ -178,6 +235,16 @@ for n in range(numSteps):
     t += dt_value
 
     force_expression.t = t
+    # set up 1st step of Heuns method solve
+    A_temp = assemble(a_temp)
+    B_temp = assemble(L_temp)
+
+    # Apply boundary conditions to matrices for first step
+    [bc.apply(A_temp, B_temp) for bc in bcs]
+
+    # solve heuns first step
+    solve(A_temp, u_temp.vector(), B_temp)
+
     A = assemble(a)
     B = assemble(L)
 
@@ -197,17 +264,23 @@ for n in range(numSteps):
     xdmfFile_p.write(out_p, t)
     xdmfFile_q.write(out_q, t)
 
-    # Update previous solution
-    u_n.assign(u_)
-
     # Update progress bar
     set_log_level(LogLevel.PROGRESS)
     progress += 1
 
     # Calculate Hamiltonian and plot energy
-    H = assemble((0.5*p_*p_ + 0.5*c**2*inner(q_, q_))*dx)
+    H = assemble((0.5*p_*p_ + 0.5*c_squared*inner(q_, q_))*dx)
+    boundaryEnergy += assemble(bEnergy)
+    print('i = {}'.format(H))
+    print('b = {}'.format(boundaryEnergy))
+    E = boundaryEnergy + H
+    print('E = {}'.format(E))
+    E_vec.append(E)
     H_vec.append(H)
     t_vec.append(t)
+
+    # Update previous solution
+    u_n.assign(u_)
 
     # Plot Hamiltonian
     # set new data point
@@ -233,6 +306,10 @@ H_array = np.zeros((numSteps + 1, 2))
 H_array[:,0] = np.array(H_vec)
 H_array[:,1] = np.array(t_vec)
 np.save(os.path.join(outputDir, 'H_array.npy'), H_array)
+E_array = np.zeros((numSteps + 1, 2))
+E_array[:,0] = np.array(E_vec)
+E_array[:,1] = np.array(t_vec)
+np.save(os.path.join(outputDir, 'E_array.npy'), E_array)
 # Calculate total time
 totalTime = time.time() - tic
 print('Simulation finished in {} seconds'.format(totalTime))

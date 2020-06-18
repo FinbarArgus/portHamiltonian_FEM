@@ -7,7 +7,9 @@ import time
 import os
 import mshr
 
-"""wave_2D_V4 has a choice of boundary conditions 
+"""V4b applies both BCs in strong form
+
+wave_2D_V4 has a choice of boundary conditions 
 "DDNN" Solves the seperated wave equation with boundary conditions applied
 with DirichletBC for the p input and right boundary.
 "NNNN" has all neumann with the left side a force input neumann, I think this is ill-posed
@@ -16,7 +18,7 @@ with DirichletBC for the p input and right boundary.
  starts on an input rectangle then travels into the main rectangle.
  The circular wavefront is seen in the main square part of the domain."""
 
-version = 'V4'
+version = 'V4b'
 # Choose operating case
 case = 'rectangle'
 # case = 'squareWInput'
@@ -123,6 +125,10 @@ def forced_boundary(x, on_boundary):
 def fixed_boundary(x, on_boundary):
     return on_boundary and near(x[0], xLength)
 
+# Define boundary on all other edges
+def general_boundary(x, on_boundary):
+    return on_boundary and (near(x[1], 0) or near(x[1], yLength))
+
 # Left edge boundary condition for marking
 class LeftMarker(SubDomain):
     def inside(self, x, on_boundary):
@@ -177,8 +183,11 @@ if boundaryType == 'DDNN':
     # fixed boundary at right boundary
     bc_fixed = DirichletBC(U.sub(0), Constant(0.0), fixed_boundary)
 
+    # General q = 0 boundary at top and bottom
+    bc_general = DirichletBC(U.sub(1), Constant((0, 0)), general_boundary)
+
     # List of boundary condition objects
-    bcs = [bc_forced, bc_fixed]
+    bcs = [bc_forced, bc_fixed, bc_general]
 else:
     bcs = []
 
@@ -193,7 +202,7 @@ if BOUNDARYPLOT:
 #     dot(q - q_n, v_q)*dx + dt*dot(grad(p), v_q)*dx
 # Simplectic stormer-verlet integration
 if boundaryType == 'DDNN':
-    F = (p - p_n)*v_p*dx - dt*c_squared*dot(q_n, grad(v_p))*dx + dt*q_bNormal*v_p*ds(1) + \
+    F = (p - p_n)*v_p*dx + dt*c_squared*div(q_n)*v_p*dx + \
         dot(q - q_n, v_q)*dx + dt*dot(grad(p), v_q)*dx
 elif boundaryType == 'NNNN':
     F = (p - p_n)*v_p*dx - dt*c_squared*dot(q_n, grad(v_p))*dx + dt*q_bNormal*v_p*ds(1) + \
@@ -211,9 +220,8 @@ B = assemble(L)
 [bc.apply(A, B) for bc in bcs]
 
 bEnergy = dt*c*dot(q_n, n)*forceExpression*(ds(0)) \
-        + dt*c*q_bNormal*p_*(ds(1)) \
-
-# -------------------------------# Set up output and plotting #---------------------------------#
+          + dt*c*q_bNormal*p_*(ds(1)) \
+    # -------------------------------# Set up output and plotting #---------------------------------#
 
 # Create xdmf Files for visualisation
 xdmfFile_p = XDMFFile(os.path.join(outputDir, 'p.xdmf'))
