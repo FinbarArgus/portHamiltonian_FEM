@@ -19,9 +19,9 @@ if __name__ == '__main__':
 
     # TODO(Finbar) Make sure this still works when these are non-zero
     # stiffness
-    K_wave = 3.0
+    K_wave = 3.0# 3.0
     # density
-    rho = 2.0 # 1.5
+    rho = 2.0 # 2.0
 
 #    caseArray = [['R', 'IE', 'weak'],
 #                ['R', 'IE', 'strong'],
@@ -52,7 +52,27 @@ if __name__ == '__main__':
 #                ['R', 'SV', 'weak', 120, 'IC', 4.5, 7500]]
 #    caseArray = [['R', 'SV', 'weak', 120, 'IC', 20, 40000]]
 #    caseArray = [['S_1C', 'SV', 'weak', 60, 'IC', 8, 16000]]
-    caseArray = [['R', 'SV', 'weak', 60, 'analytical', 4, 8000]]
+    caseArray = [['R', 'SE', 'weak', 160, 'analytical', 0.3, 600]]
+#    caseArray = [['R', 'SV', 'weak', 120, 'IC', 1.5, 3000]]
+#    caseArray = [['R', 'SE', 'weak', 120, 'IC4', 4.5, 1500],
+#                ['R', 'SE', 'weak', 120, 'IC4', 4.5, 3000],
+#                ['R', 'SE', 'weak', 120, 'IC4', 4.5, 4500],
+#                ['R', 'SE', 'weak', 120, 'IC4', 4.5, 6000],
+#                ['R', 'SE', 'weak', 120, 'IC4', 4.5, 7500],
+#                ['R', 'SE', 'weak', 120, 'IC4', 4.5, 9000]]
+#    caseArray = [['R', 'SE', 'weak', 160, 'analytical', 0.3, 400],
+#                ['R', 'SE', 'weak', 160, 'analytical', 0.3, 500],
+#                ['R', 'SE', 'weak', 160, 'analytical', 0.3, 600],
+#                ['R', 'SE', 'weak', 160, 'analytical', 0.3, 700],
+#                ['R', 'SE', 'weak', 160, 'analytical', 0.3, 800],
+#                ['R', 'SE', 'weak', 160, 'analytical', 0.3, 900]]
+#    caseArray = [['R', 'SE', 'weak', 60, 'analytical', 1.5, 3000],
+#                ['R', 'SE', 'weak', 80, 'analytical', 1.5, 3000],
+#                ['R', 'SE', 'weak', 100, 'analytical', 1.5, 3000],
+#                ['R', 'SE', 'weak', 120, 'analytical', 1.5, 3000],
+#                ['R', 'SE', 'weak', 140, 'analytical', 1.5, 3000],
+#                ['R', 'SE', 'weak', 160, 'analytical', 1.5, 3000]]
+
     for caseVec in caseArray:
         domainShape = caseVec[0]
         timeIntScheme = caseVec[1]
@@ -67,18 +87,18 @@ if __name__ == '__main__':
         if not os.path.exists(outputDir):
             os.mkdir(outputDir)
         subDir = 'output_' + domainShape + '_' + timeIntScheme + '_' + dirichletImp
-        if len(caseVec) == 4:
+        if len(caseVec) > 3:
             # we have a nx value to set
             subDir = subDir + '_nx' + str(caseVec[3])
-        elif len(caseVec) > 4:
-            # also set bool that specifies interconnection as true
-            IC_BOOL = (caseVec[4] == 'IC')
-            ANALYTICAL_BOOL = (caseVec[4] == 'analytical')
-            # add 'IC' to the subDir name to denote interconnection
-            subDir = subDir + '_' + caseVec[4]
-            if len(caseVec) > 6:
-                subDir = subDir + '_t' + str(caseVec[5]).replace('.','_') +\
-                        '_steps' + str(caseVec[6])
+            if len(caseVec) > 4:
+                # also set bool that specifies interconnection as true
+                IC_BOOL = caseVec[4].startswith('IC')
+                ANALYTICAL_BOOL = (caseVec[4] == 'analytical')
+                # add 'IC' to the subDir name to denote interconnection
+                subDir = subDir + '_' + caseVec[4]
+                if len(caseVec) > 6:
+                    subDir = subDir + '_t' + str(caseVec[5]).replace('.','_') +\
+                            '_steps' + str(caseVec[6])
 
         outputSubDir = os.path.join(outputDir, subDir)
         if not os.path.exists(outputSubDir):
@@ -106,8 +126,7 @@ if __name__ == '__main__':
             tFinal = 1.5
             numSteps = 3000
 
-        H_vec, E_vec, t_vec, disp_vec, numCells, bEnergy_vec, inpEnergy_vec, H_em_vec, H_wave_vec  = \
-                                    wave_2D_solve(tFinal, numSteps, outputSubDir,
+        H_array, numCells = wave_2D_solve(tFinal, numSteps, outputSubDir,
                                     nx, ny, xLength, yLength,
                                     domainShape=domainShape, timeIntScheme=timeIntScheme,
                                     dirichletImp=dirichletImp,
@@ -116,15 +135,6 @@ if __name__ == '__main__':
 
         # -------------------------------# Set up output and plotting #---------------------------------#
 
-        H_array = np.zeros((numSteps + 1, 8))
-        H_array[:, 0] = np.array(t_vec)
-        H_array[:, 1] = np.array(H_vec)
-        H_array[:, 2] = np.array(E_vec)
-        H_array[:, 3] = np.array(disp_vec)
-        H_array[:, 4] = np.array(bEnergy_vec)
-        H_array[:, 5] = np.array(inpEnergy_vec)
-        H_array[:, 6] = np.array(H_em_vec)
-        H_array[:, 7] = np.array(H_wave_vec)
         np.save(os.path.join(outputSubDir, 'H_array.npy'), H_array)
 
         numCells_save = np.zeros((1))

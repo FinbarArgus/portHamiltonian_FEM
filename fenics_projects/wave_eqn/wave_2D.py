@@ -36,6 +36,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
     :return:
     """
 
+    BOUNDARYPLOT = True
     # Find initial time
     tic = time.time()
     print('Started solving for case: {}, {}, {} '.format(domainShape, timeIntScheme, dirichletImp))
@@ -91,28 +92,31 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         numIntSubSteps = 2
     # Constant wave speed
     c_squared = Constant(K_wave/rho)
+    c = np.sqrt(K_wave/rho)
     K_wave = Constant(K_wave)
     rho_val = rho
     # rho = Constant(rho)
 
-    # Constants for the Electromechanical model
-    # TODO(Finbar) include the A_em matrix in the call to the function
-    # Try to make this method work for any arbitrary A matrix that defines an ODE, as
-    # long as the boundary between the two models are the same
-    Bl_em = 5
-    R1_em = 0.0
-    R2_em = 0.0
-    K_em = 5
-    m_em = 0.15
-    L_em = 0.1
+    if interConnection:
+        # Constants for the Electromechanical model
+        # TODO(Finbar) include the A_em matrix in the call to the function
+        # Try to make this method work for any arbitrary A matrix that defines an ODE, as
+        # long as the boundary between the two models are the same
+        Bl_em = 5
+        R1_em = 0.0
+        R2_em = 0.0
+        K_em = 5
+        m_em = 0.15
+        L_em = 0.1
+        C_em = 1.0
 
-    J_em = np.array([[0, Bl_em, 0], [-Bl_em, 0, -1], [0, 1, 0]])
+        J_em = np.array([[0, Bl_em, -1, 0], [-Bl_em, 0, 0, -1], [1, 0, 0, 0], [0, 1, 0, 0]])
 
-    R_em = np.array([[R1_em, 0, 0], [0, R2_em, 0], [0, 0, 0]])
+        R_em = np.array([[R1_em, 0, 0, 0], [0, R2_em, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]])
 
-    A_conv_em = np.array([[1/L_em, 0, 0], [0, 1/m_em, 0], [0, 0, K_em]])
+        A_conv_em = np.array([[1/L_em, 0, 0, 0], [0, 1/m_em, 0, 0], [0, 0, 1/C_em, 0], [0, 0, 0, K_em]])
 
-    A_em = Constant((J_em - R_em).dot(A_conv_em))
+        A_em = Constant((J_em - R_em).dot(A_conv_em))
 
     # ------------------------------# Create Function Spaces and functions#-------------------------------#
 
@@ -123,6 +127,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         RT = FiniteElement('RT', triangle, 1)
         element = MixedElement([P1, RT])
         U = FunctionSpace(mesh, element)
+        #Also create function space for just P1
 
         # Define trial and test functions
         p, q = TrialFunctions(U)
@@ -148,27 +153,27 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         P1 = FiniteElement('P', triangle, 1)
         RT = FiniteElement('RT', triangle, 1)
         odeSpace = FiniteElement('R', triangle, 0) #order 0, 1 variable
-        element = MixedElement([P1, RT, odeSpace, odeSpace, odeSpace])
+        element = MixedElement([P1, RT, odeSpace, odeSpace, odeSpace, odeSpace])
         U = FunctionSpace(mesh, element)
 
         # Define trial and test functions
-        p, q, xode_0, xode_1, xode_2  = TrialFunctions(U)
-        xode = as_vector([xode_0, xode_1, xode_2])
-        v_p, v_q, v_xode_0, v_xode_1, v_xode_2 = TestFunctions(U)
-        v_xode = as_vector([v_xode_0, v_xode_1, v_xode_2])
+        p, q, xode_0, xode_1, xode_2, xode_3 = TrialFunctions(U)
+        xode = as_vector([xode_0, xode_1, xode_2, xode_3])
+        v_p, v_q, v_xode_0, v_xode_1, v_xode_2, v_xode_3 = TestFunctions(U)
+        v_xode = as_vector([v_xode_0, v_xode_1, v_xode_2, v_xode_3])
 
         # Define functions for solutions at previous and current time steps
         u_n = Function(U)
-        p_n, q_n, xode_0_n, xode_1_n, xode_2_n = split(u_n)
-        xode_n = as_vector([xode_0_n, xode_1_n, xode_2_n])
+        p_n, q_n, xode_0_n, xode_1_n, xode_2_n, xode_3_n = split(u_n)
+        xode_n = as_vector([xode_0_n, xode_1_n, xode_2_n, xode_3_n])
 
         u_ = Function(U)
-        p_, q_, xode_0_, xode_1_, xode_2_ = split(u_)
-        xode_ = as_vector([xode_0_, xode_1_, xode_2_])
+        p_, q_, xode_0_, xode_1_, xode_2_, xode_3_ = split(u_)
+        xode_ = as_vector([xode_0_, xode_1_, xode_2_, xode_3_])
 
         u_temp = Function(U)
-        p_temp, q_temp, xode_0_temp, xode_1_temp, xode_2_temp = split(u_temp)
-        xode_temp = as_vector([xode_0_temp, xode_1_temp, xode_2_temp])
+        p_temp, q_temp, xode_0_temp, xode_1_temp, xode_2_temp, xode_3_temp = split(u_temp)
+        xode_temp = as_vector([xode_0_temp, xode_1_temp, xode_2_temp, xode_3_temp])
 
     # -------------------------------# Boundary Conditions #---------------------------------#
 
@@ -183,33 +188,20 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
 
     # Left edge boundary condition for marking
     class LeftMarker(SubDomain):
-        if not analytical:
-            def inside(self, x, on_boundary):
-                return on_boundary and near(x[0], xInputStart)
-        else:
-            def inside(self, x, on_boundary):
-                return False
+        def inside(self, x, on_boundary):
+            return on_boundary and near(x[0], xInputStart)
 
     # Right edge boundary condition for marking
     class RightMarker(SubDomain):
-        if not analytical:
-            def inside(self, x, on_boundary):
-                return on_boundary and near(x[0], xLength)
-        else:
-            # If analytical we set all boundaries to be the 'Right" boundary, which is a
-            #Dirichlet Zero boundary, TODO rename this boundary to FixedZero
-            def inside(self, x, on_boundary):
-                return on_boundary
+        def inside(self, x, on_boundary):
+            return on_boundary and near(x[0], xLength)
 
     # all other boundaries for marking
     class GeneralMarker(SubDomain):
         if domainShape == 'R':
-            if not analytical:
-                def inside(self, x, on_boundary):
-                    return on_boundary and (near(x[1], 0) or near(x[1], yLength))
-            else:
-                def inside(self, x, on_boundary):
-                    return False
+            def inside(self, x, on_boundary):
+                return on_boundary and (near(x[1], 0) or near(x[1], yLength))
+
         elif domainShape == 'S_1C':
             def inside(self, x, on_boundary):
                 return on_boundary and (near(x[1], 0) or near(x[1], xLength) or
@@ -226,7 +218,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         boundaryDomains = MeshFunction('size_t', mesh, 0)
     else:
         boundaryDomains = MeshFunction('size_t', mesh, mesh.topology().dim()-1)
-    boundaryDomains.set_all(0)
+    boundaryDomains.set_all(1)
 
     leftMark= LeftMarker()
     leftMark.mark(boundaryDomains, 0)
@@ -236,6 +228,9 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
 
     rightMark= RightMarker()
     rightMark.mark(boundaryDomains, 2)
+
+    leftCornerMark = leftCornerMarker()
+    leftCornerMark.mark(boundaryDomains, 3)
 
     # redefine ds so that ds[0] is the dirichlet boundaries and ds[1] are the neumann boundaries
     ds = Measure('ds', domain=mesh, subdomain_data=boundaryDomains)
@@ -247,7 +242,12 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
     q_bNormal = Constant(0.0)
     # Forced boundary
     if not interConnection:
-        pLeftBoundary = Expression('(t<0.25) ? 5*sin(8*3.14159*t) : 0.0', degree=2, t=0)
+        if analytical:
+            cSqrtConst = c*np.sqrt(pi**2/(4*xLength**2) + 4*pi**2/yLength**2)
+            pLeftBoundary = Expression('cSqrtConst*sin(2*pi*x[1]/(yLength) + pi/2)*cos(t*cSqrtConst)',
+                       degree=8, t=0, yLength=yLength, cSqrtConst=cSqrtConst)
+        else:
+            pLeftBoundary = Expression('(t<0.25) ? 5*sin(8*pi*t) : 0.0', degree=2, t=0)
         pLeftBoundary_temp = pLeftBoundary
         pLeftBoundary_temp_ = pLeftBoundary
         pLeftBoundary_ = pLeftBoundary
@@ -257,8 +257,11 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             pLeftBoundary = xode[1]/(m_em)
             pLeftBoundary_temp_ = xode_n[1]/(m_em)
             pLeftBoundary_ = xode_[1]/(m_em)
+        elif timeIntScheme == 'SE':
+            pLeftBoundary = xode[1]/(m_em)
+            pLeftBoundary_ = xode_[1]/(m_em)
         else:
-            print('only SV time int scheme has been implemented for interconnection')
+            print('only SV and SE time int schemes have been implemented for interconnection')
             quit()
             # TODO(Finbar) this temporarily just uses the previous time steps,
             # Change this to depend on the time integration scheme to ensure symplecticity
@@ -266,9 +269,9 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             # pLeftBoundary_temp = xode_1_n/m_em
 
         if domainShape == 'R':
-            uInput = Expression('(t<0.25) ? 10*sin(8*3.14159*t) : 0.0', degree=2, t=0)
+            uInput = Expression('(t<0.25) ? 10*sin(8*pi*t) : 0.0', degree=2, t=0)
         elif domainShape == 'S_1C':
-            uInput = Expression('(t<0.25) ? 10*sin(8*3.14159*t) : 0.0', degree=2, t=0)
+            uInput = Expression('(t<0.25) ? 10*sin(8*pi*t) : 0.0', degree=2, t=0)
 
     mirrorBoundary = Constant(0.0)
 
@@ -313,9 +316,14 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
 
             else:
                 F_temp_em = (-dot(v_xode, xode - xode_n)/(0.5*dt) + \
-                          v_xode[0]*(A_em[0, 0]*xode_n[0] + A_em[0, 1]*xode_n[1] + A_em[0, 2]*xode[2]) + \
-                          v_xode[1]*(A_em[1, 0]*xode_n[0] + A_em[1, 1]*xode_n[1] + A_em[1, 2]*xode[2]) + \
-                          v_xode[2]*(A_em[2, 0]*xode_n[0] + A_em[2, 1]*xode_n[1] + A_em[2, 2]*xode[2]) + \
+                          v_xode[0]*(A_em[0, 0]*xode_n[0] + A_em[0, 1]*xode_n[1] +
+                                     A_em[0, 2]*xode[2] + A_em[0, 3]*xode[3]) + \
+                          v_xode[1]*(A_em[1, 0]*xode_n[0] + A_em[1, 1]*xode_n[1] +
+                                     A_em[1, 2]*xode[2] + A_em[1, 3]*xode[3]) + \
+                          v_xode[2]*(A_em[2, 0]*xode_n[0] + A_em[2, 1]*xode_n[1] +
+                                     A_em[2, 2]*xode[2] + A_em[2, 3]*xode[3]) + \
+                          v_xode[3]*(A_em[3, 0]*xode_n[0] + A_em[3, 1]*xode_n[1] +
+                                     A_em[3, 2]*xode[2] + A_em[3, 3]*xode[3]) + \
                           v_xode[0]*uInput + K_wave*yLength*v_xode[1]*dot(q_n,n))*ds(0) #I dont think it matters what q_ here
 
                 F_temp_wave = (p - p_n)*v_p*dx + 0.5*dt*c_squared*(-dot(q_n, grad(v_p))*dx + q_bNormal*v_p*ds(1) +
@@ -326,12 +334,20 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
 
                 F_em = (-(v_xode[0]*(xode[0] - xode_n[0]) + \
                        v_xode[1]*(xode[1] - xode_n[1]) + \
-                       v_xode[2]*(xode[2] - xode_temp[2]))/dt + \
-                     0.5*v_xode[0]*(A_em[0, 0]*xode_n[0] + A_em[0, 1]*xode_n[1] + A_em[0, 2]*xode_temp[2] + \
-                                    A_em[0, 0]*xode[0] + A_em[0, 1]*xode[1] + A_em[0, 2]*xode_temp[2]) + \
-                     0.5*v_xode[1]*(A_em[1, 0]*xode_n[0] + A_em[1, 1]*xode_n[1] + A_em[1, 2]*xode_temp[2] + \
-                                    A_em[1, 0]*xode[0] + A_em[1, 1]*xode[1] + A_em[1, 2]*xode_temp[2]) + \
-                     0.5*v_xode[2]*(A_em[2, 0]*xode[0] + A_em[2, 1]*xode[1] + A_em[2, 2]*xode_temp[2]) + \
+                       v_xode[2]*(xode[2] - xode_temp[2]) + \
+                       v_xode[3]*(xode[3] - xode_temp[3]))/dt + \
+                     0.5*v_xode[0]*(A_em[0, 0]*xode_n[0] + A_em[0, 1]*xode_n[1] +
+                                    A_em[0, 2]*xode_temp[2] + A_em[0, 3]*xode_temp[3] + \
+                                    A_em[0, 0]*xode[0] + A_em[0, 1]*xode[1] +
+                                    A_em[0, 2]*xode_temp[2] + A_em[0, 3]*xode_temp[3]) + \
+                     0.5*v_xode[1]*(A_em[1, 0]*xode_n[0] + A_em[1, 1]*xode_n[1] +
+                                    A_em[1, 2]*xode_temp[2] + A_em[1, 3]*xode_temp[3] + \
+                                    A_em[1, 0]*xode[0] + A_em[1, 1]*xode[1] +
+                                    A_em[1, 2]*xode_temp[2] + A_em[1, 3]*xode_temp[3]) + \
+                     0.5*v_xode[2]*(A_em[2, 0]*xode[0] + A_em[2, 1]*xode[1] +
+                                    A_em[2, 2]*xode_temp[2] + A_em[2, 3]*xode_temp[3]) + \
+                     0.5*v_xode[3]*(A_em[3, 0]*xode[0] + A_em[3, 1]*xode[1] +
+                                    A_em[3, 2]*xode_temp[2] + A_em[3, 3]*xode_temp[3]) + \
                      v_xode[0]*uInput + K_wave*yLength*v_xode[1]*dot(q_temp,n))*ds(0)  # don't multiply the input by a half because it is for a full step
 
                 F_wave = (p - p_n)*v_p*dx + dt*c_squared*(-dot(q_temp, grad(v_p))*dx + q_bNormal*v_p*ds(1) +
@@ -375,16 +391,28 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             F = (p - p_n)*v_p*dx + dt*c_squared*(-dot(q_n, grad(v_p))*dx + q_bNormal*v_p*ds(1)) + \
             dot(q - q_n, v_q)*dx + dt*dot(grad(p), v_q)*dx
         elif dirichletImp == 'weak':
-            F = (p - p_n)*v_p*dx + dt*c_squared*(-dot(q_n, grad(v_p))*dx + q_bNormal*v_p*ds(1) + \
-                dot(q_n, n)*v_p*ds(0) + dot(q_n, n)*v_p*ds(2)) + \
-                dot(q - q_n, v_q)*dx - dt*div(v_q)*p*dx + dt*dot(v_q, n)*pLeftBoundary*ds(0) + \
-                dt*dot(v_q, n)*mirrorBoundary*ds(2) + dt*dot(v_q, n)*p*ds(1)
-            if interConnection:
-                xode_int = as_vector([xode[0], xode[1], xode_n[2]])
-                # xode_int = xode
-                F_em = (-dot(v_xode, xode - xode_n)/dt + dot(v_xode, A_em*xode_int) + \
-                     v_xode[0]*uInput - K_wave*v_xode[1]*dot(q_n,n))*ds(0)
-                F = F + F_em
+            if not interConnection:
+                F = (p - p_n)*v_p*dx + dt*c_squared*(-dot(q_n, grad(v_p))*dx + q_bNormal*v_p*ds(1) + \
+                    dot(q_n, n)*v_p*ds(0) + dot(q_n, n)*v_p*ds(2)) + \
+                    dot(q - q_n, v_q)*dx - dt*div(v_q)*p*dx + dt*dot(v_q, n)*pLeftBoundary*ds(0) + \
+                    dt*dot(v_q, n)*mirrorBoundary*ds(2) + dt*dot(v_q, n)*p*ds(1)
+            else:
+                F_em = (-dot(v_xode, xode - xode_n)/dt + \
+                             v_xode[0]*(A_em[0, 0]*xode[0] + A_em[0, 1]*xode[1] +
+                                        A_em[0, 2]*xode_n[2] + A_em[0, 3]*xode_n[3]) + \
+                             v_xode[1]*(A_em[1, 0]*xode[0] + A_em[1, 1]*xode[1] +
+                                        A_em[1, 2]*xode_n[2] + A_em[1, 3]*xode_n[3]) + \
+                             v_xode[2]*(A_em[2, 0]*xode[0] + A_em[2, 1]*xode[1] + \
+                                        A_em[2, 2]*xode_n[2] + A_em[2, 3]*xode_n[3]) + \
+                             v_xode[3]*(A_em[3, 0]*xode[0] + A_em[3, 1]*xode[1] +
+                                        A_em[3, 2]*xode_n[2] + A_em[3, 3]*xode_n[3]) + \
+                        v_xode[0]*uInput + K_wave*yLength*v_xode[1]*dot(q_n,n))*ds(0)
+
+                F_wave = (p - p_n)*v_p*dx + dt*c_squared*(-dot(q_n, grad(v_p))*dx + q_bNormal*v_p*ds(1) +
+                                                          dot(q_n, n)*v_p*ds(0) + dot(q_n, n)*v_p*ds(2)) + \
+                          dot(q - q_n, v_q)*dx + dt*(-div(v_q)*p*dx + dot(v_q, n)*pLeftBoundary*ds(0) +
+                                                         dot(v_q, n)*mirrorBoundary*ds(2) + dot(v_q, n)*p*ds(1))
+                F = F_em + F_wave
         else:
             print('dirichlet implementation {} not implemented'.format(dirichletImp))
             exit()
@@ -467,26 +495,38 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         q1 = q_temp
         p0 = p_n
         p1 = p_temp
-    # These are the energy contributions from the left, general and right boundaries for the first half timestep
-    pT_L_q_temp_left = 0.5*dt*K_wave*dot(q0, n)*pLeftBoundary_temp_*ds(0)
-    # pT_L_q_temp_gen = 0.5*dt*K_wave*q_bNormal*p0*ds(1)
-    # pT_L_q_temp_right = 0.5*dt*K_wave*dot(q0, n)*mirrorBoundary*ds(2)
 
-    # These are the energy contributions from the left, general and right boundaries for the second half timestep
-    pT_L_q_left = pT_L_q_temp_left + 0.5*dt*K_wave*dot(q1, n)*pLeftBoundary_*ds(0)
-    # pT_L_q_gen = pT_L_q_temp_gen + 0.5*dt*K_wave*q_bNormal*p1*ds(1)
-    # pT_L_q_right = pT_L_q_temp_right+ 0.5*dt*K_wave*dot(q1, n)*mirrorBoundary*ds(2)
+    if numIntSubSteps >1:
+        # These are the energy contributions from the left, general and right boundaries for the first half timestep
+        pT_L_q_temp_left = 0.5*dt*K_wave*dot(q0, n)*pLeftBoundary_temp_*ds(0)
+        # pT_L_q_temp_gen = 0.5*dt*K_wave*q_bNormal*p0*ds(1)
+        # pT_L_q_temp_right = 0.5*dt*K_wave*dot(q0, n)*mirrorBoundary*ds(2)
 
-    # Total energy contribution from the boundaries for the time step
-    pT_L_q = pT_L_q_left # + pT_L_q_gen + pT_L_q_right
+        # These are the energy contributions from the left, general and right boundaries for the second half timestep
+        pT_L_q_left = pT_L_q_temp_left + 0.5*dt*K_wave*dot(q1, n)*pLeftBoundary_*ds(0)
+        # pT_L_q_gen = pT_L_q_temp_gen + 0.5*dt*K_wave*q_bNormal*p1*ds(1)
+        # pT_L_q_right = pT_L_q_temp_right+ 0.5*dt*K_wave*dot(q1, n)*mirrorBoundary*ds(2)
 
+        # Total energy contribution from the boundaries for the time step
+        pT_L_q = pT_L_q_left  # + pT_L_q_gen + pT_L_q_right
+
+    else:
+        pT_L_q_left = dt*K_wave*dot(q1, n)*pLeftBoundary_*ds(0)
+        # pT_L_q_gen = dt*K_wave*q_bNormal*p1*ds(1)
+        # pT_L_q_right = dt*K_wave*dot(q1, n)*mirrorBoundary*ds(2)
+
+        pT_L_q = pT_L_q_left # + pT_L_q_gen + pT_L_q_right
 
     # -------------------------------# Set up output and plotting #---------------------------------#
 
     # Create xdmf Files for visualisation
     xdmfFile_p = XDMFFile(os.path.join(outputDir, 'p.xdmf'))
+    xdmfFile_p_exact = XDMFFile(os.path.join(outputDir, 'p_exact.xdmf'))
+    xdmfFile_p_error = XDMFFile(os.path.join(outputDir, 'p_error.xdmf'))
     # xdmfFile_q = XDMFFile(os.path.join(outputDir, 'q.xdmf'))
     xdmfFile_p.parameters["flush_output"] = True
+    xdmfFile_p_exact.parameters["flush_output"] = True
+    xdmfFile_p_error.parameters["flush_output"] = True
     # xdmfFile_q.parameters["flush_output"] = True
 
     # Create progress bar
@@ -504,25 +544,34 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
     inpEnergy_vec =[0]
     H_em_vec =[0]
     H_wave_vec =[0]
+    error_vec = [0]
+    error_vec_int = [0]
 
     # Create plot for hamiltonian
     fig, ax = plt.subplots(1, 1)
 
 
     # create line object for plotting
-    line, = ax.plot([], lw=0.5, color='k', linestyle='-',
-                    label='Boundary Residual {}, {}, {}'.format(domainShape,timeIntScheme,dirichletImp))
+    if analytical:
+        line, = ax.plot([], lw=0.5, color='k', linestyle='-',
+                    label='analytical error {}, {}, {}'.format(domainShape,timeIntScheme,dirichletImp))
+    else:
+        line, = ax.plot([], lw=0.5, color='k', linestyle='-',
+                        label='Boundary Residual {}, {}, {}'.format(domainShape,timeIntScheme,dirichletImp))
 
     # text = ax.text(0.001, 0.001, "")
     ax.set_xlim(0, tFinal)
     if domainShape == 'R':
-        # ax.set_ylim(0, 600)
-        ax.set_ylim(-0.0001, 0.0001)
+        ax.set_ylim(0, 0.01)
+        # ax.set_ylim(-0.0001, 0.0001)
     elif domainShape == 'S_1C':
         ax.set_ylim(-0.001, 0.001)
 
     ax.legend()
-    ax.set_ylabel('Energy Residual [J]')
+    if analytical:
+        ax.set_ylabel('analytical error')
+    else:
+        ax.set_ylabel('Energy Residual [J]')
     ax.set_xlabel('Time [s]')
 
     ax.add_artist(line)
@@ -535,6 +584,23 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
 
     # -------------------------------# Solve Loop #---------------------------------#
 
+    #set initial condition if doing analytical solution
+    if analytical:
+        p_init = Expression('cSqrtConst*sin(pi*x[0]/(2*xLength) + pi/2)*sin(2*pi*x[1]/yLength + pi/2)',
+                   degree=8, xLength=xLength, yLength=yLength, cSqrtConst=cSqrtConst)
+        p_init_interp = interpolate(p_init, U.sub(0).collapse())
+        q_init_interp = interpolate(Constant([0.0, 0.0]), U.sub(1).collapse())
+        assign(u_n,[p_init_interp, q_init_interp])
+
+        #expression for exact solution
+        p_exact = Expression('cSqrtConst*sin(pi*x[0]/(2*xLength) + pi/2)*sin(2*pi*x[1]/yLength + pi/2)*cos(t*cSqrtConst)',
+                            degree=8, t=0, xLength=xLength, yLength=yLength, cSqrtConst=cSqrtConst)
+
+        H_init = assemble((0.5*p_n*p_n + 0.5*c_squared*inner(q_n, q_n))*dx)*rho_val
+    else:
+        H_init = 0
+
+    surfPlot = True
     #em variables that are zero if not interconnection
     H_em = 0
     disp = 0
@@ -579,9 +645,9 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
 
         # split solution
         if not interConnection:
-            out_p, out_q = u_.split()
+            out_p, out_q = u_.split(True)
         else:
-            out_p, out_q, out_xode_0, out_xode_1, out_xode_2 = u_.split()
+            out_p, out_q, out_xode_0, out_xode_1, out_xode_2, out_xode_3 = u_.split()
 
         # Save solution to file
         xdmfFile_p.write(out_p, t)
@@ -596,16 +662,17 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             boundaryEnergy += assemble(pT_L_q)
             H_wave = assemble((0.5*p_*p_ + 0.5*c_squared*inner(q_, q_))*dx)*rho_val
 
-            E = H_wave + boundaryEnergy
+            E = H_wave + boundaryEnergy - H_init
             H = H_wave
-            print(H)
+            print('Hamiltonian = {}'.format(H))
+            print('Energy Res = {}'.format(E))
         else:
             # energy contribution from EM boundary
             if timeIntScheme == 'SV':
                 inpPowerXdt = 0.5*(dt*uInput*(xode_0_n + xode_0_)/L_em)*ds(0)
             elif timeIntScheme == 'SE' or 'IE':
                 inpPowerXdt = (dt*uInput*xode_0_/L_em)*ds(0)
-            elif timeIntScheme == 'IE':
+            elif timeIntScheme == 'EE':
                 inpPowerXdt = (dt*uInput*xode_0_n/L_em)*ds(0)
             else:
                 print('timeIntScheme = {} is not implemented for interconnection'.format(timeIntScheme))
@@ -613,18 +680,50 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             inputEnergy += assemble(inpPowerXdt)/yLength
 
             H_wave = assemble((0.5*p_*p_ + 0.5*c_squared*inner(q_, q_))*dx)*rho_val # Multiply H_wave by rho to get units of energy
-            H_em = assemble(0.5*(xode_[0]*xode_[0]/L_em + xode_[1]*xode_[1]/m_em + K_em*xode_[2]*xode_[2])*ds(0))/yLength
+            H_em = assemble(0.5*(xode_[0]*xode_[0]/L_em + xode_[1]*xode_[1]/m_em +
+                                 xode_[2]*xode_[2]/C_em + K_em*xode_[3]*xode_[3])*ds(0))/yLength
 
             E = -inputEnergy + H_wave + H_em
             H = H_wave + H_em
-            print('H_em = {}'.format(H_em))
-            print('H_wave = {}'.format(H_wave))
-            print('Residual = {}'.format(E))
 
             boundaryEnergy += assemble(pT_L_q)
 
             #output displacement
-            disp = assemble(xode_2_*ds(0))/yLength
+            disp = assemble(xode_3_*ds(0))/yLength
+
+            print('disp = {}'.format(disp))
+            print('H_em = {}'.format(H_em))
+            print('H_wave = {}'.format(H_wave))
+            print('Energy Residual = {}'.format(E))
+
+        if analytical:
+            #compare error
+            p_exact.t = t
+            p_e = interpolate(p_exact, U.sub(0).collapse())
+            if t>0.0 and surfPlot:
+                plt.close(fig)
+                fig = plt.figure()
+                c = plot(p_e - out_p, mode='color')
+                # plot(mesh)
+                plt.xlabel('x [m]')
+                plt.ylabel('y [m]')
+                plt.title('t = {:.4f}'.format(t))
+                plt.colorbar(c, orientation='horizontal', label='error')
+                plt.show()
+                # surfPlot = False
+
+            err_L2 = errornorm(p_exact, out_p, 'L2')
+            err_RMS = err_L2/np.sqrt(len(p_e.vector().get_local()))
+            err_max = np.abs(p_e.vector().get_local() - out_p.vector().get_local()).max()
+            err_integral = np.abs(assemble((p_e-out_p)*dx))
+
+            print('analytic RMS error = {}'.format(err_RMS))
+            print('analytic max error = {}'.format(err_max))
+            print('analytic integral error = {}'.format(err_integral))
+            xdmfFile_p_exact.write(p_e, t)
+            p_error = p_e - out_p
+            # p_error_interp = interpolate(p_error, U.sub(0).collapse())
+            # xdmfFile_p_error.write(p_error_interp, t)
 
         E_vec.append(E)
         H_vec.append(H)
@@ -634,13 +733,18 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         inpEnergy_vec.append(inputEnergy)
         H_em_vec.append(H_em)
         H_wave_vec.append(H_wave)
+        error_vec.append(err_RMS)
+        error_vec_int.append(err_integral)
 
         # Update previous solution
         u_n.assign(u_)
 
         # Plot Hamiltonian
         # set new data point
-        line.set_data(t_vec, E_vec)
+        if analytical:
+            line.set_data(t_vec, error_vec)
+        else:
+            line.set_data(t_vec, E_vec)
         # text.set_text('HI')
         # restore background
         fig.canvas.restore_region(axBackground)
@@ -660,5 +764,18 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
     print('{}, {}, {} Simulation finished in {} seconds'.format(domainShape, timeIntScheme,
                                                                 dirichletImp, totalTime))
 
-    return H_vec, E_vec, t_vec, disp_vec, numCells, bEnergy_vec, inpEnergy_vec, H_em_vec, H_wave_vec
+    H_array = np.zeros((numSteps + 1, 10))
+    H_array[:, 0] = np.array(t_vec)
+    H_array[:, 1] = np.array(H_vec)
+    H_array[:, 2] = np.array(E_vec)
+    H_array[:, 3] = np.array(disp_vec)
+    H_array[:, 4] = np.array(bEnergy_vec)
+    H_array[:, 5] = np.array(inpEnergy_vec)
+    H_array[:, 6] = np.array(H_em_vec)
+    H_array[:, 7] = np.array(H_wave_vec)
+    #for analytic this is error against analytic solution, for nonanalytic it is equation residual
+    H_array[:, 8] = np.array(error_vec)
+    H_array[:, 9] = np.array(error_vec_int)
+
+    return H_array, numCells
 
