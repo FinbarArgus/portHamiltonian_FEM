@@ -38,8 +38,8 @@ if __name__ == '__main__':
 
 
     # solve the wave equation
-    tFinal = 20
-    numSteps = 20000
+    tFinal = 10
+    numSteps = 30000
 
     H_vec, E_vec, t_vec, disp_vec = electromechanical_solve(tFinal, numSteps, outputSubDir,
                                 nx, ny, xLength, yLength,

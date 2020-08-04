@@ -19,112 +19,167 @@ if __name__ == '__main__':
 
     # TODO(Finbar) Make sure this still works when these are non-zero
     # stiffness
-    K_wave = 3.0
+    K_wave = 3.0 # 3.0
     # density
-    rho = 2.0 # 1.5
+    rho = 2.0 # 2.0
 
-#    caseArray = [['R', 'IE', 'weak'],
-#                ['R', 'IE', 'strong'],
-#                ['R', 'EE', 'weak'],
-#                ['R', 'EE', 'strong'],
-#                ['R', 'SE', 'weak'],
-#                ['R', 'SE', 'strong'],
-#                ['R', 'EH', 'weak'],
-#                ['R', 'EH', 'strong'],
-#                ['R', 'SV', 'weak'],
-#                ['R', 'SV', 'strong'],
-#                ['R', 'SV', 'strong', 40],
-#                ['R', 'SV', 'strong', 160],
-#                ['R', 'SV', 'weak', 40],
-#                ['R', 'SV', 'strong', 60],
-#                ['R', 'SV', 'strong', 100],
-#                ['R', 'SV', 'strong', 120],
-#                ['R', 'SV', 'weak', 100],
-#                ['R', 'SV', 'weak', 120],
-#                ['R', 'SV', 'weak', 160],
-#                ['R', 'SV', 'weak', 60],
-#                ['R', 'SV', 'strong', 20],
-#                ['R', 'SV', 'weak', 20]]
-#    caseArray = [['R', 'SV', 'weak', 120, 'IC', 4.5, 1500],
-#                ['R', 'SV', 'weak', 120, 'IC', 4.5, 3000],
-#                ['R', 'SV', 'weak', 120, 'IC', 4.5, 4500],
-#                ['R', 'SV', 'weak', 120, 'IC', 4.5, 6000],
-#                ['R', 'SV', 'weak', 120, 'IC', 4.5, 7500]]
+#    caseName = 'strong_and_weak_method_variation'
+#    caseArray = [['R', 'IE', 'weak', 80, 'wave', 1.5, 3000],
+#                ['R', 'IE', 'strong', 80, 'wave', 1.5, 3000],
+#                ['R', 'EE', 'weak', 80, 'wave', 1.5, 3000],
+#                ['R', 'EE', 'strong', 80, 'wave', 1.5, 3000],
+#                ['R', 'SE', 'weak', 80, 'wave', 1.5, 3000],
+#                ['R', 'SE', 'strong', 80, 'wave', 1.5, 3000],
+#                ['R', 'EH', 'weak', 80, 'wave', 1.5, 3000],
+#                ['R', 'EH', 'strong', 80, 'wave', 1.5, 3000],
+#                ['R', 'SV', 'weak', 80, 'wave', 1.5, 3000],
+#                ['R', 'SV', 'strong', 80, 'wave', 1.5, 3000]]
+
+#    caseName = 'strong_and_weak_spatial_variation'
+#    caseArray = [['R', 'SV', 'strong', 20, 'wave', 1.5, 3000],
+#                 ['R', 'SV', 'strong', 40, 'wave', 1.5, 3000],
+#                 ['R', 'SV', 'strong', 60, 'wave', 1.5, 3000],
+#                 ['R', 'SV', 'strong', 80, 'wave', 1.5, 3000],
+#                 ['R', 'SV', 'strong', 100, 'wave', 1.5, 3000],
+#                 ['R', 'SV', 'strong', 120, 'wave', 1.5, 3000],
+#                 ['R', 'SV', 'strong', 160, 'wave', 1.5, 3000],
+#                 ['R', 'SV', 'weak', 20, 'wave', 1.5, 3000, 'noMem'],
+#                 ['R', 'SV', 'weak', 40, 'wave', 1.5, 3000, 'noMem'],
+#                 ['R', 'SV', 'weak', 60, 'wave', 1.5, 3000, 'noMem'],
+#                 ['R', 'SV', 'weak', 80, 'wave', 1.5, 3000, 'noMem'],
+#                 ['R', 'SV', 'weak', 100, 'wave', 1.5, 3000, 'noMem'],
+#                 ['R', 'SV', 'weak', 120, 'wave', 1.5, 3000],
+#                 ['R', 'SV', 'weak', 160, 'wave', 1.5, 3000, 'noMem']]
+
+#    caseName = 'analytical_t1_5_spaceVariation'.format(timeIntScheme)
+#    caseArray = [['R', 'SV', 'weak', 60, 'analytical', 1.5, 3000],
+#                ['R', 'SV', 'weak', 80, 'analytical', 1.5, 3000],
+#                ['R', 'SV', 'weak', 100, 'analytical', 1.5, 3000],
+#                ['R', 'SV', 'weak', 120, 'analytical', 1.5, 3000],
+#                ['R', 'SV', 'weak', 140, 'analytical', 1.5, 3000],
+#                ['R', 'SV', 'weak', 160, 'analytical', 1.5, 3000],
+#                ['R', 'SE', 'weak', 60, 'analytical', 1.5, 6000],
+#                ['R', 'SE', 'weak', 80, 'analytical', 1.5, 6000],
+#                ['R', 'SE', 'weak', 100, 'analytical', 1.5, 6000],
+#                ['R', 'SE', 'weak', 120, 'analytical', 1.5, 6000],
+#                ['R', 'SE', 'weak', 140, 'analytical', 1.5, 6000, 'noMem'],
+#                ['R', 'SE', 'weak', 160, 'analytical', 1.5, 6000, 'noMem']]
+
+#    caseName = 'analytical_t10_0_schemeVariation'
+#    caseArray = [['R', 'SV', 'weak', 80, 'analytical', 10.0, 20000, 'noMem'],
+#                ['R', 'SE', 'weak', 80, 'analytical', 10.0, 40000, 'noMem'],
+#                ['R', 'EH', 'weak', 80, 'analytical', 10.0, 20000, 'noMem'],
+#                ['R', 'IE', 'weak', 80, 'analytical', 10.0, 40000, 'noMem']]
+
+#    caseName = 'IC_SV_t4_5_timeVariation'
+#    caseArray = [['R', 'SV', 'weak', 120, 'IC', 4.5, 3000, 'noMem'],
+#                ['R', 'SV', 'weak', 120, 'IC', 4.5, 4500, 'noMem'],
+#                ['R', 'SV', 'weak', 120, 'IC', 4.5, 6000, 'noMem'],
+#                ['R', 'SV', 'weak', 120, 'IC', 4.5, 7500, 'noMem'],
+#                ['R', 'SV', 'weak', 120, 'IC', 4.5, 9000],
+
+    caseName = 'analytical_SE_t1_5_timeVariation'
+    caseArray = [['R', 'SE', 'weak', 120, 'analytical', 1.5, 750, 'noMem'],
+                ['R', 'SE', 'weak', 120, 'analytical', 1.5, 1500, 'noMem'],
+                ['R', 'SE', 'weak', 120, 'analytical', 1.5, 3000, 'noMem'],
+                ['R', 'SE', 'weak', 120, 'analytical', 1.5, 6000, 'noMem']]
+
+#    caseName = 'analytical_SE_t0_1_timeVariation'
+#    caseArray = [['R', 'SE', 'weak', 120, 'analytical', 0.1, 200, 'noMem'],
+#                ['R', 'SE', 'weak', 120, 'analytical', 0.1, 300, 'noMem'],
+#                ['R', 'SE', 'weak', 120, 'analytical', 0.1, 400, 'noMem'],
+#                ['R', 'SE', 'weak', 120, 'analytical', 0.1, 500, 'noMem'],
+#                ['R', 'SE', 'weak', 120, 'analytical', 0.1, 600, 'noMem'],
+#                ['R', 'SE', 'weak', 120, 'analytical', 0.1, 800, 'noMem']]
+
+#    caseName = 'IC_SV_t_20_0_singleRun'
 #    caseArray = [['R', 'SV', 'weak', 120, 'IC', 20, 40000]]
+
+#    caseName = 'IC_square_IC_SV_t8_0'
 #    caseArray = [['S_1C', 'SV', 'weak', 60, 'IC', 8, 16000]]
-    caseArray = [['R', 'SV', 'weak', 60, 'analytical', 4, 8000]]
+
+#    caseName = 'IC4_SV_singleRun'
+#    caseArray = [['R', 'SV', 'weak', 120, 'IC4', 1.5, 3000]]
+
+# The above are confirmed cases for paper
+# The below are temporary cases
+
+#   timeIntScheme = 'SV'
+
+# The below case may not be needed, only need either IC or IC4
+#    caseName = 'IC4_{}_t4_5_timeVariation'.format(timeIntScheme)
+#    caseArray = [['R', timeIntScheme, 'weak', 120, 'IC4', 4.5, 1500],
+#                ['R', timeIntScheme, 'weak', 120, 'IC4', 4.5, 3000],
+#                ['R', timeIntScheme, 'weak', 120, 'IC4', 4.5, 4500],
+#                ['R', timeIntScheme, 'weak', 120, 'IC4', 4.5, 6000],
+#                ['R', timeIntScheme, 'weak', 120, 'IC4', 4.5, 7500],
+#                ['R', timeIntScheme, 'weak', 120, 'IC4', 4.5, 9000]]
+
+#    caseName = 'tempSingleRun
+#    caseArray = [['R', 'SV', 'weak', 160, 'analytical', 0.3, 400]]
+
     for caseVec in caseArray:
         domainShape = caseVec[0]
         timeIntScheme = caseVec[1]
         dirichletImp = caseVec[2]
 
-        assert len(caseVec) in [3, 4, 5, 7], 'caseArray should be vectors of length 3, 4, 5 or 7'
+        assert len(caseVec) in [7, 8], 'caseArray should be vectors of length 7 or 8'
         # ------------------------------# Setup Directories #-------------------------------#
 
         # Create output dir
-        outputDir = 'output'
+        outputDir = os.path.join('output', caseName)
         IC_BOOL = False
         if not os.path.exists(outputDir):
             os.mkdir(outputDir)
-        subDir = 'output_' + domainShape + '_' + timeIntScheme + '_' + dirichletImp
-        if len(caseVec) == 4:
-            # we have a nx value to set
-            subDir = subDir + '_nx' + str(caseVec[3])
-        elif len(caseVec) > 4:
-            # also set bool that specifies interconnection as true
-            IC_BOOL = (caseVec[4] == 'IC')
-            ANALYTICAL_BOOL = (caseVec[4] == 'analytical')
-            # add 'IC' to the subDir name to denote interconnection
-            subDir = subDir + '_' + caseVec[4]
-            if len(caseVec) > 6:
-                subDir = subDir + '_t' + str(caseVec[5]).replace('.','_') +\
-                        '_steps' + str(caseVec[6])
+        subDir = domainShape + '_' + timeIntScheme + '_' + dirichletImp
+        # we have a nx value to set
+        subDir = subDir + '_nx' + str(caseVec[3])
+        # also set IC that specifies whether interconnection is being modelled and if so whether it is 3DOF or 4DOF
+        if caseVec[4].startswith('IC'):
+            IC = caseVec[4]
+        else:
+            IC = None
+
+        ANALYTICAL_BOOL = (caseVec[4] == 'analytical')
+        # add 'IC', 'wave', or 'analytical' to the subDir name to denote interconnection
+        subDir = subDir + '_' + caseVec[4]
+        # add time of sim and number of steps
+        subDir = subDir + '_t' + str(caseVec[5]).replace('.','_') +\
+                            '_steps' + str(caseVec[6])
 
         outputSubDir = os.path.join(outputDir, subDir)
         if not os.path.exists(outputSubDir):
             os.mkdir(outputSubDir)
 
-        # Create the mesh
-        if len(caseVec) ==3:
-            nx = 80
-        else:
-            nx = caseVec[3]
-
-        ny = int(nx/4)
+        # approx number of elems in x direction
+        nx = caseVec[3]
         xLength = 1.0
+
         if caseVec[0] == 'R':
             yLength = 0.25 #0.25
         elif caseVec[0] == 'S_1C':
             yLength = 0.1 #0.25
 
+        # set final time and number of steps
+        tFinal = caseVec[5]
+        numSteps = caseVec[6]
+
+        # whether we want to save a p xdf file
+        saveP = True
+        if len(caseVec) > 7:
+            if caseVec[7] == 'noMem':
+                saveP = False
 
         # solve the wave equation
-        if len(caseVec) > 6:
-            tFinal = caseVec[5]
-            numSteps = caseVec[6]
-        else:
-            tFinal = 1.5
-            numSteps = 3000
-
-        H_vec, E_vec, t_vec, disp_vec, numCells, bEnergy_vec, inpEnergy_vec, H_em_vec, H_wave_vec  = \
-                                    wave_2D_solve(tFinal, numSteps, outputSubDir,
-                                    nx, ny, xLength, yLength,
+        H_array, numCells = wave_2D_solve(tFinal, numSteps, outputSubDir,
+                                    nx, xLength, yLength,
                                     domainShape=domainShape, timeIntScheme=timeIntScheme,
                                     dirichletImp=dirichletImp,
-                                    K_wave=K_wave, rho=rho, interConnection=IC_BOOL,
-                                    analytical=ANALYTICAL_BOOL)
+                                    K_wave=K_wave, rho=rho, interConnection=IC,
+                                    analytical=ANALYTICAL_BOOL, saveP=saveP)
 
         # -------------------------------# Set up output and plotting #---------------------------------#
 
-        H_array = np.zeros((numSteps + 1, 8))
-        H_array[:, 0] = np.array(t_vec)
-        H_array[:, 1] = np.array(H_vec)
-        H_array[:, 2] = np.array(E_vec)
-        H_array[:, 3] = np.array(disp_vec)
-        H_array[:, 4] = np.array(bEnergy_vec)
-        H_array[:, 5] = np.array(inpEnergy_vec)
-        H_array[:, 6] = np.array(H_em_vec)
-        H_array[:, 7] = np.array(H_wave_vec)
         np.save(os.path.join(outputSubDir, 'H_array.npy'), H_array)
 
         numCells_save = np.zeros((1))

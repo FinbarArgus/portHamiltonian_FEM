@@ -53,21 +53,28 @@ def electromechanical_solve(tFinal, numSteps, outputDir,
         numIntSubSteps = 2
     # Constant wave speed
 
-    # long as the boundary between the two models are the same
-    Bl_em = 1
+    Bl_em = 5
     R1_em = 0.0
     R2_em = 0.0
-    K_em = 1
-    m_em = 2
+    K_em = 5
+    m_em = 0.15
     L_em = 0.1
+    C_em = 1.0
 
-    J_em = np.array([[0, Bl_em, 0], [-Bl_em, 0, -1], [0, 1, 0]])
+    J_em = np.array([[0, Bl_em, -1, 0], [-Bl_em, 0, 0, -1], [1, 0, 0, 0], [0, 1, 0, 0]])
 
-    R_em = np.array([[R1_em, 0, 0], [0, R2_em, 0], [0, 0, 0]])
+    R_em = np.array([[R1_em, 0, 0, 0], [0, R2_em, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]])
 
-    A_conv_em = np.array([[1/L_em, 0, 0], [0, 1/m_em, 0], [0, 0, K_em]])
+    A_conv_em = np.array([[1/L_em, 0, 0, 0], [0, 1/m_em, 0, 0], [0, 0, 1/C_em, 0], [0, 0, 0, K_em]])
 
     A_em = Constant((J_em - R_em).dot(A_conv_em))
+
+    A_em_numpy = (J_em - R_em).dot(A_conv_em)
+
+    w, v = np.linalg.eig(A_em_numpy)
+
+    print(w)
+    # quit()
 
     # ------------------------------# Create Function Spaces and functions#-------------------------------#
 
@@ -80,27 +87,27 @@ def electromechanical_solve(tFinal, numSteps, outputDir,
 
     # create function spaces for mesh and for Electromechanical ODE variables
     odeSpace = FiniteElement('R', triangle, 0) #order 0, 1 variable
-    element = MixedElement([odeSpace, odeSpace, odeSpace])
+    element = MixedElement([odeSpace, odeSpace, odeSpace, odeSpace])
     U = FunctionSpace(mesh, element)
 
     # Define trial and test functions
-    xode_0, xode_1, xode_2  = TrialFunctions(U)
-    xode = as_vector([xode_0, xode_1, xode_2])
-    v_xode_0, v_xode_1, v_xode_2 = TestFunctions(U)
-    v_xode = as_vector([v_xode_0, v_xode_1, v_xode_2])
+    xode_0, xode_1, xode_2, xode_3 = TrialFunctions(U)
+    xode = as_vector([xode_0, xode_1, xode_2, xode_3])
+    v_xode_0, v_xode_1, v_xode_2, v_xode_3 = TestFunctions(U)
+    v_xode = as_vector([v_xode_0, v_xode_1, v_xode_2, v_xode_3])
 
     # Define functions for solutions at previous and current time steps
     u_n = Function(U)
-    xode_0_n, xode_1_n, xode_2_n = split(u_n)
-    xode_n = as_vector([xode_0_n, xode_1_n, xode_2_n])
+    xode_0_n, xode_1_n, xode_2_n, xode_3_n = split(u_n)
+    xode_n = as_vector([xode_0_n, xode_1_n, xode_2_n, xode_3_n])
 
     u_ = Function(U)
-    xode_0_, xode_1_, xode_2_ = split(u_)
-    xode_ = as_vector([xode_0_, xode_1_, xode_2_])
+    xode_0_, xode_1_, xode_2_, xode_3_ = split(u_)
+    xode_ = as_vector([xode_0_, xode_1_, xode_2_, xode_3_])
 
     u_temp = Function(U)
-    xode_0_temp, xode_1_temp, xode_2_temp = split(u_temp)
-    xode_temp = as_vector([xode_0_temp, xode_1_temp, xode_2_temp])
+    xode_0_temp, xode_1_temp, xode_2_temp, xode_3_temp = split(u_temp)
+    xode_temp = as_vector([xode_0_temp, xode_1_temp, xode_2_temp, xode_3_temp])
 
     # -------------------------------# Boundary Conditions #---------------------------------#
 
@@ -139,8 +146,8 @@ def electromechanical_solve(tFinal, numSteps, outputDir,
     ds = Measure('ds', domain=mesh, subdomain_data=boundaryDomains)
 
     # Forced input
-    # uInput = Expression('sin(3.14159*t)', degree=2, t=0)
-    uInput = Expression('(t<10.0) ? sin(3.14159*t) : 0.0', degree=2, t=0)
+    # uInput = Expression('sin(pi*t)', degree=2, t=0)
+    uInput = Expression('(t<5.0) ? sin(pi*t) : 0.0', degree=2, t=0)
 
     bcs = []
 
@@ -150,29 +157,47 @@ def electromechanical_solve(tFinal, numSteps, outputDir,
         #implement Stormer-Verlet Scheme
 
         F_temp = (-dot(v_xode, xode - xode_n)/(0.5*dt) + \
-             v_xode[0]*(A_em[0, 0]*xode_n[0] + A_em[0, 1]*xode_n[1] + A_em[0, 2]*xode[2]) + \
-             v_xode[1]*(A_em[1, 0]*xode_n[0] + A_em[1, 1]*xode_n[1] + A_em[1, 2]*xode[2]) + \
-             v_xode[2]*(A_em[2, 0]*xode_n[0] + A_em[2, 1]*xode_n[1] + A_em[2, 2]*xode[2]) + \
-             v_xode[0]*uInput)*ds(0)
+                     v_xode[0]*(A_em[0, 0]*xode_n[0] + A_em[0, 1]*xode_n[1] +
+                                A_em[0, 2]*xode[2] + A_em[0, 3]*xode[3]) + \
+                     v_xode[1]*(A_em[1, 0]*xode_n[0] + A_em[1, 1]*xode_n[1] +
+                                A_em[1, 2]*xode[2] + A_em[1, 3]*xode[3]) + \
+                     v_xode[2]*(A_em[2, 0]*xode_n[0] + A_em[2, 1]*xode_n[1] +
+                                A_em[2, 2]*xode[2] + A_em[2, 3]*xode[3]) + \
+                     v_xode[3]*(A_em[3, 0]*xode_n[0] + A_em[3, 1]*xode_n[1] +
+                                A_em[3, 2]*xode[2] + A_em[3, 3]*xode[3]) + \
+                     v_xode[0]*uInput)*ds(0)  # I dont think it matters what q_ here
 
         F = (-(v_xode[0]*(xode[0] - xode_n[0]) + \
-               v_xode[1]*(xode[1] - xode_n[1]) + \
-               v_xode[2]*(xode[2] - xode_temp[2]))/dt + \
-             0.5*v_xode[0]*(A_em[0, 0]*xode_n[0] + A_em[0, 1]*xode_n[1] + A_em[0, 2]*xode_temp[2] + \
-                        A_em[0, 0]*xode[0]   + A_em[0, 1]*xode[1]   + A_em[0, 2]*xode_temp[2]) + \
-             0.5*v_xode[1]*(A_em[1, 0]*xode_n[0] + A_em[1, 1]*xode_n[1] + A_em[1, 2]*xode_temp[2] + \
-                        A_em[1, 0]*xode[0]   + A_em[1, 1]*xode[1]   + A_em[1, 2]*xode_temp[2]) + \
-             0.5*v_xode[2]*(A_em[2, 0]*xode[0] + A_em[2, 1]*xode[1] + A_em[2, 2]*xode_temp[2]) + \
-             v_xode[0]*uInput)*ds(0) #don't multiply the input by a half because it is for a full step
+                  v_xode[1]*(xode[1] - xode_n[1]) + \
+                  v_xode[2]*(xode[2] - xode_temp[2]) + \
+                  v_xode[3]*(xode[3] - xode_temp[3]))/dt + \
+                0.5*v_xode[0]*(A_em[0, 0]*xode_n[0] + A_em[0, 1]*xode_n[1] +
+                               A_em[0, 2]*xode_temp[2] + A_em[0, 3]*xode_temp[3] + \
+                               A_em[0, 0]*xode[0] + A_em[0, 1]*xode[1] +
+                               A_em[0, 2]*xode_temp[2] + A_em[0, 3]*xode_temp[3]) + \
+                0.5*v_xode[1]*(A_em[1, 0]*xode_n[0] + A_em[1, 1]*xode_n[1] +
+                               A_em[1, 2]*xode_temp[2] + A_em[1, 3]*xode_temp[3] + \
+                               A_em[1, 0]*xode[0] + A_em[1, 1]*xode[1] +
+                               A_em[1, 2]*xode_temp[2] + A_em[1, 3]*xode_temp[3]) + \
+                0.5*v_xode[2]*(A_em[2, 0]*xode[0] + A_em[2, 1]*xode[1] +
+                               A_em[2, 2]*xode_temp[2] + A_em[2, 3]*xode_temp[3]) + \
+                0.5*v_xode[3]*(A_em[3, 0]*xode[0] + A_em[3, 1]*xode[1] +
+                               A_em[3, 2]*xode_temp[2] + A_em[3, 3]*xode_temp[3]) + \
+                v_xode[0]*uInput)*ds(0)  # don't multiply the input by a half because it is for a full step
+
     elif timeIntScheme == 'SE':
         #implement Symplectic Euler
-        xode_int = as_vector([xode[0], xode[1], xode_n[2]])
-
         F = (-dot(v_xode, xode - xode_n)/dt + \
-             v_xode[0]*(A_em[0, 0]*xode_int[0] + A_em[0, 1]*xode_int[1] + A_em[0, 2]*xode_int[2]) + \
-             v_xode[1]*(A_em[1, 0]*xode_int[0] + A_em[1, 1]*xode_int[1] + A_em[1, 2]*xode_int[2]) + \
-             v_xode[2]*(A_em[2, 0]*xode_int[0] + A_em[2, 1]*xode_int[1] + A_em[2, 2]*xode_int[2]) + \
-             v_xode[0]*uInput)*ds(0)
+                v_xode[0]*(A_em[0, 0]*xode[0] + A_em[0, 1]*xode[1] +
+                           A_em[0, 2]*xode_n[2] + A_em[0, 3]*xode_n[3]) + \
+                v_xode[1]*(A_em[1, 0]*xode[0] + A_em[1, 1]*xode[1] +
+                           A_em[1, 2]*xode_n[2] + A_em[1, 3]*xode_n[3]) + \
+                v_xode[2]*(A_em[2, 0]*xode[0] + A_em[2, 1]*xode[1] + \
+                           A_em[2, 2]*xode_n[2] + A_em[2, 3]*xode_n[3]) + \
+                v_xode[3]*(A_em[3, 0]*xode[0] + A_em[3, 1]*xode[1] +
+                           A_em[3, 2]*xode_n[2] + A_em[3, 3]*xode_n[3]) + \
+                v_xode[0]*uInput)*ds(0)
+
     elif timeIntScheme == 'EE':
         # implement Explicit Euler
         xode_int = as_vector([xode_n[0], xode_n[1], xode_n[2]])
@@ -234,7 +259,7 @@ def electromechanical_solve(tFinal, numSteps, outputDir,
     # text = ax.text(0.001, 0.001, "")
     ax.set_xlim(0, tFinal)
     # ax.set_ylim(0, 600)
-    ax.set_ylim(0, 15)
+    ax.set_ylim(0, 0.05)
 
     ax.legend()
     ax.set_ylabel('Hamiltonian [J]')
@@ -293,18 +318,20 @@ def electromechanical_solve(tFinal, numSteps, outputDir,
             inpPowerXdt = 0.5*(dt*uInput*(xode_0_n + xode_0_)/L_em)*ds(0)
         elif timeIntScheme == 'SE' or 'IE':
             inpPowerXdt = (dt*uInput*xode_0_/L_em)*ds(0)
-        elif timeIntScheme == 'IE':
+        elif timeIntScheme == 'EE':
             inpPowerXdt = (dt*uInput*xode_0_n/L_em)*ds(0)
 
         boundaryEnergy += assemble(inpPowerXdt)/yLength
-        H_em = assemble(0.5*(xode_[0]*xode_[0]/L_em + xode_[1]*xode_[1]/m_em + K_em*xode_[2]*xode_[2])*ds(0))/yLength
+        H_em = assemble(0.5*(xode_[0]*xode_[0]/L_em + xode_[1]*xode_[1]/m_em +
+                             xode_[2]*xode_[2]/C_em + K_em*xode_[3]*xode_[3])*ds(0))/yLength
         print('boundary energy = {}'.format(boundaryEnergy))
         print('Hamiltonian     = {}'.format(H_em))
         E = -boundaryEnergy + H_em # Multiply H_wave by rho to get units of energy
         H = H_em
 
         #output displacement
-        disp = assemble(xode_2_*ds(0))/yLength
+        disp = assemble(xode_3_*ds(0))/yLength
+        print('disp = {}'.format(disp))
 
         E_vec.append(E)
         H_vec.append(H)

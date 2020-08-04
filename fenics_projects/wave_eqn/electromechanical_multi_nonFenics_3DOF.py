@@ -59,14 +59,13 @@ class ToyProblems:
     class for simulating multiple pendulums
     """
 
-    def __init__(self, Bl, R1, R2, K, m, L, C, controlInputMax, r1, gamma1, gamma2, gamma3, controlType='IDA_PBC'):
+    def __init__(self, Bl, R1, R2, K, m, L, controlInputMax, r1, gamma1, gamma2, gamma3, controlType='IDA_PBC'):
         self.Bl = Bl
         self.R1 = R1
         self.R2 = R2
         self.K = K
         self. m = m
         self.L = L
-        self.C = C
         self.controlInputMax = controlInputMax
         self.r1 = r1
         self.gamma1 = gamma1
@@ -83,7 +82,7 @@ class ToyProblems:
         :return: state derivs [3,1]
         """
         #turn x into a column vector
-        x = xRow.reshape((4,1))
+        x = xRow.reshape((3,1))
 
         # create step function y_desired
         y_desired = 0
@@ -94,20 +93,20 @@ class ToyProblems:
         elif t<60.0:
             y_desired = 1
 
-        y_error = x[3] - y_desired
+        y_error = x[2] - y_desired
 
-        x_desired = np.array([[0], [0], [0], [y_desired]])
+        x_desired = np.array([[0], [0], [y_desired]])
 
 
-        fOld = np.zeros([4, ])
+        fOld = np.zeros([3, ])
 
-        J = np.array([[0, Bl, -1, 0], [-Bl, 0, 0, -1], [1, 0, 0, 0], [0, 1, 0, 0]])
+        J = np.array([[0, Bl, 0], [-Bl, 0, -1], [0, 1, 0]])
 
-        R = np.array([[R1, 0, 0, 0], [0, R2, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]])
+        R = np.array([[R1, 0, 0], [0, R2, 0], [0, 0, 0]])
 
-        A_conv = np.array([[1/L, 0, 0, 0], [0, 1/m, 0, 0], [0, 0, 1/C, 0], [0, 0, 0, K]])
+        A_conv = np.array([[1/L, 0, 0], [0, 1/m, 0], [0, 0, K]])
 
-        B = np.array([[1], [0], [0], [0]])
+        B = np.array([[1], [0], [0]])
 
 
         if controlType == 'IDA_PBC':
@@ -156,7 +155,7 @@ class ToyProblems:
         elif controlType == 'sin':
 
             # u1 = np.sin(3.14159*t)
-            u1 = np.sin(3.14159265*t) if (t < 5.0) else 0.0
+            u1 = np.sin(3.14159*t) if (t < 10.0) else 0.0
             f = (J - R).dot(A_conv.dot(x)) + B*u1
 
 
@@ -182,13 +181,13 @@ class ToyProblems:
         return cartesian_pos
 
 
-Bl = 5
+
+Bl = 1
 R1 = 0.0
 R2 = 0.0
-K = 5
-m = 0.15
+K = 1
+m = 2
 L = 0.1
-C = 1.0
 controlInputMax = 50
 
 controlType = 'sin'
@@ -209,10 +208,10 @@ gamma1 = 80
 gamma2 = 15 + 20*ii
 gamma3 = 40
 
-toyP = ToyProblems(Bl, R1, R2, K, m, L, C, controlInputMax, r1, gamma1, gamma2, gamma3, controlType=controlType)
-x0 = np.array([0.0, 0.0, 0.0, 0.0])
-tStop = 10.0
-nSteps = 30001
+toyP = ToyProblems(Bl, R1, R2, K, m, L, controlInputMax, r1, gamma1, gamma2, gamma3, controlType=controlType)
+x0 = np.array([0, 0, 0.0])
+tStop = 20.0
+nSteps = 20001
 tSpan = np.array([0, tStop])
 sol = solve_ivp(toyP.electromechanical, tSpan, x0, t_eval=np.linspace(0, tStop, nSteps),
                 method='RK45')
@@ -229,13 +228,12 @@ for II in range(len(sol.t)):
     elif t<60.0:
        yDesiredVec[II] = 1
 
-motorPos = sol.y[3, :]
-charge = sol.y[2, :]
+motorPos = sol.y[2, :]
 h_1 = sol.y[0, :]
 h_2 = sol.y[1, :]
 
 if controlType =='sin':
-    Hamiltonian = h_1**2/(2*L) + h_2**2/(2*m) + charge**2/2 + K*motorPos**2/2
+    Hamiltonian = h_1**2/(2*L) + h_2**2/(2*m) + K*motorPos**2/2
 else:
     Hamiltonian = gamma1*h_1**2/2 +gamma2*h_2**2 + gamma3*(motorPos - yDesiredVec)**2 / 2
 
@@ -274,9 +272,9 @@ dataArray = np.load(os.path.join('output', 'output_em_ver', 'H_array.npy'))
 fig = plt.figure()
 plt.xlabel('Time [s]', fontsize=14)
 plt.ylabel('Output Displacement [m]', fontsize=14)
-plt.ylim(-0.2, 0.2)
+plt.ylim(-1.5, 1.5)
 plt.plot(sol.t, motorPos, color=colorVec[ii], lw=1, linestyle='-', label='scipy')
-plt.xlim(0,10)
+plt.xlim(0,20)
 plt.plot(dataArray[:, 0], dataArray[:, 3], lw=1, color='r', linestyle='--', label='fenics')
 plt.legend(loc='lower right', fontsize=10)
 savePath = os.path.join('output', 'plots', 'emDispScipy.png')
@@ -286,8 +284,8 @@ fig = plt.figure()
 
 plt.xlabel('Time [s]', fontsize=14)
 plt.ylabel('Hamiltonian',fontsize=14)
-plt.ylim(0, 0.05)
-plt.xlim(0, 10)
+plt.ylim(0, 15)
+plt.xlim(0, 20)
 plt.title("Hamiltonian")
 
 plt.plot(sol.t, Hamiltonian, color=colorVec[ii], lw=1, linestyle='-', label='scipy')
@@ -300,7 +298,7 @@ fig.savefig(savePath, dpi=1000, bbox_inches='tight')
 fig = plt.figure()
 plt.xlabel('Time [s]', fontsize=14)
 plt.ylabel('displacement error', fontsize=14)
-plt.xlim(0, 10)
+plt.xlim(0, 20)
 plt.plot(dataArray[:, 0], np.sqrt(np.square(dataArray[:, 3]-motorPos)), lw=1, color='r', linestyle='--')
 
 # plt.legend(loc='upper right', fontsize=10)
@@ -311,7 +309,7 @@ fig.savefig(savePath, dpi=1000, bbox_inches='tight')
 fig = plt.figure()
 plt.xlabel('Time [s]', fontsize=14)
 plt.ylabel('Energy residual', fontsize=14)
-plt.xlim(0, 10)
+plt.xlim(0, 20)
 plt.plot(dataArray[:, 0], np.sqrt(np.square(dataArray[:, 2])), color='r', lw=1, linestyle='--',
          label='fenics')
 
