@@ -213,9 +213,8 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
 
     else:
         # interconnection is not used, this is the basic wave equation
-        # TODO change order back to 1
-        P1 = FiniteElement('P', triangle, 2)
-        RT = FiniteElement('RT', triangle, 2)
+        P1 = FiniteElement('P', triangle, 1)
+        RT = FiniteElement('RT', triangle, 1)
         element = MixedElement([P1, RT])
         U = FunctionSpace(mesh, element)
         #Also create function space for just P1

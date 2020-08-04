@@ -51,44 +51,6 @@ if __name__ == '__main__':
 #                 ['R', 'SV', 'weak', 120, 'wave', 1.5, 3000],
 #                 ['R', 'SV', 'weak', 160, 'wave', 1.5, 3000, 'noMem']]
 
-    caseName = 'IC_SV_t4_5_timeVariation'
-    caseArray = [['R', 'SV', 'weak', 120, 'IC', 4.5, 3000, 'noMem'],
-                ['R', 'SV', 'weak', 120, 'IC', 4.5, 4500, 'noMem'],
-                ['R', 'SV', 'weak', 120, 'IC', 4.5, 6000, 'noMem'],
-                ['R', 'SV', 'weak', 120, 'IC', 4.5, 7500, 'noMem'],
-                ['R', 'SV', 'weak', 120, 'IC', 4.5, 9000],
-                ['R', 'SV', 'weak', 120, 'IC', 20, 40000, 'noMem'],
-                ['S_1C', 'SV', 'weak', 60, 'IC', 8, 16000]]
-
-#    caseName = 'IC_SV_t_20_0_singleRun'
-#    caseArray = [['R', 'SV', 'weak', 120, 'IC', 20, 40000]]
-
-#    caseName = 'IC_square_IC_SV_t8_0'
-#    caseArray = [['S_1C', 'SV', 'weak', 60, 'IC', 8, 16000]]
-
-#    caseName = 'IC4_SV_singleRun'
-#    caseArray = [['R', 'SV', 'weak', 120, 'IC4', 1.5, 3000]]
-
-# The below methods can be all done for one time int scheme
-    timeIntScheme = 'SV'
-
-# The below case may not be needed, only need either IC or IC4
-#    caseName = 'IC4_{}_t4_5_timeVariation'.format(timeIntScheme)
-#    caseArray = [['R', timeIntScheme, 'weak', 120, 'IC4', 4.5, 1500],
-#                ['R', timeIntScheme, 'weak', 120, 'IC4', 4.5, 3000],
-#                ['R', timeIntScheme, 'weak', 120, 'IC4', 4.5, 4500],
-#                ['R', timeIntScheme, 'weak', 120, 'IC4', 4.5, 6000],
-#                ['R', timeIntScheme, 'weak', 120, 'IC4', 4.5, 7500],
-#                ['R', timeIntScheme, 'weak', 120, 'IC4', 4.5, 9000]]
-
-#    caseName = 'analytical_{}_t0_1_timeVariation'.format(timeIntScheme)
-#    caseArray = [['R', timeIntScheme, 'weak', 120, 'analytical', 0.1, 200, 'noMem'],
-#                ['R', timeIntScheme, 'weak', 120, 'analytical', 0.1, 300, 'noMem'],
-#                ['R', timeIntScheme, 'weak', 120, 'analytical', 0.1, 400, 'noMem'],
-#                ['R', timeIntScheme, 'weak', 120, 'analytical', 0.1, 500, 'noMem'],
-#                ['R', timeIntScheme, 'weak', 120, 'analytical', 0.1, 600, 'noMem'],
-#                ['R', timeIntScheme, 'weak', 120, 'analytical', 0.1, 800, 'noMem']]
-
 #    caseName = 'analytical_t1_5_spaceVariation'.format(timeIntScheme)
 #    caseArray = [['R', 'SV', 'weak', 60, 'analytical', 1.5, 3000],
 #                ['R', 'SV', 'weak', 80, 'analytical', 1.5, 3000],
@@ -103,14 +65,55 @@ if __name__ == '__main__':
 #                ['R', 'SE', 'weak', 140, 'analytical', 1.5, 6000, 'noMem'],
 #                ['R', 'SE', 'weak', 160, 'analytical', 1.5, 6000, 'noMem']]
 
-# The above are confirmed cases for paper
-# The below are temporary cases
-
-#    caseName = 'analytical_t20_0_schemeVariation'
+#    caseName = 'analytical_t10_0_schemeVariation'
 #    caseArray = [['R', 'SV', 'weak', 80, 'analytical', 10.0, 20000, 'noMem'],
 #                ['R', 'SE', 'weak', 80, 'analytical', 10.0, 40000, 'noMem'],
 #                ['R', 'EH', 'weak', 80, 'analytical', 10.0, 20000, 'noMem'],
 #                ['R', 'IE', 'weak', 80, 'analytical', 10.0, 40000, 'noMem']]
+
+#    caseName = 'IC_SV_t4_5_timeVariation'
+#    caseArray = [['R', 'SV', 'weak', 120, 'IC', 4.5, 3000, 'noMem'],
+#                ['R', 'SV', 'weak', 120, 'IC', 4.5, 4500, 'noMem'],
+#                ['R', 'SV', 'weak', 120, 'IC', 4.5, 6000, 'noMem'],
+#                ['R', 'SV', 'weak', 120, 'IC', 4.5, 7500, 'noMem'],
+#                ['R', 'SV', 'weak', 120, 'IC', 4.5, 9000],
+
+    caseName = 'analytical_SE_t1_5_timeVariation'
+    caseArray = [['R', 'SE', 'weak', 120, 'analytical', 1.5, 750, 'noMem'],
+                ['R', 'SE', 'weak', 120, 'analytical', 1.5, 1500, 'noMem'],
+                ['R', 'SE', 'weak', 120, 'analytical', 1.5, 3000, 'noMem'],
+                ['R', 'SE', 'weak', 120, 'analytical', 1.5, 6000, 'noMem']]
+
+#    caseName = 'analytical_SE_t0_1_timeVariation'
+#    caseArray = [['R', 'SE', 'weak', 120, 'analytical', 0.1, 200, 'noMem'],
+#                ['R', 'SE', 'weak', 120, 'analytical', 0.1, 300, 'noMem'],
+#                ['R', 'SE', 'weak', 120, 'analytical', 0.1, 400, 'noMem'],
+#                ['R', 'SE', 'weak', 120, 'analytical', 0.1, 500, 'noMem'],
+#                ['R', 'SE', 'weak', 120, 'analytical', 0.1, 600, 'noMem'],
+#                ['R', 'SE', 'weak', 120, 'analytical', 0.1, 800, 'noMem']]
+
+#    caseName = 'IC_SV_t_20_0_singleRun'
+#    caseArray = [['R', 'SV', 'weak', 120, 'IC', 20, 40000]]
+
+#    caseName = 'IC_square_IC_SV_t8_0'
+#    caseArray = [['S_1C', 'SV', 'weak', 60, 'IC', 8, 16000]]
+
+#    caseName = 'IC4_SV_singleRun'
+#    caseArray = [['R', 'SV', 'weak', 120, 'IC4', 1.5, 3000]]
+
+# The above are confirmed cases for paper
+# The below are temporary cases
+
+#   timeIntScheme = 'SV'
+
+# The below case may not be needed, only need either IC or IC4
+#    caseName = 'IC4_{}_t4_5_timeVariation'.format(timeIntScheme)
+#    caseArray = [['R', timeIntScheme, 'weak', 120, 'IC4', 4.5, 1500],
+#                ['R', timeIntScheme, 'weak', 120, 'IC4', 4.5, 3000],
+#                ['R', timeIntScheme, 'weak', 120, 'IC4', 4.5, 4500],
+#                ['R', timeIntScheme, 'weak', 120, 'IC4', 4.5, 6000],
+#                ['R', timeIntScheme, 'weak', 120, 'IC4', 4.5, 7500],
+#                ['R', timeIntScheme, 'weak', 120, 'IC4', 4.5, 9000]]
 
 #    caseName = 'tempSingleRun
 #    caseArray = [['R', 'SV', 'weak', 160, 'analytical', 0.3, 400]]

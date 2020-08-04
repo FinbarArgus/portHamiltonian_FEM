@@ -52,6 +52,8 @@ ax.set_ylim(-0.02, 0.03)
 ax2.set_xlabel('Time [s]')
 ax.set_ylabel('Energy Residual [J]')
 ax2.set_ylabel('Energy Residual [J]')
+ax.text(0.2,0.025,'(a)',fontsize=20)
+ax2.text(0.2,0.0004,'(b)',fontsize=20)
 for count, dir in enumerate(outputSubDirArray):
     dataArray = np.load(os.path.join(dir, 'H_array.npy'))
     ax.plot(dataArray[:, 0], dataArray[:, 2], lw=0.5, color=colorVec[count], linestyle=lineStyleArray[count],
@@ -74,6 +76,8 @@ ax.set_ylim(0.0, 2.2)
 ax2.set_xlabel('Time [s]')
 ax.set_ylabel('Hamiltonian [J]')
 ax2.set_ylabel('Hamiltonian [J]')
+ax.text(0.2,2.03,'(a)',fontsize=20)
+ax2.text(0.2,1.91582,'(b)',fontsize=20)
 for count, dir in enumerate(outputSubDirArray):
     dataArray = np.load(os.path.join(dir, 'H_array.npy'))
     ax.plot(dataArray[:, 0], dataArray[:, 1], lw=0.5, color=colorVec[count], linestyle=lineStyleArray[count],
@@ -86,7 +90,6 @@ ax2.set_xlim(0.0, tFinal)
 ax2.set_ylim(1.914, 1.916)
 plt.savefig(os.path.join(plotDir, 'Hamiltonian.png'), dpi=500, bbox_inches='tight')
 plt.close(fig)
-
 
 # ------------# Plotting boundary energy residual for multiple cell numbers #---------------#
 
@@ -338,8 +341,8 @@ strongGradient = (np.log(numCell_Res[5,4]) - np.log(numCell_Res[1,4]))/ \
 
 # ------------# Plot analytical RMS error for 0.3 second run for all time steps#---------------#
 
-timeIntScheme = 'SV'
-tFinal = 0.1
+timeIntScheme = 'SE'
+tFinal = 1.5
 caseName = 'analytical_{}_t{}_timeVariation'.format(timeIntScheme, tFinal).replace('.','_')
 outputDir = os.path.join('output', caseName)
 if not os.path.exists(outputDir):
@@ -350,12 +353,22 @@ plotDir = os.path.join(outputDir, 'plots')
 if not os.path.exists(plotDir):
     os.mkdir(plotDir)
 if timeIntScheme == 'SE':
-    caseArray = [['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 50],
-                 ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 100],
-                 ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 200],
-                 ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 400],
-                 ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 800],
-                 ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 1600]]
+    if tFinal == 0.1:
+        # For 0.1 second simulation
+        caseArray = [['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 50],
+                     ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 100],
+                     ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 200],
+                     ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 400],
+                     ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 800],
+                     ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 1600]]
+    elif tFinal == 1.5:
+        # For 1.5 second simulation
+        caseArray = [['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 750],
+                     ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 1500],
+                     ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 3000],
+                     ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 6000]]
+    else:
+        print('final time of {} is not a recognised case'.format(tFinal))
 else:
     caseArray = [['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 200],
                  ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 400],
@@ -540,7 +553,7 @@ plt.close(fig)
 
 # -----# Plot the analytic error for long times for various schemes, wave model#-------#
 
-caseName = 'analytical_t20_0_schemeVariation'
+caseName = 'analytical_t10_0_schemeVariation'
 outputDir = os.path.join('output', caseName)
 if not os.path.exists(outputDir):
     print('The output dir {} doesn\'t exist'.format(outputDir))
@@ -574,7 +587,7 @@ fig, ax = plt.subplots(1, 1)
 for count, dir in enumerate(outputSubDirArray):
     dataArray = np.load(os.path.join(dir, 'H_array.npy'))
     plt.plot(dataArray[:,0], dataArray[:, 8], lw=0.2, color=colorVec[count], linestyle=lineStyleArray[count],
-             label='{}, dt = {}'.format(caseArray[count][1], caseArray[count][5]/caseArray[count][6]))
+             label='{}, $\Delta t$ = {}'.format(caseArray[count][1], caseArray[count][5]/caseArray[count][6]))
 
 plt.xlabel('Time [s]')
 plt.ylabel('RMS Error')
@@ -592,7 +605,7 @@ fig, ax = plt.subplots(1, 1)
 for count, dir in enumerate(outputSubDirArray):
     dataArray = np.load(os.path.join(dir, 'H_array.npy'))
     plt.plot(dataArray[:,0], np.sqrt(dataArray[:, 9]), lw=0.2, color=colorVec[count], linestyle=lineStyleArray[count],
-             label='{}, dt = {}'.format(caseArray[count][1], caseArray[count][5]/caseArray[count][6]))
+             label='{}, $\Delta t$ = {}'.format(caseArray[count][1], caseArray[count][5]/caseArray[count][6]))
 
 plt.xlabel('Time [s]')
 plt.ylabel('Integral Error')
@@ -606,11 +619,17 @@ plt.close(fig)
 
 
 # ------------# Plotting results for interconnection wave and electromechanical #---------------#
+caseName = 'IC_SV_t_20_0_singleRun'
+outputDir = os.path.join('output', caseName)
+if not os.path.exists(outputDir):
+    print('The output dir {} doesn\'t exist'.format(outputDir))
+    quit()
 
-# TODO remove this quit
-quit()
+plotDir = os.path.join(outputDir, 'plots')
+if not os.path.exists(plotDir):
+    os.mkdir(plotDir)
 
-subDir = 'R_SV_weak_IC_t20_steps40000'
+subDir = 'R_SV_weak_nx120_IC_t20_steps40000'
 outputSubDirArray = [os.path.join(outputDir, subDir)]
 # ------------# Plot Hamiltonian and energy residual over time#---------------#
 
@@ -632,7 +651,7 @@ for count, dir in enumerate(outputSubDirArray):
     # Plot EM residual
     emResid = np.sqrt(np.square(dataArray[:, 6] - dataArray[:,5] - dataArray[:,4]))
     plt.plot(dataArray[:, 0], emResid, lw=0.5, color='g', linestyle=lineStyleArray[count],
-             label='em Residual')
+             label='EM Residual')
     #plot check
     totalResid2 = dataArray[:, 6] +dataArray[:, 7] - dataArray[:,5]
     # plt.plot(dataArray[:, 0], totalResid2, lw=0.5, color='c', linestyle=lineStyleArray[count],
@@ -684,8 +703,17 @@ plt.close(fig)
 
 # ------------# Plot max energy residual over step size#---------------#
 
-caseArray = [['R', 'SV', 'weak', 120, 'IC', 4.5, 1500],
-             ['R', 'SV', 'weak', 120, 'IC', 4.5, 3000],
+caseName = 'IC_SV_t4_5_timeVariation'
+outputDir = os.path.join('output', caseName)
+if not os.path.exists(outputDir):
+    print('The output dir {} doesn\'t exist'.format(outputDir))
+    quit()
+
+plotDir = os.path.join(outputDir, 'plots')
+if not os.path.exists(plotDir):
+    os.mkdir(plotDir)
+
+caseArray = [['R', 'SV', 'weak', 120, 'IC', 4.5, 3000],
              ['R', 'SV', 'weak', 120, 'IC', 4.5, 4500],
              ['R', 'SV', 'weak', 120, 'IC', 4.5, 6000],
              ['R', 'SV', 'weak', 120, 'IC', 4.5, 7500],
@@ -705,14 +733,13 @@ caseArray = [['R', 'SV', 'weak', 120, 'IC', 4.5, 1500],
 
 outputSubDirArray = []
 for caseVec in caseArray:
-    #TODO(Finbar) Include str(caseVec[3]) in the below string when everything is rerun
-    subDir = caseVec[0] + '_' + caseVec[1] + '_' +caseVec[2] +\
-                '_' + caseVec[4] + '_t' +\
-                str(caseVec[5]).replace('.','_') + '_steps' + str(caseVec[6])
+    subDir = caseVec[0] + '_' + caseVec[1] + '_' +caseVec[2] + \
+             '_nx' + str(caseVec[3]) + '_' + caseVec[4] + '_t' + \
+             str(caseVec[5]).replace('.','_') + '_steps' + str(caseVec[6])
 
     outputSubDirArray.append(os.path.join(outputDir, subDir))
 
-numStepsRes = np.zeros((18,2))
+numStepsRes = np.zeros((len(caseArray),2))
 for count, dir in enumerate(outputSubDirArray):
     dataArray = np.load(os.path.join(dir, 'H_array.npy'))
     numStepsRes[count,0] = caseArray[count][5]/(caseArray[count][6])
@@ -720,19 +747,19 @@ for count, dir in enumerate(outputSubDirArray):
 
 
 fig, ax = plt.subplots(1, 1)
-plt.plot(numStepsRes[0:6, 0], numStepsRes[0:6, 1], lw=1.5, color='r', linestyle='', marker='x',
+plt.plot(numStepsRes[0:5, 0], numStepsRes[0:5, 1], lw=1.5, color='r', linestyle='', marker='x',
          label='SV wave-EM 3DOF')
-plt.plot(numStepsRes[6:12, 0], numStepsRes[6:12, 1], lw=1.5, color='b', linestyle='', marker='o',
-         label='SV wave-EM 4DOF')
-plt.plot(numStepsRes[12:18, 0], numStepsRes[12:18, 1], lw=1.5, color='g', linestyle='', marker='o',
-         label='SE wave-EM 4DOF')
+#plt.plot(numStepsRes[6:12, 0], numStepsRes[6:12, 1], lw=1.5, color='b', linestyle='', marker='o',
+#         label='SV wave-EM 4DOF')
+#plt.plot(numStepsRes[12:18, 0], numStepsRes[12:18, 1], lw=1.5, color='g', linestyle='', marker='o',
+#         label='SE wave-EM 4DOF')
 #create linear line to plot
-xLin = np.linspace(numStepsRes[0,0], numStepsRes[5,0], 1000)
-scale = 800
-yLin = scale*xLin
-plt.plot(xLin, yLin, lw=1.0, color='k', label='Linear Trend ($800x$)')
+#xLin = np.linspace(numStepsRes[0,0], numStepsRes[4,0], 1000)
+#scale = 800
+#yLin = scale*xLin
+#plt.plot(xLin, yLin, lw=1.0, color='k', label='Linear Trend ($800x$)')
 #create quadratic line to plot
-xQuad = np.linspace(numStepsRes[0,0], numStepsRes[5,0], 1000)
+xQuad = np.linspace(numStepsRes[0,0], numStepsRes[4,0], 1000)
 scale = 400
 yQuad = scale*np.square(xQuad)
 plt.plot(xQuad, yQuad, lw=1.0, color='k', label='Quadratic Trend ($400x^2$)')
@@ -756,8 +783,18 @@ plt.close(fig)
 
 
 # ------------# Plotting results for square domain interconnection#---------------#
+caseName = 'IC_square_IC_SV_t8_0'
 
-subDir = 'S_1C_SV_weak_IC_t8_steps16000'
+outputDir = os.path.join('output', caseName)
+if not os.path.exists(outputDir):
+    print('The output dir {} doesn\'t exist'.format(outputDir))
+    quit()
+
+plotDir = os.path.join(outputDir, 'plots')
+if not os.path.exists(plotDir):
+    os.mkdir(plotDir)
+
+subDir = 'S_1C_SV_weak_nx60_IC_t8_steps16000'
 outputSubDirArray = [os.path.join(outputDir, subDir)]
 # ------------# Plot Hamiltonian and energy residual over time#---------------#
 
@@ -779,7 +816,7 @@ for count, dir in enumerate(outputSubDirArray):
     # Plot EM residual
     emResid = np.sqrt(np.square(dataArray[:, 6] - dataArray[:,5] - dataArray[:,4]))
     plt.plot(dataArray[:, 0], emResid, lw=0.5, color='g', linestyle=lineStyleArray[count],
-             label='em Residual')
+             label='EM Residual')
     #plot check
     totalResid2 = dataArray[:, 6] +dataArray[:, 7] - dataArray[:,5]
     # plt.plot(dataArray[:, 0], totalResid2, lw=0.5, color='c', linestyle=lineStyleArray[count],
@@ -805,6 +842,8 @@ ax.legend()
 plt.savefig(os.path.join(plotDir, 'ICSquareHamiltonian.png'), dpi=500, bbox_inches='tight')
 
 # ------------# Plotting results for 4DOF Interconnection#---------------#
+#TODO include below if i want 4dof results
+quit()
 
 subDir = 'R_SV_weak_IC_t1_5_steps3000_4DOF'
 outputSubDirArray = [os.path.join(outputDir, subDir)]
@@ -828,7 +867,7 @@ for count, dir in enumerate(outputSubDirArray):
     # Plot EM residual
     emResid = np.sqrt(np.square(dataArray[:, 6] - dataArray[:,5] - dataArray[:,4]))
     plt.plot(dataArray[:, 0], emResid, lw=0.5, color='g', linestyle=lineStyleArray[count],
-             label='em Residual')
+             label='EM Residual')
     #plot check
     totalResid2 = dataArray[:, 6] +dataArray[:, 7] - dataArray[:,5]
     # plt.plot(dataArray[:, 0], totalResid2, lw=0.5, color='c', linestyle=lineStyleArray[count],
