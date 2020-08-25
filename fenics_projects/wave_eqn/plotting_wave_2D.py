@@ -215,7 +215,7 @@ plt.plot(numCell_Res[7:14, 2], numCell_Res[7:14, 3], lw=1.5, color='r', linestyl
 xQuad = np.linspace(numCell_Res[0,2], numCell_Res[6,2], 1000)
 scale = 100
 yQuad = scale*np.square(xQuad)
-plt.plot(xQuad, yQuad, lw=1.0, color='k', label='Quadratic Trend ($100x^2$)')
+plt.plot(xQuad, yQuad, lw=1.0, color='k',linestyle='--', label='Quadratic Trend ($100x^2$)')
 
 ax.legend()
 plt.grid()
@@ -233,6 +233,8 @@ strongGradient = (np.log(numCell_Res[6,3]) - np.log(numCell_Res[1,3]))/ \
 
 # -----# Plot the analytic error against characteristic cell length for wave model#-------#
 
+# TODO Change RMS to L2 error, rerun all analytical cases and change all labels
+
 caseName = 'analytical_t1_5_spaceVariation'
 outputDir = os.path.join('output', caseName)
 if not os.path.exists(outputDir):
@@ -248,13 +250,14 @@ caseArray = [['R', 'SV', 'weak', 60, 'analytical', 1.5, 3000],
              ['R', 'SV', 'weak', 100, 'analytical', 1.5, 3000],
              ['R', 'SV', 'weak', 120, 'analytical', 1.5, 3000],
              ['R', 'SV', 'weak', 140, 'analytical', 1.5, 3000],
-             ['R', 'SV', 'weak', 160, 'analytical', 1.5, 3000],
-             ['R', 'SE', 'weak', 60, 'analytical', 1.5, 6000],
-             ['R', 'SE', 'weak', 80, 'analytical', 1.5, 6000],
-             ['R', 'SE', 'weak', 100, 'analytical', 1.5, 6000],
-             ['R', 'SE', 'weak', 120, 'analytical', 1.5, 6000],
-             ['R', 'SE', 'weak', 140, 'analytical', 1.5, 6000],
-             ['R', 'SE', 'weak', 160, 'analytical', 1.5, 6000]]
+             ['R', 'SV', 'weak', 160, 'analytical', 1.5, 3000]]
+#TODO include this back for paper
+#             ['R', 'SE', 'weak', 60, 'analytical', 1.5, 6000],
+#             ['R', 'SE', 'weak', 80, 'analytical', 1.5, 6000],
+#             ['R', 'SE', 'weak', 100, 'analytical', 1.5, 6000],
+#             ['R', 'SE', 'weak', 120, 'analytical', 1.5, 6000],
+#             ['R', 'SE', 'weak', 140, 'analytical', 1.5, 6000],
+#             ['R', 'SE', 'weak', 160, 'analytical', 1.5, 6000]]
 
 outputSubDirArray = []
 for caseVec in caseArray:
@@ -273,22 +276,22 @@ for count, dir in enumerate(outputSubDirArray):
     numCell_Res[count, :] = [numCells, avCellSize, avCellLength,
                              np.max(abs(dataArray[:,8])), np.sqrt(np.max(dataArray[:,9]))]
 
-#Plot L2 error against average cell Length
+#Plot RMS error against average cell Length
 fig, ax = plt.subplots(1, 1)
 # ax.set_xlim(0, 0.04)
 # ax.set_ylim(0, 0.16)
 ax.set_xlabel('Characteristic Cell Length [$m$]')
-ax.set_ylabel('Maximum RMS Error')
+ax.set_ylabel('Max RMS Error')
 plt.plot(numCell_Res[0:6, 2], numCell_Res[0:6, 3], lw=1.5, color='r', linestyle='', marker='x',
-         label='SV weak, dt = {}'.format(caseArray[0][5]/caseArray[0][6]))
-plt.plot(numCell_Res[6:12, 2], numCell_Res[6:12, 3], lw=1.5, color='b', linestyle='', marker='o',
-         label='SE weak, dt = {}'.format(caseArray[6][5]/caseArray[6][6]))
+         label='SV, $\Delta t$ = {}'.format(caseArray[0][5]/caseArray[0][6]))
+#plt.plot(numCell_Res[6:12, 2], numCell_Res[6:12, 3], lw=1.5, color='b', linestyle='', marker='o',
+#         label='SE, $\Delta t$ = {}'.format(caseArray[6][5]/caseArray[6][6]))
 
 #create quadratic line to plot
 xQuad = np.linspace(numCell_Res[0,2], numCell_Res[5,2], 1000)
 scale = 70
 yQuad = scale*np.square(xQuad)
-plt.plot(xQuad, yQuad, lw=1.0, color='k', label='Quadratic Trend ({}$x^2$)'.format(scale))
+plt.plot(xQuad, yQuad, lw=1.0, color='k',linestyle='--', label='Quadratic Trend ({}$x^2$)'.format(scale))
 
 ax.legend()
 plt.grid()
@@ -311,17 +314,19 @@ fig, ax = plt.subplots(1, 1)
 # ax.set_xlim(0, 0.04)
 # ax.set_ylim(0, 0.16)
 ax.set_xlabel('Characteristic Cell Length [$m$]')
-ax.set_ylabel('Maximum integral error')
+# TODO rerun simulations and change above RMS error to L^2 error
+ax.set_ylabel('Max $L^2$ Error')
 plt.plot(numCell_Res[0:6, 2], numCell_Res[0:6, 4], lw=1.5, color='r', linestyle='', marker='x',
-         label='SV weak, dt = {:.1E}'.format(caseArray[0][5]/caseArray[0][6]))
-plt.plot(numCell_Res[6:12, 2], numCell_Res[6:12, 4], lw=1.5, color='b', linestyle='', marker='o',
-         label='SE weak, dt = {:.1E}'.format(caseArray[6][5]/caseArray[6][6]))
+         label='SV, $\Delta t$ = {}'.format(caseArray[0][5]/caseArray[0][6]))
+# TODO include this back for paper
+# plt.plot(numCell_Res[6:12, 2], numCell_Res[6:12, 4], lw=1.5, color='b', linestyle='', marker='o',
+#         label='SE, $\Delta t$ = {:.1E}'.format(caseArray[6][5]/caseArray[6][6]))
 
 #create quadratic line to plot
 xQuad = np.linspace(numCell_Res[0,2], numCell_Res[5,2], 1000)
 scale = 10000
 yQuad = scale*np.square(xQuad)
-plt.plot(xQuad, yQuad, lw=1.0, color='k', label='Quadratic Trend ({}$x^2$)'.format(scale))
+plt.plot(xQuad, yQuad, lw=1.0, color='k', linestyle='--', label='Quadratic Trend ({}$x^2$)'.format(scale))
 
 ax.legend()
 plt.grid()
@@ -341,7 +346,7 @@ strongGradient = (np.log(numCell_Res[5,4]) - np.log(numCell_Res[1,4]))/ \
 
 # ------------# Plot analytical RMS error for 0.3 second run for all time steps#---------------#
 
-timeIntScheme = 'SE'
+timeIntScheme = 'SV'
 tFinal = 1.5
 caseName = 'analytical_{}_t{}_timeVariation'.format(timeIntScheme, tFinal).replace('.','_')
 outputDir = os.path.join('output', caseName)
@@ -363,17 +368,29 @@ if timeIntScheme == 'SE':
                      ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 1600]]
     elif tFinal == 1.5:
         # For 1.5 second simulation
-        caseArray = [['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 750],
-                     ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 1500],
-                     ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 3000],
-                     ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 6000]]
+        caseArray = [['R', timeIntScheme, 'weak', 80, 'analytical', tFinal, 3000, 'noMem'],
+                     ['R', timeIntScheme, 'weak', 80, 'analytical', tFinal, 3500, 'noMem'],
+                     ['R', timeIntScheme, 'weak', 80, 'analytical', tFinal, 4250, 'noMem'],
+                     ['R', timeIntScheme, 'weak', 80, 'analytical', tFinal, 5000, 'noMem'],
+                     ['R', timeIntScheme, 'weak', 80, 'analytical', tFinal, 6000, 'noMem']]
     else:
         print('final time of {} is not a recognised case'.format(tFinal))
 else:
-    caseArray = [['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 200],
-                 ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 400],
-                 ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 800],
-                 ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 1600]]
+    if tFinal ==0.1:
+        caseArray = [['R', timeIntScheme, 'weak', 80, 'analytical', tFinal, 200, 'noMem'],
+                     ['R', timeIntScheme, 'weak', 80, 'analytical', tFinal, 300, 'noMem'],
+                     ['R', timeIntScheme, 'weak', 80, 'analytical', tFinal, 400, 'noMem'],
+                     ['R', timeIntScheme, 'weak', 80, 'analytical', tFinal, 500, 'noMem'],
+                     ['R', timeIntScheme, 'weak', 80, 'analytical', tFinal, 600, 'noMem'],
+                     ['R', timeIntScheme, 'weak', 80, 'analytical', tFinal, 700, 'noMem']]
+    elif tFinal == 1.5:
+        caseArray = [['R', timeIntScheme, 'weak', 80, 'analytical', tFinal, 3000, 'noMem'],
+                     ['R', timeIntScheme, 'weak', 80, 'analytical', tFinal, 4250, 'noMem'],
+                     ['R', timeIntScheme, 'weak', 80, 'analytical', tFinal, 3500, 'noMem'],
+                     ['R', timeIntScheme, 'weak', 80, 'analytical', tFinal, 5000, 'noMem'],
+                     ['R', timeIntScheme, 'weak', 80, 'analytical', tFinal, 6000, 'noMem']]
+    else:
+        print('final time of {} is not a recognised case'.format(tFinal))
 
 colorVec = ['c', 'b', 'g', 'm', 'r', 'k']
 
@@ -396,7 +413,7 @@ for count, dir in enumerate(outputSubDirArray):
     # sqrt the integral^2 error
     numStepsRes[count,2] = np.sqrt(np.max(dataArray[:,9]))
     plt.plot(dataArray[:,0], dataArray[:, 8], lw=1.5, color=colorVec[count], linestyle='-',
-            label='dt = {:.5f}'.format(caseArray[count][5]/caseArray[count][6]))
+            label='$\Delta t$ = {:.5f}'.format(caseArray[count][5]/caseArray[count][6]))
 
 plt.xlabel('Time [s]')
 plt.ylabel('RMS Error')
@@ -407,7 +424,7 @@ plt.xlim(0.0, tFinal)
 #    plt.ylim(0.0, 0.003)
 
 plt.legend()
-plt.savefig(os.path.join(plotDir, 'analyticRMSErrorOverTime{}.png'.format(caseArray[0][1])),
+plt.savefig(os.path.join(plotDir, 'analyticL2ErrorOverTime{}.png'.format(caseArray[0][1])),
             dpi=500, bbox_inches='tight')
 plt.close(fig)
 
@@ -416,7 +433,7 @@ fig, ax = plt.subplots(1, 1)
 for count, dir in enumerate(outputSubDirArray):
     dataArray = np.load(os.path.join(dir, 'H_array.npy'))
     plt.plot(dataArray[:,0], np.sqrt(dataArray[:, 9]), lw=1.5, color=colorVec[count], linestyle='-',
-             label='dt = {:.5f}'.format(caseArray[count][5]/caseArray[count][6]))
+             label='$\Delta t$ = {:.5f}'.format(caseArray[count][5]/caseArray[count][6]))
 
 plt.xlabel('Time [s]')
 plt.ylabel('Integral Error')
@@ -436,7 +453,7 @@ fig, ax = plt.subplots(1, 1)
 for count, dir in enumerate(outputSubDirArray):
     dataArray = np.load(os.path.join(dir, 'H_array.npy'))
     plt.plot(dataArray[:,0], dataArray[:, 10], lw=1.5, color=colorVec[count], linestyle='-',
-             label='p numerical, dt = {:.5f}'.format(caseArray[count][5]/caseArray[count][6]))
+             label='p numerical, $\Delta t$ = {:.5f}'.format(caseArray[count][5]/caseArray[count][6]))
 plt.plot(dataArray[:, 0], dataArray[:, 11], lw=1.5, color='orange', linestyle='--',
          label='p analytic')
 
@@ -458,7 +475,7 @@ fig, ax = plt.subplots(1, 1)
 for count, dir in enumerate(outputSubDirArray):
     dataArray = np.load(os.path.join(dir, 'H_array.npy'))
     plt.plot(dataArray[:,0], dataArray[:, 2], lw=1.5, color=colorVec[count], linestyle='-',
-             label='dt = {:.5f}'.format(caseArray[count][5]/caseArray[count][6]))
+             label='$\Delta t$ = {:.5f}'.format(caseArray[count][5]/caseArray[count][6]))
 
 plt.xlabel('Time [s]')
 plt.ylabel('Energy Residual (J)')
@@ -477,38 +494,43 @@ plt.close(fig)
 
 fig, ax = plt.subplots(1, 1)
 plt.plot(numStepsRes[:, 0], numStepsRes[:, 1], lw=1.5, color='r', linestyle='', marker='x',
-         label='{} weak'.format(timeIntScheme))
+         label='{}'.format(timeIntScheme))
 #create linear line to plot
 xLin = np.linspace(numStepsRes[0,0], numStepsRes[len(caseArray)-1,0], 1000)
 if timeIntScheme == 'SE':
-    scale = 1.5
+    scale = 115
 elif timeIntScheme == 'SV':
     scale = 0.04
 else:
     scale = 40
 yLin = scale*xLin
-plt.plot(xLin, yLin, lw=1.0, color='k', label='Linear Trend ({}$x$)'.format(scale))
+if timeIntScheme == 'SE':
+    plt.plot(xLin, yLin, lw=1.0, color='k', label='Linear Trend ({}$x$)'.format(scale))
 ##create quadratic line to plot
-#xQuad = np.linspace(numStepsRes[0,0], numStepsRes[5,0], 1000)
-#scale = 400
-#yQuad = scale*np.square(xQuad)
-#plt.plot(xQuad, yQuad, lw=1.0, color='k', label='Quadratic Trend ($400x^2$)')
+xQuad = np.linspace(numStepsRes[0,0], numStepsRes[len(caseArray)-1,0], 1000)
+scale = 13000
+yQuad = scale*np.square(xQuad)
+if timeIntScheme == 'SV':
+    plt.plot(xQuad, yQuad, lw=1.0, color='k', linestyle='--', label='Quadratic Trend ({}$x^2$)'.format(scale))
 ##create Cubic line to plot
 #xCubic = np.linspace(numStepsRes[0,0], numStepsRes[5,0], 1000)
 #scale = 4000
 #yCubic = scale*np.power(xQuad, 3)
 #plt.plot(xCubic , yCubic, lw=1.0, color='k', linestyle='--', label='Cubic Trend ($4000x^3$)')
 plt.xlabel('Time Step Size [s]')
-plt.ylabel('Max RMS Error')
+plt.ylabel('Max $L^2$ Error')
 plt.legend()
 plt.grid()
 #plt.show()
-plt.savefig(os.path.join(plotDir, 'analyticRMSErrorVsStepSize{}.png'.format(timeIntScheme)), dpi=500, bbox_inches='tight')
-plt.xlim(1e-5, 1e-2)
-plt.ylim(1e-4, 1e-2)
+plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsStepSize{}.png'.format(timeIntScheme)), dpi=500, bbox_inches='tight')
+plt.xlim(1e-4, 1e-3)
+if timeIntScheme == 'SV':
+    plt.ylim(1e-4, 1e-2)
+else:
+    plt.ylim(1e-2, 1e-1)
 plt.xscale('log')
 plt.yscale('log')
-plt.savefig(os.path.join(plotDir, 'analyticRMSErrorVsStepSize{}LogScale.png'.format(timeIntScheme)), dpi=500, bbox_inches='tight')
+plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsStepSize{}LogScale.png'.format(timeIntScheme)), dpi=500, bbox_inches='tight')
 plt.close(fig)
 
 # ------------# Plot analytical integral error over step size#---------------#
@@ -528,10 +550,10 @@ else:
 yLin = scale*xLin
 plt.plot(xLin, yLin, lw=1.0, color='k', label='Linear Trend ({}$x$)'.format(scale))
 ##create quadratic line to plot
-#xQuad = np.linspace(numStepsRes[0,0], numStepsRes[5,0], 1000)
-#scale = 400
-#yQuad = scale*np.square(xQuad)
-#plt.plot(xQuad, yQuad, lw=1.0, color='k', label='Quadratic Trend ($400x^2$)')
+xQuad = np.linspace(numStepsRes[0,0], numStepsRes[len(caseArray)-1,0], 1000)
+scale = 400
+yQuad = scale*np.square(xQuad)
+plt.plot(xQuad, yQuad, lw=1.0, color='k', linestyle='--', label='Quadratic Trend ($400x^2$)')
 ##create Cubic line to plot
 #xCubic = np.linspace(numStepsRes[0,0], numStepsRes[5,0], 1000)
 #scale = 4000
@@ -544,7 +566,7 @@ plt.grid()
 #plt.show()
 plt.savefig(os.path.join(plotDir, 'analyticIntErrorVsStepSize{}.png'.format(timeIntScheme)), dpi=500, bbox_inches='tight')
 plt.xlim(1e-5, 1e-2)
-plt.ylim(8e-3, 1)
+# plt.ylim(8e-3, 1)
 plt.xscale('log')
 plt.yscale('log')
 plt.savefig(os.path.join(plotDir, 'analyticIntErrorVsStepSize{}LogScale.png'.format(timeIntScheme)), dpi=500, bbox_inches='tight')
@@ -553,7 +575,7 @@ plt.close(fig)
 
 # -----# Plot the analytic error for long times for various schemes, wave model#-------#
 
-caseName = 'analytical_t10_0_schemeVariation'
+caseName = 'analytical_t10_0_schemeVariation_3rdOrder'
 outputDir = os.path.join('output', caseName)
 if not os.path.exists(outputDir):
     print('The output dir {} doesn\'t exist'.format(outputDir))
@@ -564,13 +586,13 @@ if not os.path.exists(plotDir):
     os.mkdir(plotDir)
 
 tFinal = 10.0
-# TODO Run these at nx = 120 or 160
-caseArray = [['R', 'EH', 'weak', 80, 'analytical', 10.0, 20000],
+caseArray = [['R', 'EH', 'weak', 80, 'analytical', 5.0, 40000],
             ['R', 'IE', 'weak', 80, 'analytical', 10.0, 40000],
-            ['R', 'SE', 'weak', 80, 'analytical', 10.0, 40000],
+            #['R', 'SE', 'weak', 80, 'analytical', 20.0, 80000],
+            ['R', 'SM', 'weak', 80, 'analytical', 10.0, 40000],
             ['R', 'SV', 'weak', 80, 'analytical', 10.0, 20000]]
 
-colorVec = ['g', 'b', 'r', 'k']
+colorVec = ['g', 'b', 'k','red']
 lineStyleArray = ['-', '-', '-', '-']
 
 outputSubDirArray = []
@@ -581,7 +603,7 @@ for caseVec in caseArray:
 
     outputSubDirArray.append(os.path.join(outputDir, subDir))
 
-# Make plot for RMS error over long times
+# Make plot for L2 error over long times
 
 fig, ax = plt.subplots(1, 1)
 for count, dir in enumerate(outputSubDirArray):
@@ -590,12 +612,12 @@ for count, dir in enumerate(outputSubDirArray):
              label='{}, $\Delta t$ = {}'.format(caseArray[count][1], caseArray[count][5]/caseArray[count][6]))
 
 plt.xlabel('Time [s]')
-plt.ylabel('RMS Error')
+plt.ylabel('$L^2$ Error')
 plt.xlim(0.0, tFinal)
-plt.ylim(0, 0.06)
+plt.ylim(0, 0.15)
 
 plt.legend()
-plt.savefig(os.path.join(plotDir, 'analyticRMSLongTimeSchemeVariation.png'),
+plt.savefig(os.path.join(plotDir, 'analyticL2LongTimeSchemeVariation.png'),
             dpi=500, bbox_inches='tight')
 plt.close(fig)
 
@@ -608,9 +630,9 @@ for count, dir in enumerate(outputSubDirArray):
              label='{}, $\Delta t$ = {}'.format(caseArray[count][1], caseArray[count][5]/caseArray[count][6]))
 
 plt.xlabel('Time [s]')
-plt.ylabel('Integral Error')
+plt.ylabel('integral Error')
 plt.xlim(0.0, tFinal)
-plt.ylim(0, 4)
+plt.ylim(0, 0.5)
 
 plt.legend()
 plt.savefig(os.path.join(plotDir, 'analyticIntErrorLongTimeSchemeVariation.png'),
@@ -759,17 +781,17 @@ plt.plot(numStepsRes[0:5, 0], numStepsRes[0:5, 1], lw=1.5, color='r', linestyle=
 #yLin = scale*xLin
 #plt.plot(xLin, yLin, lw=1.0, color='k', label='Linear Trend ($800x$)')
 #create quadratic line to plot
-xQuad = np.linspace(numStepsRes[0,0], numStepsRes[4,0], 1000)
+xQuad = np.linspace(numStepsRes[0,0], numStepsRes[len(caseArray)-1,0], 1000)
 scale = 400
 yQuad = scale*np.square(xQuad)
-plt.plot(xQuad, yQuad, lw=1.0, color='k', label='Quadratic Trend ($400x^2$)')
+plt.plot(xQuad, yQuad, lw=1.0, color='k',linestyle='--', label='Quadratic Trend ($400x^2$)')
 #create Cubic line to plot
 #xCubic = np.linspace(numStepsRes[0,0], numStepsRes[5,0], 1000)
 #scale = 4000
 #yCubic = scale*np.power(xQuad, 3)
 #plt.plot(xCubic , yCubic, lw=1.0, color='k', linestyle='--', label='Cubic Trend ($4000x^3$)')
 plt.xlabel('Time Step Size [s]')
-plt.ylabel('Maximum Energy Residual [J]')
+plt.ylabel('Max Energy Residual [J]')
 plt.legend()
 plt.grid()
 #plt.show()

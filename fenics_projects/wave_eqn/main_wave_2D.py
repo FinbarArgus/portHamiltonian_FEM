@@ -6,8 +6,9 @@ import numpy as np
 import time
 import os
 import mshr
-import paperPlotSetup
+# import paperPlotSetup
 from wave_2D import *
+from mpi4py import MPI
 
 if __name__ == '__main__':
 
@@ -15,6 +16,8 @@ if __name__ == '__main__':
     print('starting script and timer')
     tic = time.time()
 
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
     # -------------------------------# Define params #---------------------------------#
 
     # TODO(Finbar) Make sure this still works when these are non-zero
@@ -52,37 +55,40 @@ if __name__ == '__main__':
 #                 ['R', 'SV', 'weak', 160, 'wave', 1.5, 3000, 'noMem']]
 
 #    caseName = 'analytical_t1_5_spaceVariation'.format(timeIntScheme)
-#    caseArray = [['R', 'SV', 'weak', 60, 'analytical', 1.5, 3000],
-#                ['R', 'SV', 'weak', 80, 'analytical', 1.5, 3000],
-#                ['R', 'SV', 'weak', 100, 'analytical', 1.5, 3000],
-#                ['R', 'SV', 'weak', 120, 'analytical', 1.5, 3000],
-#                ['R', 'SV', 'weak', 140, 'analytical', 1.5, 3000],
-#                ['R', 'SV', 'weak', 160, 'analytical', 1.5, 3000],
-#                ['R', 'SE', 'weak', 60, 'analytical', 1.5, 6000],
-#                ['R', 'SE', 'weak', 80, 'analytical', 1.5, 6000],
-#                ['R', 'SE', 'weak', 100, 'analytical', 1.5, 6000],
-#                ['R', 'SE', 'weak', 120, 'analytical', 1.5, 6000],
+    # TODO For this sim we need to change the order of the analytical elements to 1.
+    # Think about including order of elements into the case array
+#    caseArray = [['R', 'SV', 'weak', 60, 'analytical', 1.5, 3000, 'noMem'],
+#                ['R', 'SV', 'weak', 80, 'analytical', 1.5, 3000, 'noMem'],
+#                ['R', 'SV', 'weak', 100, 'analytical', 1.5, 3000, 'noMem'],
+#                ['R', 'SV', 'weak', 120, 'analytical', 1.5, 3000, 'noMem'],
+#                ['R', 'SV', 'weak', 140, 'analytical', 1.5, 3000, 'noMem'],
+#                ['R', 'SV', 'weak', 160, 'analytical', 1.5, 3000, 'noMem'],
+#                ['R', 'SE', 'weak', 60, 'analytical', 1.5, 6000, 'noMem'],
+#                ['R', 'SE', 'weak', 80, 'analytical', 1.5, 6000, 'noMem'],
+#                ['R', 'SE', 'weak', 100, 'analytical', 1.5, 6000, 'noMem'],
+#                ['R', 'SE', 'weak', 120, 'analytical', 1.5, 6000, 'noMem'],
 #                ['R', 'SE', 'weak', 140, 'analytical', 1.5, 6000, 'noMem'],
 #                ['R', 'SE', 'weak', 160, 'analytical', 1.5, 6000, 'noMem']]
 
-#    caseName = 'analytical_t10_0_schemeVariation'
+    caseName = 'analytical_t10_0_schemeVariation_3rdOrder'
 #    caseArray = [['R', 'SV', 'weak', 80, 'analytical', 10.0, 20000, 'noMem'],
-#                ['R', 'SE', 'weak', 80, 'analytical', 10.0, 40000, 'noMem'],
-#                ['R', 'EH', 'weak', 80, 'analytical', 10.0, 20000, 'noMem'],
-#                ['R', 'IE', 'weak', 80, 'analytical', 10.0, 40000, 'noMem']]
+#    caseArray = [['R', 'SE', 'weak', 80, 'analytical', 20.0, 80000, 'noMem']]
+#                ['R', 'IE', 'weak', 80, 'analytical', 10.0, 40000, 'noMem'],
+#    caseArray = [['R', 'EH', 'weak', 80, 'analytical', 5.0, 40000, 'noMem']]
+    caseArray = [['R', 'SM', 'weak', 80, 'analytical', 10.0, 40000, 'noMem']]
 
-#    caseName = 'IC_SV_t4_5_timeVariation'
+    #    caseName = 'IC_SV_t4_5_timeVariation'
 #    caseArray = [['R', 'SV', 'weak', 120, 'IC', 4.5, 3000, 'noMem'],
 #                ['R', 'SV', 'weak', 120, 'IC', 4.5, 4500, 'noMem'],
 #                ['R', 'SV', 'weak', 120, 'IC', 4.5, 6000, 'noMem'],
 #                ['R', 'SV', 'weak', 120, 'IC', 4.5, 7500, 'noMem'],
 #                ['R', 'SV', 'weak', 120, 'IC', 4.5, 9000],
 
-    caseName = 'analytical_SE_t1_5_timeVariation'
-    caseArray = [['R', 'SE', 'weak', 120, 'analytical', 1.5, 750, 'noMem'],
-                ['R', 'SE', 'weak', 120, 'analytical', 1.5, 1500, 'noMem'],
-                ['R', 'SE', 'weak', 120, 'analytical', 1.5, 3000, 'noMem'],
-                ['R', 'SE', 'weak', 120, 'analytical', 1.5, 6000, 'noMem']]
+#    caseName = 'analytical_SE_t1_5_timeVariation'
+#    caseArray = [['R', 'SE', 'weak', 120, 'analytical', 1.5, 750, 'noMem'],
+#                ['R', 'SE', 'weak', 120, 'analytical', 1.5, 1500, 'noMem'],
+#                ['R', 'SE', 'weak', 120, 'analytical', 1.5, 3000, 'noMem'],
+#                ['R', 'SE', 'weak', 120, 'analytical', 1.5, 6000, 'noMem']]
 
 #    caseName = 'analytical_SE_t0_1_timeVariation'
 #    caseArray = [['R', 'SE', 'weak', 120, 'analytical', 0.1, 200, 'noMem'],
@@ -115,8 +121,30 @@ if __name__ == '__main__':
 #                ['R', timeIntScheme, 'weak', 120, 'IC4', 4.5, 7500],
 #                ['R', timeIntScheme, 'weak', 120, 'IC4', 4.5, 9000]]
 
-#    caseName = 'tempSingleRun
-#    caseArray = [['R', 'SV', 'weak', 160, 'analytical', 0.3, 400]]
+#    caseName = 'analytical_SV_t0_1_timeVariation'
+#    caseArray = [['R', 'SV', 'weak', 80, 'analytical', 0.1, 200, 'noMem'],
+#                ['R', 'SV', 'weak', 80, 'analytical', 0.1, 300, 'noMem'],
+#                ['R', 'SV', 'weak', 80, 'analytical', 0.1, 400, 'noMem'],
+#                ['R', 'SV', 'weak', 80, 'analytical', 0.1, 500, 'noMem'],
+#                ['R', 'SV', 'weak', 80, 'analytical', 0.1, 600, 'noMem'],
+#                ['R', 'SV', 'weak', 80, 'analytical', 0.1, 700, 'noMem']]
+
+#    caseName = 'analytical_SV_t1_5_timeVariation'
+#    caseArray = [['R', 'SV', 'weak', 80, 'analytical', 1.5, 3000, 'noMem'],
+#                 ['R', 'SV', 'weak', 80, 'analytical', 1.5, 4250, 'noMem'],
+#                 ['R', 'SV', 'weak', 80, 'analytical', 1.5, 3500, 'noMem'],
+#                 ['R', 'SV', 'weak', 80, 'analytical', 1.5, 5000, 'noMem'],
+#                 ['R', 'SV', 'weak', 80, 'analytical', 1.5, 6000, 'noMem']]
+
+#    caseName = 'analytical_SE_t1_5_timeVariation'
+#    caseArray = [['R', 'SE', 'weak', 80, 'analytical', 1.5, 3000, 'noMem'],
+#                 ['R', 'SE', 'weak', 80, 'analytical', 1.5, 3500, 'noMem'],
+#                 ['R', 'SE', 'weak', 80, 'analytical', 1.5, 4250, 'noMem'],
+#                 ['R', 'SE', 'weak', 80, 'analytical', 1.5, 5000, 'noMem'],
+#                 ['R', 'SE', 'weak', 80, 'analytical', 1.5, 6000, 'noMem']]
+
+#    caseName = 'tempSingleRun'
+#    caseArray = [['R', 'SM', 'weak', 120, 'IC4', 0.5, 500, 'noMem']]
 
     for caseVec in caseArray:
         domainShape = caseVec[0]
@@ -149,7 +177,8 @@ if __name__ == '__main__':
 
         outputSubDir = os.path.join(outputDir, subDir)
         if not os.path.exists(outputSubDir):
-            os.mkdir(outputSubDir)
+            if rank == 0:
+                os.mkdir(outputSubDir)
 
         # approx number of elems in x direction
         nx = caseVec[3]
@@ -186,7 +215,8 @@ if __name__ == '__main__':
         numCells_save[0] = numCells
         np.save(os.path.join(outputSubDir, 'numCells.npy'), numCells_save)
 
-    totalTime = time.time() - tic
-    print('All Simulations finished in {} seconds'.format(totalTime))
+    if rank == 0:
+        totalTime = time.time() - tic
+        print('All Simulations finished in {} seconds'.format(totalTime))
 
 
