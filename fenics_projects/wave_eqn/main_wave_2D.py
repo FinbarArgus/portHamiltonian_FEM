@@ -26,7 +26,7 @@ if __name__ == '__main__':
     # density
     rho = 2.0 # 2.0
 
-#    caseName = 'strong_and_weak_method_variation'
+    caseName = 'strong_and_weak_method_variation'
 #    caseArray = [['R', 'IE', 'weak', 80, 'wave', 1.5, 3000],
 #                ['R', 'IE', 'strong', 80, 'wave', 1.5, 3000],
 #                ['R', 'EE', 'weak', 80, 'wave', 1.5, 3000],
@@ -37,8 +37,10 @@ if __name__ == '__main__':
 #                ['R', 'EH', 'strong', 80, 'wave', 1.5, 3000],
 #                ['R', 'SV', 'weak', 80, 'wave', 1.5, 3000],
 #                ['R', 'SV', 'strong', 80, 'wave', 1.5, 3000]]
+    caseArray = [['R', 'SM', 'weak', 80, 'wave', 1.5, 3000],
+                ['R', 'SM', 'strong', 80, 'wave', 1.5, 3000]]
 
-#    caseName = 'strong_and_weak_spatial_variation'
+    #    caseName = 'strong_and_weak_spatial_variation'
 #    caseArray = [['R', 'SV', 'strong', 20, 'wave', 1.5, 3000],
 #                 ['R', 'SV', 'strong', 40, 'wave', 1.5, 3000],
 #                 ['R', 'SV', 'strong', 60, 'wave', 1.5, 3000],
@@ -68,35 +70,45 @@ if __name__ == '__main__':
 #                ['R', 'SE', 'weak', 100, 'analytical', 1.5, 6000, 'noMem'],
 #                ['R', 'SE', 'weak', 120, 'analytical', 1.5, 6000, 'noMem'],
 #                ['R', 'SE', 'weak', 140, 'analytical', 1.5, 6000, 'noMem'],
-#                ['R', 'SE', 'weak', 160, 'analytical', 1.5, 6000, 'noMem']]
+#                ['R', 'SE', 'weak', 160, 'analytical', 1.5, 6000, 'noMem'],
+#                ['R', 'SM', 'weak', 60, 'analytical', 1.5, 6000, 'noMem'],
+#                ['R', 'SM', 'weak', 80, 'analytical', 1.5, 6000, 'noMem'],
+#                ['R', 'SM', 'weak', 100, 'analytical', 1.5, 6000, 'noMem'],
+#                ['R', 'SM', 'weak', 120, 'analytical', 1.5, 6000, 'noMem'],
+#                ['R', 'SM', 'weak', 140, 'analytical', 1.5, 6000, 'noMem'],
+#                ['R', 'SM', 'weak', 160, 'analytical', 1.5, 6000, 'noMem']]
 
-    caseName = 'analytical_t10_0_schemeVariation_3rdOrder'
+    #    caseName = 'analytical_t10_0_schemeVariation_3rdOrder'
 #    caseArray = [['R', 'SV', 'weak', 80, 'analytical', 10.0, 20000, 'noMem'],
 #    caseArray = [['R', 'SE', 'weak', 80, 'analytical', 20.0, 80000, 'noMem']]
 #                ['R', 'IE', 'weak', 80, 'analytical', 10.0, 40000, 'noMem'],
 #    caseArray = [['R', 'EH', 'weak', 80, 'analytical', 5.0, 40000, 'noMem']]
-    caseArray = [['R', 'SM', 'weak', 80, 'analytical', 10.0, 40000, 'noMem']]
+#    caseArray = [['R', 'SM', 'weak', 80, 'analytical', 10.0, 40000, 'noMem']]
 
-    #    caseName = 'IC_SV_t4_5_timeVariation'
+#    caseName = 'IC_t4_5_timeVariation'
 #    caseArray = [['R', 'SV', 'weak', 120, 'IC', 4.5, 3000, 'noMem'],
 #                ['R', 'SV', 'weak', 120, 'IC', 4.5, 4500, 'noMem'],
 #                ['R', 'SV', 'weak', 120, 'IC', 4.5, 6000, 'noMem'],
 #                ['R', 'SV', 'weak', 120, 'IC', 4.5, 7500, 'noMem'],
 #                ['R', 'SV', 'weak', 120, 'IC', 4.5, 9000],
+#    caseArray = [['R', 'SM', 'weak', 120, 'IC', 0.45, 300, 'noMem'],
+#                ['R', 'SM', 'weak', 120, 'IC', 0.45, 450, 'noMem'],
+#                ['R', 'SM', 'weak', 120, 'IC', 0.45, 600, 'noMem'],
+#                ['R', 'SM', 'weak', 120, 'IC', 0.45, 750, 'noMem'],
+#                ['R', 'SM', 'weak', 120, 'IC', 0.45, 900, 'noMem']]
+#TODO redo above with 4.5 seconds for SM for paper
 
-#    caseName = 'analytical_SE_t1_5_timeVariation'
-#    caseArray = [['R', 'SE', 'weak', 120, 'analytical', 1.5, 750, 'noMem'],
-#                ['R', 'SE', 'weak', 120, 'analytical', 1.5, 1500, 'noMem'],
-#                ['R', 'SE', 'weak', 120, 'analytical', 1.5, 3000, 'noMem'],
-#                ['R', 'SE', 'weak', 120, 'analytical', 1.5, 6000, 'noMem']]
-
-#    caseName = 'analytical_SE_t0_1_timeVariation'
-#    caseArray = [['R', 'SE', 'weak', 120, 'analytical', 0.1, 200, 'noMem'],
-#                ['R', 'SE', 'weak', 120, 'analytical', 0.1, 300, 'noMem'],
-#                ['R', 'SE', 'weak', 120, 'analytical', 0.1, 400, 'noMem'],
-#                ['R', 'SE', 'weak', 120, 'analytical', 0.1, 500, 'noMem'],
-#                ['R', 'SE', 'weak', 120, 'analytical', 0.1, 600, 'noMem'],
-#                ['R', 'SE', 'weak', 120, 'analytical', 0.1, 800, 'noMem']]
+#    caseName = 'analytical_t1_5_timeVariation'
+#    caseArray = [['R', 'SV', 'weak', 80, 'analytical', 1.5, 3000, 'noMem'],
+#                 ['R', 'SV', 'weak', 80, 'analytical', 1.5, 4250, 'noMem'],
+#                 ['R', 'SV', 'weak', 80, 'analytical', 1.5, 3500, 'noMem'],
+#                 ['R', 'SV', 'weak', 80, 'analytical', 1.5, 5000, 'noMem'],
+#                 ['R', 'SV', 'weak', 80, 'analytical', 1.5, 6000, 'noMem'],
+#                 ['R', 'SE', 'weak', 80, 'analytical', 1.5, 3000, 'noMem'],
+#                 ['R', 'SE', 'weak', 80, 'analytical', 1.5, 3500, 'noMem'],
+#                 ['R', 'SE', 'weak', 80, 'analytical', 1.5, 4250, 'noMem'],
+#                 ['R', 'SE', 'weak', 80, 'analytical', 1.5, 5000, 'noMem'],
+#                 ['R', 'SE', 'weak', 80, 'analytical', 1.5, 6000, 'noMem']]
 
 #    caseName = 'IC_SV_t_20_0_singleRun'
 #    caseArray = [['R', 'SV', 'weak', 120, 'IC', 20, 40000]]
@@ -120,28 +132,6 @@ if __name__ == '__main__':
 #                ['R', timeIntScheme, 'weak', 120, 'IC4', 4.5, 6000],
 #                ['R', timeIntScheme, 'weak', 120, 'IC4', 4.5, 7500],
 #                ['R', timeIntScheme, 'weak', 120, 'IC4', 4.5, 9000]]
-
-#    caseName = 'analytical_SV_t0_1_timeVariation'
-#    caseArray = [['R', 'SV', 'weak', 80, 'analytical', 0.1, 200, 'noMem'],
-#                ['R', 'SV', 'weak', 80, 'analytical', 0.1, 300, 'noMem'],
-#                ['R', 'SV', 'weak', 80, 'analytical', 0.1, 400, 'noMem'],
-#                ['R', 'SV', 'weak', 80, 'analytical', 0.1, 500, 'noMem'],
-#                ['R', 'SV', 'weak', 80, 'analytical', 0.1, 600, 'noMem'],
-#                ['R', 'SV', 'weak', 80, 'analytical', 0.1, 700, 'noMem']]
-
-#    caseName = 'analytical_SV_t1_5_timeVariation'
-#    caseArray = [['R', 'SV', 'weak', 80, 'analytical', 1.5, 3000, 'noMem'],
-#                 ['R', 'SV', 'weak', 80, 'analytical', 1.5, 4250, 'noMem'],
-#                 ['R', 'SV', 'weak', 80, 'analytical', 1.5, 3500, 'noMem'],
-#                 ['R', 'SV', 'weak', 80, 'analytical', 1.5, 5000, 'noMem'],
-#                 ['R', 'SV', 'weak', 80, 'analytical', 1.5, 6000, 'noMem']]
-
-#    caseName = 'analytical_SE_t1_5_timeVariation'
-#    caseArray = [['R', 'SE', 'weak', 80, 'analytical', 1.5, 3000, 'noMem'],
-#                 ['R', 'SE', 'weak', 80, 'analytical', 1.5, 3500, 'noMem'],
-#                 ['R', 'SE', 'weak', 80, 'analytical', 1.5, 4250, 'noMem'],
-#                 ['R', 'SE', 'weak', 80, 'analytical', 1.5, 5000, 'noMem'],
-#                 ['R', 'SE', 'weak', 80, 'analytical', 1.5, 6000, 'noMem']]
 
 #    caseName = 'tempSingleRun'
 #    caseArray = [['R', 'SM', 'weak', 120, 'IC4', 0.5, 500, 'noMem']]

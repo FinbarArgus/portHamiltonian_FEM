@@ -22,6 +22,7 @@ def Setup_Plot(case):
     mpl.rcParams['grid.color'] = 'xkcd:light grey'
     mpl.rcParams['legend.edgecolor'] = 'k'
     mpl.rcParams['legend.fancybox'] = False
+    mpl.rcParams['legend.framealpha'] = 1.0
     # calculate figure width and height for number of columns
     assert(case in [1,2,3])
     if case == 1:
