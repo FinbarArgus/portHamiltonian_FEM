@@ -729,8 +729,6 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
 
         plt.show(block=False)
 
-    # -------------------------------# Solve Loop #---------------------------------#
-
     #set initial condition if doing analytical solution
     if analytical:
         p_init = Expression('cSqrtConst*sin(pi*x[0]/(2*xLength) + pi/2)*sin(2*pi*x[1]/yLength + pi/2)',
@@ -757,6 +755,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
     else:
         H_init = 0
 
+    # -------------------------------# Solve Loop #---------------------------------#
 
     surfPlot = False
     #em variables that are zero if not interconnection

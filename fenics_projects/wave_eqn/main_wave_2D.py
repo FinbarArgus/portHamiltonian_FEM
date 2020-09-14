@@ -20,13 +20,12 @@ if __name__ == '__main__':
     rank = comm.Get_rank()
     # -------------------------------# Define params #---------------------------------#
 
-    # TODO(Finbar) Make sure this still works when these are non-zero
     # stiffness
     K_wave = 3.0 # 3.0
     # density
     rho = 2.0 # 2.0
 
-    caseName = 'strong_and_weak_method_variation'
+#    caseName = 'strong_and_weak_method_variation'
 #    caseArray = [['R', 'IE', 'weak', 80, 'wave', 1.5, 3000],
 #                ['R', 'IE', 'strong', 80, 'wave', 1.5, 3000],
 #                ['R', 'EE', 'weak', 80, 'wave', 1.5, 3000],
@@ -37,8 +36,8 @@ if __name__ == '__main__':
 #                ['R', 'EH', 'strong', 80, 'wave', 1.5, 3000],
 #                ['R', 'SV', 'weak', 80, 'wave', 1.5, 3000],
 #                ['R', 'SV', 'strong', 80, 'wave', 1.5, 3000]]
-    caseArray = [['R', 'SM', 'weak', 80, 'wave', 1.5, 3000],
-                ['R', 'SM', 'strong', 80, 'wave', 1.5, 3000]]
+#    caseArray = [['R', 'SM', 'weak', 80, 'wave', 1.5, 3000],
+#                ['R', 'SM', 'strong', 80, 'wave', 1.5, 3000]]
 
     #    caseName = 'strong_and_weak_spatial_variation'
 #    caseArray = [['R', 'SV', 'strong', 20, 'wave', 1.5, 3000],
@@ -85,21 +84,21 @@ if __name__ == '__main__':
 #    caseArray = [['R', 'EH', 'weak', 80, 'analytical', 5.0, 40000, 'noMem']]
 #    caseArray = [['R', 'SM', 'weak', 80, 'analytical', 10.0, 40000, 'noMem']]
 
-#    caseName = 'IC_t4_5_timeVariation'
+    caseName = 'IC_t4_5_timeVariation'
 #    caseArray = [['R', 'SV', 'weak', 120, 'IC', 4.5, 3000, 'noMem'],
 #                ['R', 'SV', 'weak', 120, 'IC', 4.5, 4500, 'noMem'],
 #                ['R', 'SV', 'weak', 120, 'IC', 4.5, 6000, 'noMem'],
 #                ['R', 'SV', 'weak', 120, 'IC', 4.5, 7500, 'noMem'],
 #                ['R', 'SV', 'weak', 120, 'IC', 4.5, 9000],
-#    caseArray = [['R', 'SM', 'weak', 120, 'IC', 0.45, 300, 'noMem'],
-#                ['R', 'SM', 'weak', 120, 'IC', 0.45, 450, 'noMem'],
-#                ['R', 'SM', 'weak', 120, 'IC', 0.45, 600, 'noMem'],
-#                ['R', 'SM', 'weak', 120, 'IC', 0.45, 750, 'noMem'],
-#                ['R', 'SM', 'weak', 120, 'IC', 0.45, 900, 'noMem']]
-#TODO redo above with 4.5 seconds for SM for paper
+    caseArray = [['R', 'SM', 'weak', 120, 'IC', 4.5, 3000, 'noMem'],
+                ['R', 'SM', 'weak', 120, 'IC', 4.5, 4500, 'noMem'],
+                ['R', 'SM', 'weak', 120, 'IC', 4.5, 6000, 'noMem'],
+                ['R', 'SM', 'weak', 120, 'IC', 4.5, 7500, 'noMem'],
+                ['R', 'SM', 'weak', 120, 'IC', 4.5, 9000, 'noMem']]
+#TODO redo plots for the above
 
 #    caseName = 'analytical_t1_5_timeVariation'
-#    caseArray = [['R', 'SV', 'weak', 80, 'analytical', 1.5, 3000, 'noMem'],
+#    caseArray = [['R', 'SV', 'weak', 80, 'analytical', 1.5, 3000],
 #                 ['R', 'SV', 'weak', 80, 'analytical', 1.5, 4250, 'noMem'],
 #                 ['R', 'SV', 'weak', 80, 'analytical', 1.5, 3500, 'noMem'],
 #                 ['R', 'SV', 'weak', 80, 'analytical', 1.5, 5000, 'noMem'],
@@ -121,8 +120,10 @@ if __name__ == '__main__':
 
 # The above are confirmed cases for paper
 # The below are temporary cases
+#    caseName = 'analytical_t1_5_visualisation'
+#    caseArray = [['R', 'SV', 'weak', 80, 'analytical', 1.5, 3000]]
 
-#   timeIntScheme = 'SV'
+    #   timeIntScheme = 'SV'
 
 # The below case may not be needed, only need either IC or IC4
 #    caseName = 'IC4_{}_t4_5_timeVariation'.format(timeIntScheme)
