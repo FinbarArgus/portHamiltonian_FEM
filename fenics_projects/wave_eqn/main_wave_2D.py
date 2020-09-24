@@ -55,15 +55,15 @@ if __name__ == '__main__':
 #                 ['R', 'SV', 'weak', 120, 'wave', 1.5, 3000],
 #                 ['R', 'SV', 'weak', 160, 'wave', 1.5, 3000, 'noMem']]
 
-#    caseName = 'analytical_t1_5_spaceVariation'.format(timeIntScheme)
+    caseName = 'analytical_t1_5_spaceVariation'
     # TODO For this sim we need to change the order of the analytical elements to 1.
     # Think about including order of elements into the case array
-#    caseArray = [['R', 'SV', 'weak', 60, 'analytical', 1.5, 3000, 'noMem'],
-#                ['R', 'SV', 'weak', 80, 'analytical', 1.5, 3000, 'noMem'],
-#                ['R', 'SV', 'weak', 100, 'analytical', 1.5, 3000, 'noMem'],
-#                ['R', 'SV', 'weak', 120, 'analytical', 1.5, 3000, 'noMem'],
-#                ['R', 'SV', 'weak', 140, 'analytical', 1.5, 3000, 'noMem'],
-#                ['R', 'SV', 'weak', 160, 'analytical', 1.5, 3000, 'noMem'],
+    caseArray = [['R', 'SV', 'weak', 60, 'analytical', 1.5, 3000, 'noMem'],
+                ['R', 'SV', 'weak', 80, 'analytical', 1.5, 3000, 'noMem'],
+                ['R', 'SV', 'weak', 100, 'analytical', 1.5, 3000, 'noMem'],
+                ['R', 'SV', 'weak', 120, 'analytical', 1.5, 3000, 'noMem'],
+                ['R', 'SV', 'weak', 140, 'analytical', 1.5, 3000, 'noMem'],
+                ['R', 'SV', 'weak', 160, 'analytical', 1.5, 3000, 'noMem']]
 #                ['R', 'SE', 'weak', 60, 'analytical', 1.5, 6000, 'noMem'],
 #                ['R', 'SE', 'weak', 80, 'analytical', 1.5, 6000, 'noMem'],
 #                ['R', 'SE', 'weak', 100, 'analytical', 1.5, 6000, 'noMem'],
@@ -84,18 +84,17 @@ if __name__ == '__main__':
 #    caseArray = [['R', 'EH', 'weak', 80, 'analytical', 5.0, 40000, 'noMem']]
 #    caseArray = [['R', 'SM', 'weak', 80, 'analytical', 10.0, 40000, 'noMem']]
 
-    caseName = 'IC_t4_5_timeVariation'
+#    caseName = 'IC_t4_5_timeVariation'
 #    caseArray = [['R', 'SV', 'weak', 120, 'IC', 4.5, 3000, 'noMem'],
 #                ['R', 'SV', 'weak', 120, 'IC', 4.5, 4500, 'noMem'],
 #                ['R', 'SV', 'weak', 120, 'IC', 4.5, 6000, 'noMem'],
 #                ['R', 'SV', 'weak', 120, 'IC', 4.5, 7500, 'noMem'],
 #                ['R', 'SV', 'weak', 120, 'IC', 4.5, 9000],
-    caseArray = [['R', 'SM', 'weak', 120, 'IC', 4.5, 3000, 'noMem'],
-                ['R', 'SM', 'weak', 120, 'IC', 4.5, 4500, 'noMem'],
-                ['R', 'SM', 'weak', 120, 'IC', 4.5, 6000, 'noMem'],
-                ['R', 'SM', 'weak', 120, 'IC', 4.5, 7500, 'noMem'],
-                ['R', 'SM', 'weak', 120, 'IC', 4.5, 9000, 'noMem']]
-#TODO redo plots for the above
+#    caseArray = [['R', 'SM', 'weak', 120, 'IC', 4.5, 3000, 'noMem'],
+#                ['R', 'SM', 'weak', 120, 'IC', 4.5, 4500, 'noMem'],
+#                ['R', 'SM', 'weak', 120, 'IC', 4.5, 6000, 'noMem'],
+#                ['R', 'SM', 'weak', 120, 'IC', 4.5, 7500, 'noMem'],
+#                ['R', 'SM', 'weak', 120, 'IC', 4.5, 9000, 'noMem']]
 
 #    caseName = 'analytical_t1_5_timeVariation'
 #    caseArray = [['R', 'SV', 'weak', 80, 'analytical', 1.5, 3000],

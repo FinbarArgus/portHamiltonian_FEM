@@ -267,8 +267,6 @@ strongGradient = (np.log(numCell_Res[6,3]) - np.log(numCell_Res[1,3]))/ \
 
 # -----# Plot the analytic error against characteristic cell length for wave model#-------#
 
-# TODO Change RMS to L2 error, rerun all analytical cases and change all labels
-
 caseName = 'analytical_t1_5_spaceVariation'
 outputDir = os.path.join('output', caseName)
 if not os.path.exists(outputDir):
@@ -285,7 +283,7 @@ caseArray = [['R', 'SV', 'weak', 60, 'analytical', 1.5, 3000],
              ['R', 'SV', 'weak', 120, 'analytical', 1.5, 3000],
              ['R', 'SV', 'weak', 140, 'analytical', 1.5, 3000],
              ['R', 'SV', 'weak', 160, 'analytical', 1.5, 3000]]
-#TODO include this back for paper
+
 #             ['R', 'SE', 'weak', 60, 'analytical', 1.5, 6000],
 #             ['R', 'SE', 'weak', 80, 'analytical', 1.5, 6000],
 #             ['R', 'SE', 'weak', 100, 'analytical', 1.5, 6000],
@@ -301,66 +299,30 @@ for caseVec in caseArray:
 
     outputSubDirArray.append(os.path.join(outputDir, subDir))
 
-numCell_Res = np.zeros((len(caseArray), 5))
+numCell_Res = np.zeros((len(caseArray), 4))
 for count, dir in enumerate(outputSubDirArray):
     dataArray = np.load(os.path.join(dir, 'H_array.npy'))
     numCells = np.load(os.path.join(dir, 'numCells.npy'))[0]
     avCellSize = 0.25/numCells
     avCellLength = np.sqrt(avCellSize)
     numCell_Res[count, :] = [numCells, avCellSize, avCellLength,
-                             np.max(abs(dataArray[:,8])), np.sqrt(np.max(dataArray[:,9]))]
+                             np.max(abs(dataArray[:,8]))]
 
-#Plot RMS error against average cell Length
+#Plot L2 error against average cell Length
 fig, ax = plt.subplots(1, 1)
 # ax.set_xlim(0, 0.04)
 # ax.set_ylim(0, 0.16)
 ax.set_xlabel('Characteristic Element Length [$m$]')
-ax.set_ylabel('Max RMS Error')
+ax.set_ylabel('Max $L^2$ Error Norm')
 plt.plot(numCell_Res[0:6, 2], numCell_Res[0:6, 3], lw=1.5, color='r', linestyle='', marker='x',
          label='SV, $\Delta t$ = {}'.format(caseArray[0][5]/caseArray[0][6]))
-#plt.plot(numCell_Res[6:12, 2], numCell_Res[6:12, 3], lw=1.5, color='b', linestyle='', marker='o',
-#         label='SE, $\Delta t$ = {}'.format(caseArray[6][5]/caseArray[6][6]))
 
-#create quadratic line to plot
-xQuad = np.linspace(numCell_Res[0,2], numCell_Res[5,2], 1000)
-scale = 70
-yQuad = scale*np.square(xQuad)
-plt.plot(xQuad, yQuad, lw=1.0, color='k',linestyle='--', label='Quadratic Trend ({}$x^2$)'.format(scale))
-
-ax.legend()
-plt.grid()
-#plt.show()
-if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'analyticRMSErrorVsAvCellLength.png'), dpi=500, bbox_inches='tight')
-if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'analyticRMSErrorVsAvCellLength.eps'), bbox_inches='tight')
-ax.set_xlim(1e-3, 1e-2)
-ax.set_ylim(1e-4, 1e-2)
-plt.xscale('log')
-plt.yscale('log')
-if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'analyticRMSErrorVsAvCellLengthLogScale.png'), dpi=500, bbox_inches='tight')
-if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'analyticRMSErrorVsAvCellLengthLogScale.eps'), bbox_inches='tight')
-plt.close(fig)
-
-strongGradient = (np.log(numCell_Res[5,3]) - np.log(numCell_Res[1,3]))/ \
-                 (np.log(numCell_Res[5,2]) - np.log(numCell_Res[1,2]))
-
-# print(strongGradient)
-
-#Plot integral error against average cell Length
-fig, ax = plt.subplots(1, 1)
-# ax.set_xlim(0, 0.04)
-# ax.set_ylim(0, 0.16)
-ax.set_xlabel('Characteristic Element Length [$m$]')
-# TODO rerun simulations and change above RMS error to L^2 error
-ax.set_ylabel('Max $L^2$ Error')
-plt.plot(numCell_Res[0:6, 2], numCell_Res[0:6, 4], lw=1.5, color='r', linestyle='', marker='x',
-         label='SV, $\Delta t$ = {}'.format(caseArray[0][5]/caseArray[0][6]))
-# TODO include this back for paper
 # plt.plot(numCell_Res[6:12, 2], numCell_Res[6:12, 4], lw=1.5, color='b', linestyle='', marker='o',
 #         label='SE, $\Delta t$ = {:.1E}'.format(caseArray[6][5]/caseArray[6][6]))
+
+print(numCell_Res[0:6, 2])
+print(numCell_Res[0:6, 3])
+print(np.log10((numCell_Res[0:5, 3] - numCell_Res[1:6, 3]) / (numCell_Res[0:5, 2] - numCell_Res[1:6, 2])))
 
 #create quadratic line to plot
 xQuad = np.linspace(numCell_Res[0,2], numCell_Res[5,2], 1000)
@@ -372,25 +334,25 @@ ax.legend(loc='upper left')
 plt.grid()
 #plt.show()
 if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'analyticIntErrorVsAvCellLength.png'), dpi=500, bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsAvCellLength.png'), dpi=500, bbox_inches='tight')
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'analyticIntErrorVsAvCellLength.eps'), bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsAvCellLength.eps'), bbox_inches='tight')
 ax.set_xlim(1e-3, 1e-2)
 ax.set_ylim(1e-2, 1)
 plt.xscale('log')
 plt.yscale('log')
 if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'analyticIntErrorVsAvCellLengthLogScale.png'), dpi=500, bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsAvCellLengthLogScale.png'), dpi=500, bbox_inches='tight')
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'analyticIntErrorVsAvCellLengthLogScale.eps'), bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsAvCellLengthLogScale.eps'), bbox_inches='tight')
 plt.close(fig)
 
-strongGradient = (np.log(numCell_Res[5,4]) - np.log(numCell_Res[1,4]))/ \
+strongGradient = (np.log(numCell_Res[5,3]) - np.log(numCell_Res[1,3]))/ \
                  (np.log(numCell_Res[5,2]) - np.log(numCell_Res[1,2]))
 
 # print(strongGradient)
 
-# ------------# Plot analytical RMS error for 0.3 second run for all time steps#---------------#
+# ------------# Plot analytical L2 error for 1.5 second run for all time steps#---------------#
 
 timeIntScheme = 'SV'
 tFinal = 1.5
@@ -433,15 +395,14 @@ numStepsRes = np.zeros((len(caseArray),3))
 for count, dir in enumerate(outputSubDirArray):
     dataArray = np.load(os.path.join(dir, 'H_array.npy'))
     numStepsRes[count,0] = caseArray[count][5]/(caseArray[count][6])
-    # RMS error
+    # L2 error
     numStepsRes[count,1] = np.max(dataArray[:,8])
-    # sqrt the integral^2 error
-    numStepsRes[count,2] = np.sqrt(np.max(dataArray[:,9]))
+
     plt.plot(dataArray[:,0], dataArray[:, 8], lw=1.5, color=colorVec[count], linestyle=lineStyleArray[count],
             label='{} $\Delta t$ = {:.5f}'.format(caseArray[count][1], caseArray[count][5]/caseArray[count][6]))
 
 plt.xlabel('Time [s]')
-plt.ylabel('RMS Error')
+plt.ylabel('$L^2$ Error')
 plt.xlim(0.0, tFinal)
 #if timeIntScheme == 'SE':
 #    plt.ylim(0.0, 0.004)
@@ -454,30 +415,6 @@ if plotPNG:
                 dpi=500, bbox_inches='tight')
 if plotEPS:
     plt.savefig(os.path.join(plotDir, 'analyticL2ErrorOverTime.eps'),
-                bbox_inches='tight')
-plt.close(fig)
-
-# plot int error over time
-fig, ax = plt.subplots(1, 1)
-for count, dir in enumerate(outputSubDirArray):
-    dataArray = np.load(os.path.join(dir, 'H_array.npy'))
-    plt.plot(dataArray[:,0], np.sqrt(dataArray[:, 9]), lw=1.5, color=colorVec[count], linestyle=lineStyleArray[count],
-             label='{} $\Delta t$ = {:.5f}'.format(caseArray[count][1], caseArray[count][5]/caseArray[count][6]))
-
-plt.xlabel('Time [s]')
-plt.ylabel('Integral Error')
-plt.xlim(0.0, tFinal)
-#if timeIntScheme == 'SE':
-#    plt.ylim(0.0, 0.01)
-#else:
-#    plt.ylim(0.0, 0.003)
-
-plt.legend()
-if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'analyticIntErrorOverTime.png'),
-                dpi=500, bbox_inches='tight')
-if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'analyticIntErrorOverTime.eps'),
                 bbox_inches='tight')
 plt.close(fig)
 
@@ -556,7 +493,7 @@ plt.plot(xQuad, yQuad, lw=1.0, color='k', linestyle='--', label='Quadratic Trend
 #yCubic = scale*np.power(xQuad, 3)
 #plt.plot(xCubic , yCubic, lw=1.0, color='k', linestyle='--', label='Cubic Trend ($4000x^3$)')
 plt.xlabel('Time Step Size [s]')
-plt.ylabel('Max $L^2$ Error')
+plt.ylabel('Max $L^2$ Error Norm')
 plt.legend()
 plt.grid()
 #plt.show()
@@ -613,7 +550,7 @@ for count, dir in enumerate(outputSubDirArray):
              label='{}, $\Delta t$ = {}'.format(caseArray[count][1], caseArray[count][5]/caseArray[count][6]))
 
 plt.xlabel('Time [s]')
-plt.ylabel('$L^2$ Error')
+plt.ylabel('$L^2$ Error Norm')
 plt.xlim(0.0, tFinal)
 plt.ylim(0, 0.15)
 
@@ -625,29 +562,6 @@ if plotEPS:
     plt.savefig(os.path.join(plotDir, 'analyticL2LongTimeSchemeVariation.eps'),
                 bbox_inches='tight')
 plt.close(fig)
-
-# Make plot for Integral error over long times
-
-fig, ax = plt.subplots(1, 1)
-for count, dir in enumerate(outputSubDirArray):
-    dataArray = np.load(os.path.join(dir, 'H_array.npy'))
-    plt.plot(dataArray[:,0], np.sqrt(dataArray[:, 9]), lw=0.2, color=colorVec[count], linestyle=lineStyleArray[count],
-             label='{}, $\Delta t$ = {}'.format(caseArray[count][1], caseArray[count][5]/caseArray[count][6]))
-
-plt.xlabel('Time [s]')
-plt.ylabel('integral Error')
-plt.xlim(0.0, tFinal)
-plt.ylim(0, 0.5)
-
-plt.legend()
-if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'analyticIntErrorLongTimeSchemeVariation.png'),
-                dpi=500, bbox_inches='tight')
-if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'analyticIntErrorLongTimeSchemeVariation.eps'),
-                bbox_inches='tight')
-plt.close(fig)
-
 
 # ------------# Plotting results for interconnection wave and electromechanical #---------------#
 caseName = 'IC_SV_t_20_0_singleRun'

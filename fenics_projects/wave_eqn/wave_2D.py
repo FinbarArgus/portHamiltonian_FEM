@@ -685,7 +685,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
     H_wave_vec =[]
     if analytical:
         error_vec = []
-        error_vec_int = []
+        error_vec_max = []
         p_point_vec = []
         p_point_exact_vec = []
 
@@ -935,19 +935,18 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
                 p_point = out_p(xPoint, yPoint)
                 p_point_exact = p_e(xPoint, yPoint)
             else:
-                # This is temporary
+                # This is temporary because I haven't yet enabled finding point values in parallel
                 p_point = 0
                 p_point_exact = 0
 
             err_L2 = errornorm(p_exact, out_p, 'L2')
             # err_RMS = err_L2/np.sqrt(len(p_e.vector().get_local()))
             err_max = np.abs(p_e.vector().get_local() - out_p.vector().get_local()).max()
-            err_integral = assemble(((p_e-out_p)*(p_e-out_p))*dx)
+            # err_integral = assemble(((p_e-out_p)*(p_e-out_p))*dx)
 
             if rank == 0:
                 print('analytic L2 error = {}'.format(err_L2))
                 print('analytic max error = {}'.format(err_max))
-                print('analytic integral error = {}'.format(err_integral))
             if saveP:
                 xdmfFile_p_exact.write(p_e, t)
 
@@ -961,7 +960,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         H_wave_vec.append(H_wave)
         if analytical:
             error_vec.append(err_L2)
-            error_vec_int.append(err_integral)
+            error_vec_max.append(err_max)
             p_point_vec.append(p_point)
             p_point_exact_vec.append(p_point_exact)
 
@@ -1009,7 +1008,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
     if analytical:
         #for analytic this is error against analytic solution, for nonanalytic it is equation residual
         H_array[:, 8] = np.array(error_vec)
-        H_array[:, 9] = np.array(error_vec_int)
+        H_array[:, 9] = np.array(error_vec_max)
         H_array[:, 10] = np.array(p_point_vec)
         H_array[:, 11] = np.array(p_point_exact_vec)
 
