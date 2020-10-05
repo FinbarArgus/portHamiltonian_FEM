@@ -7,6 +7,8 @@ import os
 import paperPlotSetup
 
 paperPlotSetup.Setup_Plot(3)
+plotPNG = False
+plotEPS = True
 
 # -------------------------------# Access Data #---------------------------------#
 
@@ -29,10 +31,15 @@ caseArray = [['R', 'IE', 'weak', 80, 'wave', 1.5, 3000],
              ['R', 'EH', 'weak', 80, 'wave', 1.5, 3000],
              ['R', 'EH', 'strong', 80, 'wave', 1.5, 3000],
              ['R', 'SV', 'weak', 80, 'wave', 1.5, 3000],
-             ['R', 'SV', 'strong', 80, 'wave', 1.5, 3000]]
+             ['R', 'SV', 'strong', 80, 'wave', 1.5, 3000],
+             ['R', 'SM', 'weak', 80, 'wave', 1.5, 3000],
+             ['R', 'SM', 'strong', 80, 'wave', 1.5, 3000]]
 
-colorVec= ['b', 'b', 'r', 'r', 'c', 'c', 'g', 'g', 'k', 'k']
-lineStyleArray = ['-', '--', '-', '--', '-', '--', '-', '--', '-', '--',]
+colorVec= ['b', 'b', 'r', 'r', 'c', 'c', 'g', 'g', 'k', 'k', 'orange', 'orange']
+lineStyleArray = ['-', (0, (5, 10)), '-', (0, (5, 10)), '-',
+                  (0, (5, 10)), '-', (0, (5, 10)), '-',
+                  (0, (5, 10)), '-', (0, (5, 10))]
+
 
 outputSubDirArray = []
 for caseVec in caseArray:
@@ -46,14 +53,14 @@ for caseVec in caseArray:
 # ------------# Plot Hamiltonian and energy residual over time#---------------#
 tFinal = caseArray[0][5]
 # Plot the energy residual
-fig, (ax, ax2) = plt.subplots(2, 1, figsize=(10, 12))
+fig, (ax, ax2) = plt.subplots(2, 1, figsize=(17.4/2.54, 23.4/2.54))
 ax.set_xlim(0, tFinal)
 ax.set_ylim(-0.02, 0.03)
 ax2.set_xlabel('Time [s]')
 ax.set_ylabel('Energy Residual [J]')
 ax2.set_ylabel('Energy Residual [J]')
-ax.text(0.2,0.025,'(a)',fontsize=20)
-ax2.text(0.2,0.0004,'(b)',fontsize=20)
+ax.text(0.18,0.025,'(a)',fontsize=20)
+ax2.text(0.18,0.0004,'(b)',fontsize=20)
 for count, dir in enumerate(outputSubDirArray):
     dataArray = np.load(os.path.join(dir, 'H_array.npy'))
     ax.plot(dataArray[:, 0], dataArray[:, 2], lw=0.5, color=colorVec[count], linestyle=lineStyleArray[count],
@@ -61,34 +68,40 @@ for count, dir in enumerate(outputSubDirArray):
     ax2.plot(dataArray[:, 0], dataArray[:, 2], lw=0.5, color=colorVec[count], linestyle=lineStyleArray[count],
             label='{} {}'.format(caseArray[count][1], caseArray[count][2]))
 
-ax.legend(loc=1)
+ax.legend(loc=1, ncol=3)
 #plt.show()
 # set ylimits for zoom
 ax2.set_xlim(0, tFinal)
 ax2.set_ylim(-0.0005, 0.0005)
-plt.savefig(os.path.join(plotDir, 'EnergyRes.png'), dpi=500, bbox_inches='tight')
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'EnergyRes.png'), dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'EnergyRes.eps'))
 plt.close(fig)
 
 # Plot the hamiltonian
-fig, (ax, ax2) = plt.subplots(2, 1, figsize=(10, 12))
+fig, (ax, ax2) = plt.subplots(2, 1, figsize=(17.4/2.54, 23.4/2.54))
 ax.set_xlim(0, tFinal)
 ax.set_ylim(0.0, 2.2)
 ax2.set_xlabel('Time [s]')
 ax.set_ylabel('Hamiltonian [J]')
 ax2.set_ylabel('Hamiltonian [J]')
-ax.text(0.2,2.03,'(a)',fontsize=20)
-ax2.text(0.2,1.91582,'(b)',fontsize=20)
+ax.text(0.18,2.03,'(a)',fontsize=20)
+ax2.text(0.18,1.91582,'(b)',fontsize=20)
 for count, dir in enumerate(outputSubDirArray):
     dataArray = np.load(os.path.join(dir, 'H_array.npy'))
     ax.plot(dataArray[:, 0], dataArray[:, 1], lw=0.5, color=colorVec[count], linestyle=lineStyleArray[count],
              label='{} {}'.format(caseArray[count][1], caseArray[count][2]))
     ax2.plot(dataArray[:, 0], dataArray[:, 1], lw=0.5, color=colorVec[count], linestyle=lineStyleArray[count],
             label='{} {}'.format(caseArray[count][1], caseArray[count][2]))
-ax.legend()
+ax.legend(ncol=3)
 # overwrite limits if we want to zoom
 ax2.set_xlim(0.0, tFinal)
 ax2.set_ylim(1.914, 1.916)
-plt.savefig(os.path.join(plotDir, 'Hamiltonian.png'), dpi=500, bbox_inches='tight')
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'Hamiltonian.png'), dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'Hamiltonian.eps'))
 plt.close(fig)
 
 # ------------# Plotting boundary energy residual for multiple cell numbers #---------------#
@@ -144,7 +157,10 @@ for count, dir in enumerate(outputSubDirArray):
 
 ax.legend(loc='center right')
 #plt.show()
-plt.savefig(os.path.join(plotDir, 'EnergyResDistForNumCells.png'), dpi=500, bbox_inches='tight')
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'EnergyResDistForNumCells.png'), dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'EnergyResDistForNumCells.eps'))
 plt.close(fig)
 
 # -----# Plot the final boundary energy residual against number of cells #-------#
@@ -152,7 +168,7 @@ plt.close(fig)
 fig, ax = plt.subplots(1, 1)
 ax.set_xlim(0, 14000)
 ax.set_ylim(0, 0.16)
-ax.set_xlabel('number of Cells')
+ax.set_xlabel('number of Elements')
 ax.set_ylabel('Energy Residual [J]')
 numCell_Res = np.zeros((len(caseArray), 4))
 for count, dir in enumerate(outputSubDirArray):
@@ -170,19 +186,25 @@ plt.plot(numCell_Res[7:14, 0], numCell_Res[7:14, 3], lw=1.5, color='r', linestyl
 ax.legend()
 plt.grid()
 #plt.show()
-plt.savefig(os.path.join(plotDir, 'EnergyResVsNumCells.png'), dpi=500, bbox_inches='tight')
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'EnergyResVsNumCells.png'), dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'EnergyResVsNumCells.eps'))
 ax.set_xlim(1e2, 1e5)
 ax.set_ylim(1e-5, 1)
 plt.xscale('log')
 plt.yscale('log')
-plt.savefig(os.path.join(plotDir, 'EnergyResVsNumCellsLogScale.png'), dpi=500, bbox_inches='tight')
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'EnergyResVsNumCellsLogScale.png'), dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'EnergyResVsNumCellsLogScale.eps'))
 plt.close(fig)
 
 #Plot against average cell size
 fig, ax = plt.subplots(1, 1)
 ax.set_xlim(0, 0.0014)
 ax.set_ylim(0, 0.16)
-ax.set_xlabel('Average Cell Size [$m^2$]')
+ax.set_xlabel('Average Element Size [$m^2$]')
 ax.set_ylabel('Energy Residual [J]')
 plt.plot(numCell_Res[0:7, 1], numCell_Res[0:7, 3], lw=1.5, color='b', linestyle='', marker='o',
          label='SV strong')
@@ -192,19 +214,25 @@ plt.plot(numCell_Res[7:14, 1], numCell_Res[7:14, 3], lw=1.5, color='r', linestyl
 ax.legend()
 plt.grid()
 #plt.show()
-plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellSize.png'), dpi=500, bbox_inches='tight')
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellSize.png'), dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellSize.eps'))
 ax.set_xlim(1e-5, 1e-2)
 ax.set_ylim(1e-5, 1)
 plt.xscale('log')
 plt.yscale('log')
-plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellSizeLogScale.png'), dpi=500, bbox_inches='tight')
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellSizeLogScale.png'), dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellSizeLogScale.eps'))
 plt.close(fig)
 
 #Plot against average cell Length
 fig, ax = plt.subplots(1, 1)
 ax.set_xlim(0, 0.04)
 ax.set_ylim(0, 0.16)
-ax.set_xlabel('Characteristic Cell Length [$m$]')
+ax.set_xlabel('Characteristic Element Length [$m$]')
 ax.set_ylabel('Energy Residual [J]')
 plt.plot(numCell_Res[0:7, 2], numCell_Res[0:7, 3], lw=1.5, color='b', linestyle='', marker='o',
          label='SV strong')
@@ -215,17 +243,23 @@ plt.plot(numCell_Res[7:14, 2], numCell_Res[7:14, 3], lw=1.5, color='r', linestyl
 xQuad = np.linspace(numCell_Res[0,2], numCell_Res[6,2], 1000)
 scale = 100
 yQuad = scale*np.square(xQuad)
-plt.plot(xQuad, yQuad, lw=1.0, color='k', label='Quadratic Trend ($100x^2$)')
+plt.plot(xQuad, yQuad, lw=1.0, color='k',linestyle='--', label='Quadratic Trend ($100x^2$)')
 
 ax.legend()
 plt.grid()
 #plt.show()
-plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellLength.png'), dpi=500, bbox_inches='tight')
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellLength.png'), dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellLength.eps'))
 ax.set_xlim(1e-3, 1e-1)
 ax.set_ylim(1e-5, 1)
 plt.xscale('log')
 plt.yscale('log')
-plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellLengthLogScale.png'), dpi=500, bbox_inches='tight')
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellLengthLogScale.png'), dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellLengthLogScale.eps'))
 plt.close(fig)
 
 strongGradient = (np.log(numCell_Res[6,3]) - np.log(numCell_Res[1,3]))/ \
@@ -248,13 +282,14 @@ caseArray = [['R', 'SV', 'weak', 60, 'analytical', 1.5, 3000],
              ['R', 'SV', 'weak', 100, 'analytical', 1.5, 3000],
              ['R', 'SV', 'weak', 120, 'analytical', 1.5, 3000],
              ['R', 'SV', 'weak', 140, 'analytical', 1.5, 3000],
-             ['R', 'SV', 'weak', 160, 'analytical', 1.5, 3000],
-             ['R', 'SE', 'weak', 60, 'analytical', 1.5, 6000],
-             ['R', 'SE', 'weak', 80, 'analytical', 1.5, 6000],
-             ['R', 'SE', 'weak', 100, 'analytical', 1.5, 6000],
-             ['R', 'SE', 'weak', 120, 'analytical', 1.5, 6000],
-             ['R', 'SE', 'weak', 140, 'analytical', 1.5, 6000],
-             ['R', 'SE', 'weak', 160, 'analytical', 1.5, 6000]]
+             ['R', 'SV', 'weak', 160, 'analytical', 1.5, 3000]]
+
+#             ['R', 'SE', 'weak', 60, 'analytical', 1.5, 6000],
+#             ['R', 'SE', 'weak', 80, 'analytical', 1.5, 6000],
+#             ['R', 'SE', 'weak', 100, 'analytical', 1.5, 6000],
+#             ['R', 'SE', 'weak', 120, 'analytical', 1.5, 6000],
+#             ['R', 'SE', 'weak', 140, 'analytical', 1.5, 6000],
+#             ['R', 'SE', 'weak', 160, 'analytical', 1.5, 6000]]
 
 outputSubDirArray = []
 for caseVec in caseArray:
@@ -264,41 +299,52 @@ for caseVec in caseArray:
 
     outputSubDirArray.append(os.path.join(outputDir, subDir))
 
-numCell_Res = np.zeros((len(caseArray), 5))
+numCell_Res = np.zeros((len(caseArray), 4))
 for count, dir in enumerate(outputSubDirArray):
     dataArray = np.load(os.path.join(dir, 'H_array.npy'))
     numCells = np.load(os.path.join(dir, 'numCells.npy'))[0]
     avCellSize = 0.25/numCells
     avCellLength = np.sqrt(avCellSize)
     numCell_Res[count, :] = [numCells, avCellSize, avCellLength,
-                             np.max(abs(dataArray[:,8])), np.sqrt(np.max(dataArray[:,9]))]
+                             np.max(abs(dataArray[:,8]))]
 
 #Plot L2 error against average cell Length
 fig, ax = plt.subplots(1, 1)
 # ax.set_xlim(0, 0.04)
 # ax.set_ylim(0, 0.16)
-ax.set_xlabel('Characteristic Cell Length [$m$]')
-ax.set_ylabel('Maximum RMS Error')
+ax.set_xlabel('Characteristic Element Length [$m$]')
+ax.set_ylabel('Max $L^2$ Error Norm')
 plt.plot(numCell_Res[0:6, 2], numCell_Res[0:6, 3], lw=1.5, color='r', linestyle='', marker='x',
-         label='SV weak, dt = {}'.format(caseArray[0][5]/caseArray[0][6]))
-plt.plot(numCell_Res[6:12, 2], numCell_Res[6:12, 3], lw=1.5, color='b', linestyle='', marker='o',
-         label='SE weak, dt = {}'.format(caseArray[6][5]/caseArray[6][6]))
+         label='SV, $\Delta t$ = {}'.format(caseArray[0][5]/caseArray[0][6]))
+
+# plt.plot(numCell_Res[6:12, 2], numCell_Res[6:12, 4], lw=1.5, color='b', linestyle='', marker='o',
+#         label='SE, $\Delta t$ = {:.1E}'.format(caseArray[6][5]/caseArray[6][6]))
+
+print(numCell_Res[0:6, 2])
+print(numCell_Res[0:6, 3])
+print(np.log10((numCell_Res[0:5, 3] - numCell_Res[1:6, 3]) / (numCell_Res[0:5, 2] - numCell_Res[1:6, 2])))
 
 #create quadratic line to plot
 xQuad = np.linspace(numCell_Res[0,2], numCell_Res[5,2], 1000)
-scale = 70
+scale = 10000
 yQuad = scale*np.square(xQuad)
-plt.plot(xQuad, yQuad, lw=1.0, color='k', label='Quadratic Trend ({}$x^2$)'.format(scale))
+plt.plot(xQuad, yQuad, lw=1.0, color='k', linestyle='--', label='Quadratic Trend ({}$x^2$)'.format(scale))
 
-ax.legend()
+ax.legend(loc='upper left')
 plt.grid()
 #plt.show()
-plt.savefig(os.path.join(plotDir, 'analyticRMSErrorVsAvCellLength.png'), dpi=500, bbox_inches='tight')
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsAvCellLength.png'), dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsAvCellLength.eps'))
 ax.set_xlim(1e-3, 1e-2)
-ax.set_ylim(1e-4, 1e-2)
+ax.set_ylim(1e-2, 1)
 plt.xscale('log')
 plt.yscale('log')
-plt.savefig(os.path.join(plotDir, 'analyticRMSErrorVsAvCellLengthLogScale.png'), dpi=500, bbox_inches='tight')
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsAvCellLengthLogScale.png'), dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsAvCellLengthLogScale.eps'))
 plt.close(fig)
 
 strongGradient = (np.log(numCell_Res[5,3]) - np.log(numCell_Res[1,3]))/ \
@@ -306,44 +352,11 @@ strongGradient = (np.log(numCell_Res[5,3]) - np.log(numCell_Res[1,3]))/ \
 
 # print(strongGradient)
 
-#Plot integral error against average cell Length
-fig, ax = plt.subplots(1, 1)
-# ax.set_xlim(0, 0.04)
-# ax.set_ylim(0, 0.16)
-ax.set_xlabel('Characteristic Cell Length [$m$]')
-ax.set_ylabel('Maximum integral error')
-plt.plot(numCell_Res[0:6, 2], numCell_Res[0:6, 4], lw=1.5, color='r', linestyle='', marker='x',
-         label='SV weak, dt = {:.1E}'.format(caseArray[0][5]/caseArray[0][6]))
-plt.plot(numCell_Res[6:12, 2], numCell_Res[6:12, 4], lw=1.5, color='b', linestyle='', marker='o',
-         label='SE weak, dt = {:.1E}'.format(caseArray[6][5]/caseArray[6][6]))
+# ------------# Plot analytical L2 error for 1.5 second run for all time steps#---------------#
 
-#create quadratic line to plot
-xQuad = np.linspace(numCell_Res[0,2], numCell_Res[5,2], 1000)
-scale = 10000
-yQuad = scale*np.square(xQuad)
-plt.plot(xQuad, yQuad, lw=1.0, color='k', label='Quadratic Trend ({}$x^2$)'.format(scale))
-
-ax.legend()
-plt.grid()
-#plt.show()
-plt.savefig(os.path.join(plotDir, 'analyticIntErrorVsAvCellLength.png'), dpi=500, bbox_inches='tight')
-ax.set_xlim(1e-3, 1e-2)
-ax.set_ylim(1e-2, 1)
-plt.xscale('log')
-plt.yscale('log')
-plt.savefig(os.path.join(plotDir, 'analyticIntErrorVsAvCellLengthLogScale.png'), dpi=500, bbox_inches='tight')
-plt.close(fig)
-
-strongGradient = (np.log(numCell_Res[5,4]) - np.log(numCell_Res[1,4]))/ \
-                 (np.log(numCell_Res[5,2]) - np.log(numCell_Res[1,2]))
-
-# print(strongGradient)
-
-# ------------# Plot analytical RMS error for 0.3 second run for all time steps#---------------#
-
-timeIntScheme = 'SE'
+timeIntScheme = 'SV'
 tFinal = 1.5
-caseName = 'analytical_{}_t{}_timeVariation'.format(timeIntScheme, tFinal).replace('.','_')
+caseName = 'analytical_t{}_timeVariation'.format(tFinal).replace('.','_')
 outputDir = os.path.join('output', caseName)
 if not os.path.exists(outputDir):
     print('The output dir {} doesn\'t exist'.format(outputDir))
@@ -352,30 +365,21 @@ if not os.path.exists(outputDir):
 plotDir = os.path.join(outputDir, 'plots')
 if not os.path.exists(plotDir):
     os.mkdir(plotDir)
-if timeIntScheme == 'SE':
-    if tFinal == 0.1:
-        # For 0.1 second simulation
-        caseArray = [['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 50],
-                     ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 100],
-                     ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 200],
-                     ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 400],
-                     ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 800],
-                     ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 1600]]
-    elif tFinal == 1.5:
-        # For 1.5 second simulation
-        caseArray = [['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 750],
-                     ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 1500],
-                     ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 3000],
-                     ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 6000]]
-    else:
-        print('final time of {} is not a recognised case'.format(tFinal))
-else:
-    caseArray = [['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 200],
-                 ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 400],
-                 ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 800],
-                 ['R', timeIntScheme, 'weak', 120, 'analytical', tFinal, 1600]]
 
-colorVec = ['c', 'b', 'g', 'm', 'r', 'k']
+
+caseArray = [['R', 'SE', 'weak', 80, 'analytical', tFinal, 3000, 'noMem'],
+            ['R', 'SE', 'weak', 80, 'analytical', tFinal, 3500, 'noMem'],
+            ['R', 'SE', 'weak', 80, 'analytical', tFinal, 4250, 'noMem'],
+            ['R', 'SE', 'weak', 80, 'analytical', tFinal, 5000, 'noMem'],
+            ['R', 'SE', 'weak', 80, 'analytical', tFinal, 6000, 'noMem'],
+            ['R', 'SV', 'weak', 80, 'analytical', tFinal, 3000, 'noMem'],
+            ['R', 'SV', 'weak', 80, 'analytical', tFinal, 4250, 'noMem'],
+            ['R', 'SV', 'weak', 80, 'analytical', tFinal, 3500, 'noMem'],
+            ['R', 'SV', 'weak', 80, 'analytical', tFinal, 5000, 'noMem'],
+            ['R', 'SV', 'weak', 80, 'analytical', tFinal, 6000, 'noMem']]
+
+colorVec = ['c', 'b', 'g', 'm', 'r', 'k', 'c', 'b', 'g', 'm', 'r', 'k']
+lineStyleArray = ['--', '--', '--', '--', '--', '--', '-', '-', '-', '-', '-', '-']
 
 outputSubDirArray = []
 for caseVec in caseArray:
@@ -391,15 +395,14 @@ numStepsRes = np.zeros((len(caseArray),3))
 for count, dir in enumerate(outputSubDirArray):
     dataArray = np.load(os.path.join(dir, 'H_array.npy'))
     numStepsRes[count,0] = caseArray[count][5]/(caseArray[count][6])
-    # RMS error
+    # L2 error
     numStepsRes[count,1] = np.max(dataArray[:,8])
-    # sqrt the integral^2 error
-    numStepsRes[count,2] = np.sqrt(np.max(dataArray[:,9]))
-    plt.plot(dataArray[:,0], dataArray[:, 8], lw=1.5, color=colorVec[count], linestyle='-',
-            label='dt = {:.5f}'.format(caseArray[count][5]/caseArray[count][6]))
+
+    plt.plot(dataArray[:,0], dataArray[:, 8], lw=1.5, color=colorVec[count], linestyle=lineStyleArray[count],
+            label='{} $\Delta t$ = {:.5f}'.format(caseArray[count][1], caseArray[count][5]/caseArray[count][6]))
 
 plt.xlabel('Time [s]')
-plt.ylabel('RMS Error')
+plt.ylabel('$L^2$ Error')
 plt.xlim(0.0, tFinal)
 #if timeIntScheme == 'SE':
 #    plt.ylim(0.0, 0.004)
@@ -407,36 +410,20 @@ plt.xlim(0.0, tFinal)
 #    plt.ylim(0.0, 0.003)
 
 plt.legend()
-plt.savefig(os.path.join(plotDir, 'analyticRMSErrorOverTime{}.png'.format(caseArray[0][1])),
-            dpi=500, bbox_inches='tight')
-plt.close(fig)
-
-# plot int error over time
-fig, ax = plt.subplots(1, 1)
-for count, dir in enumerate(outputSubDirArray):
-    dataArray = np.load(os.path.join(dir, 'H_array.npy'))
-    plt.plot(dataArray[:,0], np.sqrt(dataArray[:, 9]), lw=1.5, color=colorVec[count], linestyle='-',
-             label='dt = {:.5f}'.format(caseArray[count][5]/caseArray[count][6]))
-
-plt.xlabel('Time [s]')
-plt.ylabel('Integral Error')
-plt.xlim(0.0, tFinal)
-#if timeIntScheme == 'SE':
-#    plt.ylim(0.0, 0.01)
-#else:
-#    plt.ylim(0.0, 0.003)
-
-plt.legend()
-plt.savefig(os.path.join(plotDir, 'analyticIntErrorOverTime{}.png'.format(caseArray[0][1])),
-            dpi=500, bbox_inches='tight')
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorOverTime.png'),
+                dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorOverTime.eps'))
 plt.close(fig)
 
 # plot p and p_exact vs time
 fig, ax = plt.subplots(1, 1)
 for count, dir in enumerate(outputSubDirArray):
     dataArray = np.load(os.path.join(dir, 'H_array.npy'))
-    plt.plot(dataArray[:,0], dataArray[:, 10], lw=1.5, color=colorVec[count], linestyle='-',
-             label='p numerical, dt = {:.5f}'.format(caseArray[count][5]/caseArray[count][6]))
+    plt.plot(dataArray[:,0], dataArray[:, 10], lw=1.5, color=colorVec[count], linestyle=lineStyleArray[count],
+             label='p numerical, {}, $\Delta t$ = {:.5f}'.format(caseArray[count][1],
+                                                                 caseArray[count][5]/caseArray[count][6]))
 plt.plot(dataArray[:, 0], dataArray[:, 11], lw=1.5, color='orange', linestyle='--',
          label='p analytic')
 
@@ -450,15 +437,18 @@ plt.xlim(0.0, tFinal)
 
 plt.legend()
 # plt.show()
-plt.savefig(os.path.join(plotDir, 'analyticPVsTime{}.png'.format(timeIntScheme)), dpi=500, bbox_inches='tight')
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'analyticPVsTime.png'), dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'analyticPVsTime.eps'))
 plt.close(fig)
 
 # plot Energy resiudal vs time for analytical comparison
 fig, ax = plt.subplots(1, 1)
 for count, dir in enumerate(outputSubDirArray):
     dataArray = np.load(os.path.join(dir, 'H_array.npy'))
-    plt.plot(dataArray[:,0], dataArray[:, 2], lw=1.5, color=colorVec[count], linestyle='-',
-             label='dt = {:.5f}'.format(caseArray[count][5]/caseArray[count][6]))
+    plt.plot(dataArray[:,0], dataArray[:, 2], lw=1.5, color=colorVec[count], linestyle=lineStyleArray[count],
+             label='${}, \Delta t$ = {:.5f}'.format(caseArray[count][1], caseArray[count][5]/caseArray[count][6]))
 
 plt.xlabel('Time [s]')
 plt.ylabel('Energy Residual (J)')
@@ -469,91 +459,59 @@ plt.xlim(0.0, tFinal)
 #    plt.ylim(0.0, 0.003)
 
 plt.legend()
-plt.savefig(os.path.join(plotDir, 'analyticEnergyResidualOverTime{}.png'.format(timeIntScheme)),
-            dpi=500, bbox_inches='tight')
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'analyticEnergyResidualOverTime.png'),
+                dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'analyticEnergyResidualOverTime.eps'))
 plt.close(fig)
 
-# ------------# Plot analytical RMS error over step size#---------------#
+# ------------# Plot analytical L^2 error over step size#---------------#
 
 fig, ax = plt.subplots(1, 1)
-plt.plot(numStepsRes[:, 0], numStepsRes[:, 1], lw=1.5, color='r', linestyle='', marker='x',
-         label='{} weak'.format(timeIntScheme))
+plt.plot(numStepsRes[:5, 0], numStepsRes[:5, 1], lw=1.5, color='b', linestyle='', marker='o',
+         label='{}'.format(caseArray[0][1]))
+plt.plot(numStepsRes[5:10, 0], numStepsRes[5:10, 1], lw=1.5, color='r', linestyle='', marker='x',
+         label='{}'.format(caseArray[5][1]))
 #create linear line to plot
 xLin = np.linspace(numStepsRes[0,0], numStepsRes[len(caseArray)-1,0], 1000)
-if timeIntScheme == 'SE':
-    scale = 1.5
-elif timeIntScheme == 'SV':
-    scale = 0.04
-else:
-    scale = 40
+
+scale = 115
+#scale = 40
 yLin = scale*xLin
 plt.plot(xLin, yLin, lw=1.0, color='k', label='Linear Trend ({}$x$)'.format(scale))
 ##create quadratic line to plot
-#xQuad = np.linspace(numStepsRes[0,0], numStepsRes[5,0], 1000)
-#scale = 400
-#yQuad = scale*np.square(xQuad)
-#plt.plot(xQuad, yQuad, lw=1.0, color='k', label='Quadratic Trend ($400x^2$)')
+xQuad = np.linspace(numStepsRes[0,0], numStepsRes[len(caseArray)-1,0], 1000)
+scale = 13000
+yQuad = scale*np.square(xQuad)
+plt.plot(xQuad, yQuad, lw=1.0, color='k', linestyle='--', label='Quadratic Trend ({}$x^2$)'.format(scale))
 ##create Cubic line to plot
 #xCubic = np.linspace(numStepsRes[0,0], numStepsRes[5,0], 1000)
 #scale = 4000
 #yCubic = scale*np.power(xQuad, 3)
 #plt.plot(xCubic , yCubic, lw=1.0, color='k', linestyle='--', label='Cubic Trend ($4000x^3$)')
 plt.xlabel('Time Step Size [s]')
-plt.ylabel('Max RMS Error')
+plt.ylabel('Max $L^2$ Error Norm')
 plt.legend()
 plt.grid()
 #plt.show()
-plt.savefig(os.path.join(plotDir, 'analyticRMSErrorVsStepSize{}.png'.format(timeIntScheme)), dpi=500, bbox_inches='tight')
-plt.xlim(1e-5, 1e-2)
-plt.ylim(1e-4, 1e-2)
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsStepSize.png'), dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsStepSize.eps'))
+plt.xlim(1e-4, 1e-3)
+plt.ylim(1e-4, 1e-1)
 plt.xscale('log')
 plt.yscale('log')
-plt.savefig(os.path.join(plotDir, 'analyticRMSErrorVsStepSize{}LogScale.png'.format(timeIntScheme)), dpi=500, bbox_inches='tight')
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsStepSizeLogScale.png'), dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsStepSizeLogScale.eps'))
 plt.close(fig)
-
-# ------------# Plot analytical integral error over step size#---------------#
-
-fig, ax = plt.subplots(1, 1)
-plt.plot(numStepsRes[:, 0], numStepsRes[:, 2], lw=1.5, color='r', linestyle='', marker='x',
-         label='{} wave vs analytic'.format(timeIntScheme))
-#create linear line to plot
-xLin = np.linspace(numStepsRes[0,0], numStepsRes[len(caseArray)-1,0], 1000)
-if timeIntScheme == 'SE':
-    scale = 150
-elif timeIntScheme == 'SV':
-    scale = 0.04
-else:
-    scale = 4000
-
-yLin = scale*xLin
-plt.plot(xLin, yLin, lw=1.0, color='k', label='Linear Trend ({}$x$)'.format(scale))
-##create quadratic line to plot
-#xQuad = np.linspace(numStepsRes[0,0], numStepsRes[5,0], 1000)
-#scale = 400
-#yQuad = scale*np.square(xQuad)
-#plt.plot(xQuad, yQuad, lw=1.0, color='k', label='Quadratic Trend ($400x^2$)')
-##create Cubic line to plot
-#xCubic = np.linspace(numStepsRes[0,0], numStepsRes[5,0], 1000)
-#scale = 4000
-#yCubic = scale*np.power(xQuad, 3)
-#plt.plot(xCubic , yCubic, lw=1.0, color='k', linestyle='--', label='Cubic Trend ($4000x^3$)')
-plt.xlabel('Time Step Size [s]')
-plt.ylabel('Max Integral Error')
-plt.legend()
-plt.grid()
-#plt.show()
-plt.savefig(os.path.join(plotDir, 'analyticIntErrorVsStepSize{}.png'.format(timeIntScheme)), dpi=500, bbox_inches='tight')
-plt.xlim(1e-5, 1e-2)
-plt.ylim(8e-3, 1)
-plt.xscale('log')
-plt.yscale('log')
-plt.savefig(os.path.join(plotDir, 'analyticIntErrorVsStepSize{}LogScale.png'.format(timeIntScheme)), dpi=500, bbox_inches='tight')
-plt.close(fig)
-
 
 # -----# Plot the analytic error for long times for various schemes, wave model#-------#
 
-caseName = 'analytical_t10_0_schemeVariation'
+caseName = 'analytical_t10_0_schemeVariation_3rdOrder'
 outputDir = os.path.join('output', caseName)
 if not os.path.exists(outputDir):
     print('The output dir {} doesn\'t exist'.format(outputDir))
@@ -564,14 +522,14 @@ if not os.path.exists(plotDir):
     os.mkdir(plotDir)
 
 tFinal = 10.0
-# TODO Run these at nx = 120 or 160
-caseArray = [['R', 'EH', 'weak', 80, 'analytical', 10.0, 20000],
+caseArray = [['R', 'EH', 'weak', 80, 'analytical', 5.0, 40000],
             ['R', 'IE', 'weak', 80, 'analytical', 10.0, 40000],
-            ['R', 'SE', 'weak', 80, 'analytical', 10.0, 40000],
+            #['R', 'SE', 'weak', 80, 'analytical', 10.0, 40000],
+            ['R', 'SM', 'weak', 80, 'analytical', 10.0, 40000],
             ['R', 'SV', 'weak', 80, 'analytical', 10.0, 20000]]
 
-colorVec = ['g', 'b', 'r', 'k']
-lineStyleArray = ['-', '-', '-', '-']
+colorVec = ['g', 'b', 'k', 'r', 'cyan']
+lineStyleArray = ['-', '-', '-', '-', '-']
 
 outputSubDirArray = []
 for caseVec in caseArray:
@@ -581,7 +539,7 @@ for caseVec in caseArray:
 
     outputSubDirArray.append(os.path.join(outputDir, subDir))
 
-# Make plot for RMS error over long times
+# Make plot for L2 error over long times
 
 fig, ax = plt.subplots(1, 1)
 for count, dir in enumerate(outputSubDirArray):
@@ -590,33 +548,17 @@ for count, dir in enumerate(outputSubDirArray):
              label='{}, $\Delta t$ = {}'.format(caseArray[count][1], caseArray[count][5]/caseArray[count][6]))
 
 plt.xlabel('Time [s]')
-plt.ylabel('RMS Error')
+plt.ylabel('$L^2$ Error Norm')
 plt.xlim(0.0, tFinal)
-plt.ylim(0, 0.06)
+plt.ylim(0, 0.15)
 
 plt.legend()
-plt.savefig(os.path.join(plotDir, 'analyticRMSLongTimeSchemeVariation.png'),
-            dpi=500, bbox_inches='tight')
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'analyticL2LongTimeSchemeVariation.png'),
+                dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'analyticL2LongTimeSchemeVariation.eps'))
 plt.close(fig)
-
-# Make plot for Integral error over long times
-
-fig, ax = plt.subplots(1, 1)
-for count, dir in enumerate(outputSubDirArray):
-    dataArray = np.load(os.path.join(dir, 'H_array.npy'))
-    plt.plot(dataArray[:,0], np.sqrt(dataArray[:, 9]), lw=0.2, color=colorVec[count], linestyle=lineStyleArray[count],
-             label='{}, $\Delta t$ = {}'.format(caseArray[count][1], caseArray[count][5]/caseArray[count][6]))
-
-plt.xlabel('Time [s]')
-plt.ylabel('Integral Error')
-plt.xlim(0.0, tFinal)
-plt.ylim(0, 4)
-
-plt.legend()
-plt.savefig(os.path.join(plotDir, 'analyticIntErrorLongTimeSchemeVariation.png'),
-            dpi=500, bbox_inches='tight')
-plt.close(fig)
-
 
 # ------------# Plotting results for interconnection wave and electromechanical #---------------#
 caseName = 'IC_SV_t_20_0_singleRun'
@@ -659,7 +601,10 @@ for count, dir in enumerate(outputSubDirArray):
 
 ax.legend()
 # plt.show()
-plt.savefig(os.path.join(plotDir, 'ICEnergyRes.png'), dpi=500, bbox_inches='tight')
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'ICEnergyRes.png'), dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'ICEnergyRes.eps'))
 plt.close(fig)
 
 # Plot the hamiltonian
@@ -674,15 +619,21 @@ for count, dir in enumerate(outputSubDirArray):
              label='Interconnection SV')
 ax.legend()
 # plt.show()
-plt.savefig(os.path.join(plotDir, 'ICHamiltonian.png'), dpi=500, bbox_inches='tight')
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'ICHamiltonian.png'), dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'ICHamiltonian.eps'))
 # overwrite limits if we want to zoom
 ax.set_xlim(0.25, tFinal)
 ax.set_ylim(0.009, 0.011)
-plt.savefig(os.path.join(plotDir, 'ICHamiltonianZoom.png'), dpi=500, bbox_inches='tight')
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'ICHamiltonianZoom.png'), dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'ICHamiltonianZoom.eps'))
 # overwrite limits if we want to zoom
 ax.set_xlim(0.25, tFinal)
 ax.set_ylim(0.0002, 0.0003)
-# plt.savefig(os.path.join(plotDir, 'IC_HamiltonianZoomZoom.png'), dpi=500, bbox_inches='tight')
+# plt.savefig(os.path.join(plotDir, 'IC_HamiltonianZoomZoom.png'), dpi=500)
 plt.close(fig)
 
 #plot the motor displacement
@@ -698,12 +649,15 @@ for count, dir in enumerate(outputSubDirArray):
 
 ax.legend()
 #plt.show()
-plt.savefig(os.path.join(plotDir, 'ICDisplacement.png'), dpi=500, bbox_inches='tight')
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'ICDisplacement.png'), dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'ICDisplacement.eps'))
 plt.close(fig)
 
 # ------------# Plot max energy residual over step size#---------------#
 
-caseName = 'IC_SV_t4_5_timeVariation'
+caseName = 'IC_t4_5_timeVariation'
 outputDir = os.path.join('output', caseName)
 if not os.path.exists(outputDir):
     print('The output dir {} doesn\'t exist'.format(outputDir))
@@ -717,7 +671,12 @@ caseArray = [['R', 'SV', 'weak', 120, 'IC', 4.5, 3000],
              ['R', 'SV', 'weak', 120, 'IC', 4.5, 4500],
              ['R', 'SV', 'weak', 120, 'IC', 4.5, 6000],
              ['R', 'SV', 'weak', 120, 'IC', 4.5, 7500],
-             ['R', 'SV', 'weak', 120, 'IC', 4.5, 9000]]
+             ['R', 'SV', 'weak', 120, 'IC', 4.5, 9000],
+             ['R', 'SM', 'weak', 120, 'IC', 4.5, 3000],
+             ['R', 'SM', 'weak', 120, 'IC', 4.5, 4500],
+             ['R', 'SM', 'weak', 120, 'IC', 4.5, 6000],
+             ['R', 'SM', 'weak', 120, 'IC', 4.5, 7500],
+             ['R', 'SM', 'weak', 120, 'IC', 4.5, 9000]]
 #             ['R', 'SV', 'weak', 120, 'IC4', 4.5, 1500],
 #             ['R', 'SV', 'weak', 120, 'IC4', 4.5, 3000],
 #             ['R', 'SV', 'weak', 120, 'IC4', 4.5, 4500],
@@ -748,9 +707,9 @@ for count, dir in enumerate(outputSubDirArray):
 
 fig, ax = plt.subplots(1, 1)
 plt.plot(numStepsRes[0:5, 0], numStepsRes[0:5, 1], lw=1.5, color='r', linestyle='', marker='x',
-         label='SV wave-EM 3DOF')
-#plt.plot(numStepsRes[6:12, 0], numStepsRes[6:12, 1], lw=1.5, color='b', linestyle='', marker='o',
-#         label='SV wave-EM 4DOF')
+         label='SV wave-EM')
+plt.plot(numStepsRes[5:10, 0], numStepsRes[5:10, 1], lw=1.5, color='b', linestyle='', marker='o',
+         label='SM wave-EM')
 #plt.plot(numStepsRes[12:18, 0], numStepsRes[12:18, 1], lw=1.5, color='g', linestyle='', marker='o',
 #         label='SE wave-EM 4DOF')
 #create linear line to plot
@@ -759,26 +718,32 @@ plt.plot(numStepsRes[0:5, 0], numStepsRes[0:5, 1], lw=1.5, color='r', linestyle=
 #yLin = scale*xLin
 #plt.plot(xLin, yLin, lw=1.0, color='k', label='Linear Trend ($800x$)')
 #create quadratic line to plot
-xQuad = np.linspace(numStepsRes[0,0], numStepsRes[4,0], 1000)
+xQuad = np.linspace(numStepsRes[0,0], numStepsRes[len(caseArray)-1,0], 1000)
 scale = 400
 yQuad = scale*np.square(xQuad)
-plt.plot(xQuad, yQuad, lw=1.0, color='k', label='Quadratic Trend ($400x^2$)')
+plt.plot(xQuad, yQuad, lw=1.0, color='k',linestyle='--', label='Quadratic Trend ($400x^2$)')
 #create Cubic line to plot
 #xCubic = np.linspace(numStepsRes[0,0], numStepsRes[5,0], 1000)
 #scale = 4000
 #yCubic = scale*np.power(xQuad, 3)
 #plt.plot(xCubic , yCubic, lw=1.0, color='k', linestyle='--', label='Cubic Trend ($4000x^3$)')
 plt.xlabel('Time Step Size [s]')
-plt.ylabel('Maximum Energy Residual [J]')
+plt.ylabel('Max Energy Residual [J]')
 plt.legend()
 plt.grid()
 #plt.show()
-plt.savefig(os.path.join(plotDir, 'ICEnergyResVsNumSteps.png'), dpi=500, bbox_inches='tight')
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'ICEnergyResVsNumSteps.png'), dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'ICEnergyResVsNumSteps.eps'))
 plt.xlim(3e-4, 4e-3)
-# plt.ylim(9e-5, 1e-2)
+plt.ylim(1e-14, 1e-2)
 plt.xscale('log')
 plt.yscale('log')
-plt.savefig(os.path.join(plotDir, 'ICEnergyResVsNumStepsLogScale.png'), dpi=500, bbox_inches='tight')
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'ICEnergyResVsNumStepsLogScale.png'), dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'ICEnergyResVsNumStepsLogScale.eps'))
 plt.close(fig)
 
 
@@ -824,7 +789,10 @@ for count, dir in enumerate(outputSubDirArray):
 
 ax.legend()
 # plt.show()
-plt.savefig(os.path.join(plotDir, 'ICSquareEnergyRes.png'), dpi=500, bbox_inches='tight')
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'ICSquareEnergyRes.png'), dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'ICSquareEnergyRes.eps'))
 plt.close(fig)
 
 # Plot the hamiltonian
@@ -839,7 +807,10 @@ for count, dir in enumerate(outputSubDirArray):
              label='Interconnection SV')
 ax.legend()
 # plt.show()
-plt.savefig(os.path.join(plotDir, 'ICSquareHamiltonian.png'), dpi=500, bbox_inches='tight')
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'ICSquareHamiltonian.png'), dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'ICSquareHamiltonian.eps'))
 
 # ------------# Plotting results for 4DOF Interconnection#---------------#
 #TODO include below if i want 4dof results
@@ -875,7 +846,10 @@ for count, dir in enumerate(outputSubDirArray):
 
 ax.legend()
 # plt.show()
-plt.savefig(os.path.join(plotDir, 'IC4DOFEnergyRes.png'), dpi=500, bbox_inches='tight')
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'IC4DOFEnergyRes.png'), dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'IC4DOFEnergyRes.eps'))
 plt.close(fig)
 
 # Plot the hamiltonian
@@ -890,15 +864,21 @@ for count, dir in enumerate(outputSubDirArray):
              label='Interconnection SV')
 ax.legend()
 # plt.show()
-plt.savefig(os.path.join(plotDir, 'IC4DOFHamiltonian.png'), dpi=500, bbox_inches='tight')
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'IC4DOFHamiltonian.png'), dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'IC4DOFHamiltonian.eps'))
 # overwrite limits if we want to zoom
 ax.set_xlim(0.25, tFinal)
 ax.set_ylim(0.009, 0.011)
-plt.savefig(os.path.join(plotDir, 'IC4DOFHamiltonianZoom.png'), dpi=500, bbox_inches='tight')
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'IC4DOFHamiltonianZoom.png'), dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'IC4DOFHamiltonianZoom.eps'))
 # overwrite limits if we want to zoom
 ax.set_xlim(0.25, tFinal)
 ax.set_ylim(0.0002, 0.0003)
-# plt.savefig(os.path.join(plotDir, 'IC_HamiltonianZoomZoom.png'), dpi=500, bbox_inches='tight')
+# plt.savefig(os.path.join(plotDir, 'IC_HamiltonianZoomZoom.png'), dpi=500)
 plt.close(fig)
 
 #plot the motor displacement
@@ -914,7 +894,10 @@ for count, dir in enumerate(outputSubDirArray):
 
 ax.legend()
 #plt.show()
-plt.savefig(os.path.join(plotDir, 'IC4DOFDisplacement.png'), dpi=500, bbox_inches='tight')
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'IC4DOFDisplacement.eps'), dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'IC4DOFDisplacement.png'))
 plt.close(fig)
 
 

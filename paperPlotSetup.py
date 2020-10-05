@@ -22,6 +22,7 @@ def Setup_Plot(case):
     mpl.rcParams['grid.color'] = 'xkcd:light grey'
     mpl.rcParams['legend.edgecolor'] = 'k'
     mpl.rcParams['legend.fancybox'] = False
+    mpl.rcParams['legend.framealpha'] = 1.0
     # calculate figure width and height for number of columns
     assert(case in [1,2,3])
     if case == 1:
@@ -41,7 +42,7 @@ def Setup_Plot(case):
         mpl.rcParams['legend.fontsize'] = 20
         mpl.rcParams['lines.linewidth'] = 1.8
     elif(case ==3):
-        fig_width = 10
+        fig_width = 17.4/2.54 #17.54 cm to inches
         mpl.rcParams['font.size'] = 14
         mpl.rcParams['xtick.labelsize'] = 12
         mpl.rcParams['ytick.labelsize'] = 12
