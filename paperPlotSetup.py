@@ -42,12 +42,12 @@ def Setup_Plot(case):
         mpl.rcParams['legend.fontsize'] = 20
         mpl.rcParams['lines.linewidth'] = 1.8
     elif(case ==3):
-        fig_width = 10
-        mpl.rcParams['font.size'] = 16
-        mpl.rcParams['xtick.labelsize'] = 14
-        mpl.rcParams['ytick.labelsize'] = 14
-        mpl.rcParams['axes.labelsize'] = 16
-        mpl.rcParams['legend.fontsize'] = 14
+        fig_width = 17.4/2.54 #17.54 cm to inches
+        mpl.rcParams['font.size'] = 14
+        mpl.rcParams['xtick.labelsize'] = 12
+        mpl.rcParams['ytick.labelsize'] = 12
+        mpl.rcParams['axes.labelsize'] = 14
+        mpl.rcParams['legend.fontsize'] = 12
         mpl.rcParams['lines.linewidth'] = 0.5
 
 

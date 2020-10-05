@@ -53,14 +53,14 @@ for caseVec in caseArray:
 # ------------# Plot Hamiltonian and energy residual over time#---------------#
 tFinal = caseArray[0][5]
 # Plot the energy residual
-fig, (ax, ax2) = plt.subplots(2, 1, figsize=(10, 12))
+fig, (ax, ax2) = plt.subplots(2, 1, figsize=(17.4/2.54, 23.4/2.54))
 ax.set_xlim(0, tFinal)
 ax.set_ylim(-0.02, 0.03)
 ax2.set_xlabel('Time [s]')
 ax.set_ylabel('Energy Residual [J]')
 ax2.set_ylabel('Energy Residual [J]')
-ax.text(0.2,0.025,'(a)',fontsize=20)
-ax2.text(0.2,0.0004,'(b)',fontsize=20)
+ax.text(0.18,0.025,'(a)',fontsize=20)
+ax2.text(0.18,0.0004,'(b)',fontsize=20)
 for count, dir in enumerate(outputSubDirArray):
     dataArray = np.load(os.path.join(dir, 'H_array.npy'))
     ax.plot(dataArray[:, 0], dataArray[:, 2], lw=0.5, color=colorVec[count], linestyle=lineStyleArray[count],
@@ -74,20 +74,20 @@ ax.legend(loc=1, ncol=3)
 ax2.set_xlim(0, tFinal)
 ax2.set_ylim(-0.0005, 0.0005)
 if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'EnergyRes.png'), dpi=500, bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'EnergyRes.png'), dpi=500)
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'EnergyRes.eps'), bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'EnergyRes.eps'))
 plt.close(fig)
 
 # Plot the hamiltonian
-fig, (ax, ax2) = plt.subplots(2, 1, figsize=(10, 12))
+fig, (ax, ax2) = plt.subplots(2, 1, figsize=(17.4/2.54, 23.4/2.54))
 ax.set_xlim(0, tFinal)
 ax.set_ylim(0.0, 2.2)
 ax2.set_xlabel('Time [s]')
 ax.set_ylabel('Hamiltonian [J]')
 ax2.set_ylabel('Hamiltonian [J]')
-ax.text(0.2,2.03,'(a)',fontsize=20)
-ax2.text(0.2,1.91582,'(b)',fontsize=20)
+ax.text(0.18,2.03,'(a)',fontsize=20)
+ax2.text(0.18,1.91582,'(b)',fontsize=20)
 for count, dir in enumerate(outputSubDirArray):
     dataArray = np.load(os.path.join(dir, 'H_array.npy'))
     ax.plot(dataArray[:, 0], dataArray[:, 1], lw=0.5, color=colorVec[count], linestyle=lineStyleArray[count],
@@ -99,9 +99,9 @@ ax.legend(ncol=3)
 ax2.set_xlim(0.0, tFinal)
 ax2.set_ylim(1.914, 1.916)
 if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'Hamiltonian.png'), dpi=500, bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'Hamiltonian.png'), dpi=500)
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'Hamiltonian.eps'), bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'Hamiltonian.eps'))
 plt.close(fig)
 
 # ------------# Plotting boundary energy residual for multiple cell numbers #---------------#
@@ -158,9 +158,9 @@ for count, dir in enumerate(outputSubDirArray):
 ax.legend(loc='center right')
 #plt.show()
 if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'EnergyResDistForNumCells.png'), dpi=500, bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'EnergyResDistForNumCells.png'), dpi=500)
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'EnergyResDistForNumCells.eps'), bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'EnergyResDistForNumCells.eps'))
 plt.close(fig)
 
 # -----# Plot the final boundary energy residual against number of cells #-------#
@@ -187,17 +187,17 @@ ax.legend()
 plt.grid()
 #plt.show()
 if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'EnergyResVsNumCells.png'), dpi=500, bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'EnergyResVsNumCells.png'), dpi=500)
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'EnergyResVsNumCells.eps'), bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'EnergyResVsNumCells.eps'))
 ax.set_xlim(1e2, 1e5)
 ax.set_ylim(1e-5, 1)
 plt.xscale('log')
 plt.yscale('log')
 if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'EnergyResVsNumCellsLogScale.png'), dpi=500, bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'EnergyResVsNumCellsLogScale.png'), dpi=500)
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'EnergyResVsNumCellsLogScale.eps'), bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'EnergyResVsNumCellsLogScale.eps'))
 plt.close(fig)
 
 #Plot against average cell size
@@ -215,17 +215,17 @@ ax.legend()
 plt.grid()
 #plt.show()
 if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellSize.png'), dpi=500, bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellSize.png'), dpi=500)
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellSize.eps'), bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellSize.eps'))
 ax.set_xlim(1e-5, 1e-2)
 ax.set_ylim(1e-5, 1)
 plt.xscale('log')
 plt.yscale('log')
 if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellSizeLogScale.png'), dpi=500, bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellSizeLogScale.png'), dpi=500)
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellSizeLogScale.eps'), bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellSizeLogScale.eps'))
 plt.close(fig)
 
 #Plot against average cell Length
@@ -249,17 +249,17 @@ ax.legend()
 plt.grid()
 #plt.show()
 if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellLength.png'), dpi=500, bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellLength.png'), dpi=500)
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellLength.eps'), bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellLength.eps'))
 ax.set_xlim(1e-3, 1e-1)
 ax.set_ylim(1e-5, 1)
 plt.xscale('log')
 plt.yscale('log')
 if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellLengthLogScale.png'), dpi=500, bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellLengthLogScale.png'), dpi=500)
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellLengthLogScale.eps'), bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'EnergyResVsAvCellLengthLogScale.eps'))
 plt.close(fig)
 
 strongGradient = (np.log(numCell_Res[6,3]) - np.log(numCell_Res[1,3]))/ \
@@ -334,17 +334,17 @@ ax.legend(loc='upper left')
 plt.grid()
 #plt.show()
 if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsAvCellLength.png'), dpi=500, bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsAvCellLength.png'), dpi=500)
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsAvCellLength.eps'), bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsAvCellLength.eps'))
 ax.set_xlim(1e-3, 1e-2)
 ax.set_ylim(1e-2, 1)
 plt.xscale('log')
 plt.yscale('log')
 if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsAvCellLengthLogScale.png'), dpi=500, bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsAvCellLengthLogScale.png'), dpi=500)
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsAvCellLengthLogScale.eps'), bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsAvCellLengthLogScale.eps'))
 plt.close(fig)
 
 strongGradient = (np.log(numCell_Res[5,3]) - np.log(numCell_Res[1,3]))/ \
@@ -412,10 +412,9 @@ plt.xlim(0.0, tFinal)
 plt.legend()
 if plotPNG:
     plt.savefig(os.path.join(plotDir, 'analyticL2ErrorOverTime.png'),
-                dpi=500, bbox_inches='tight')
+                dpi=500)
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorOverTime.eps'),
-                bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorOverTime.eps'))
 plt.close(fig)
 
 # plot p and p_exact vs time
@@ -439,9 +438,9 @@ plt.xlim(0.0, tFinal)
 plt.legend()
 # plt.show()
 if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'analyticPVsTime.png'), dpi=500, bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'analyticPVsTime.png'), dpi=500)
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'analyticPVsTime.eps'), bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'analyticPVsTime.eps'))
 plt.close(fig)
 
 # plot Energy resiudal vs time for analytical comparison
@@ -462,10 +461,9 @@ plt.xlim(0.0, tFinal)
 plt.legend()
 if plotPNG:
     plt.savefig(os.path.join(plotDir, 'analyticEnergyResidualOverTime.png'),
-                dpi=500, bbox_inches='tight')
+                dpi=500)
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'analyticEnergyResidualOverTime.eps'),
-                bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'analyticEnergyResidualOverTime.eps'))
 plt.close(fig)
 
 # ------------# Plot analytical L^2 error over step size#---------------#
@@ -498,17 +496,17 @@ plt.legend()
 plt.grid()
 #plt.show()
 if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsStepSize.png'), dpi=500, bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsStepSize.png'), dpi=500)
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsStepSize.eps'), bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsStepSize.eps'))
 plt.xlim(1e-4, 1e-3)
 plt.ylim(1e-4, 1e-1)
 plt.xscale('log')
 plt.yscale('log')
 if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsStepSizeLogScale.png'), dpi=500, bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsStepSizeLogScale.png'), dpi=500)
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsStepSizeLogScale.eps'), bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsStepSizeLogScale.eps'))
 plt.close(fig)
 
 # -----# Plot the analytic error for long times for various schemes, wave model#-------#
@@ -557,10 +555,9 @@ plt.ylim(0, 0.15)
 plt.legend()
 if plotPNG:
     plt.savefig(os.path.join(plotDir, 'analyticL2LongTimeSchemeVariation.png'),
-                dpi=500, bbox_inches='tight')
+                dpi=500)
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'analyticL2LongTimeSchemeVariation.eps'),
-                bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'analyticL2LongTimeSchemeVariation.eps'))
 plt.close(fig)
 
 # ------------# Plotting results for interconnection wave and electromechanical #---------------#
@@ -605,9 +602,9 @@ for count, dir in enumerate(outputSubDirArray):
 ax.legend()
 # plt.show()
 if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'ICEnergyRes.png'), dpi=500, bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'ICEnergyRes.png'), dpi=500)
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'ICEnergyRes.eps'), bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'ICEnergyRes.eps'))
 plt.close(fig)
 
 # Plot the hamiltonian
@@ -623,20 +620,20 @@ for count, dir in enumerate(outputSubDirArray):
 ax.legend()
 # plt.show()
 if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'ICHamiltonian.png'), dpi=500, bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'ICHamiltonian.png'), dpi=500)
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'ICHamiltonian.eps'), bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'ICHamiltonian.eps'))
 # overwrite limits if we want to zoom
 ax.set_xlim(0.25, tFinal)
 ax.set_ylim(0.009, 0.011)
 if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'ICHamiltonianZoom.png'), dpi=500, bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'ICHamiltonianZoom.png'), dpi=500)
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'ICHamiltonianZoom.eps'), bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'ICHamiltonianZoom.eps'))
 # overwrite limits if we want to zoom
 ax.set_xlim(0.25, tFinal)
 ax.set_ylim(0.0002, 0.0003)
-# plt.savefig(os.path.join(plotDir, 'IC_HamiltonianZoomZoom.png'), dpi=500, bbox_inches='tight')
+# plt.savefig(os.path.join(plotDir, 'IC_HamiltonianZoomZoom.png'), dpi=500)
 plt.close(fig)
 
 #plot the motor displacement
@@ -653,9 +650,9 @@ for count, dir in enumerate(outputSubDirArray):
 ax.legend()
 #plt.show()
 if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'ICDisplacement.png'), dpi=500, bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'ICDisplacement.png'), dpi=500)
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'ICDisplacement.eps'), bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'ICDisplacement.eps'))
 plt.close(fig)
 
 # ------------# Plot max energy residual over step size#---------------#
@@ -736,17 +733,17 @@ plt.legend()
 plt.grid()
 #plt.show()
 if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'ICEnergyResVsNumSteps.png'), dpi=500, bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'ICEnergyResVsNumSteps.png'), dpi=500)
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'ICEnergyResVsNumSteps.eps'), bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'ICEnergyResVsNumSteps.eps'))
 plt.xlim(3e-4, 4e-3)
 plt.ylim(1e-14, 1e-2)
 plt.xscale('log')
 plt.yscale('log')
 if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'ICEnergyResVsNumStepsLogScale.png'), dpi=500, bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'ICEnergyResVsNumStepsLogScale.png'), dpi=500)
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'ICEnergyResVsNumStepsLogScale.eps'), bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'ICEnergyResVsNumStepsLogScale.eps'))
 plt.close(fig)
 
 
@@ -793,9 +790,9 @@ for count, dir in enumerate(outputSubDirArray):
 ax.legend()
 # plt.show()
 if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'ICSquareEnergyRes.png'), dpi=500, bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'ICSquareEnergyRes.png'), dpi=500)
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'ICSquareEnergyRes.eps'), bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'ICSquareEnergyRes.eps'))
 plt.close(fig)
 
 # Plot the hamiltonian
@@ -811,9 +808,9 @@ for count, dir in enumerate(outputSubDirArray):
 ax.legend()
 # plt.show()
 if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'ICSquareHamiltonian.png'), dpi=500, bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'ICSquareHamiltonian.png'), dpi=500)
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'ICSquareHamiltonian.eps'), bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'ICSquareHamiltonian.eps'))
 
 # ------------# Plotting results for 4DOF Interconnection#---------------#
 #TODO include below if i want 4dof results
@@ -850,9 +847,9 @@ for count, dir in enumerate(outputSubDirArray):
 ax.legend()
 # plt.show()
 if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'IC4DOFEnergyRes.png'), dpi=500, bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'IC4DOFEnergyRes.png'), dpi=500)
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'IC4DOFEnergyRes.eps'), bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'IC4DOFEnergyRes.eps'))
 plt.close(fig)
 
 # Plot the hamiltonian
@@ -868,20 +865,20 @@ for count, dir in enumerate(outputSubDirArray):
 ax.legend()
 # plt.show()
 if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'IC4DOFHamiltonian.png'), dpi=500, bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'IC4DOFHamiltonian.png'), dpi=500)
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'IC4DOFHamiltonian.eps'), bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'IC4DOFHamiltonian.eps'))
 # overwrite limits if we want to zoom
 ax.set_xlim(0.25, tFinal)
 ax.set_ylim(0.009, 0.011)
 if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'IC4DOFHamiltonianZoom.png'), dpi=500, bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'IC4DOFHamiltonianZoom.png'), dpi=500)
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'IC4DOFHamiltonianZoom.eps'), bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'IC4DOFHamiltonianZoom.eps'))
 # overwrite limits if we want to zoom
 ax.set_xlim(0.25, tFinal)
 ax.set_ylim(0.0002, 0.0003)
-# plt.savefig(os.path.join(plotDir, 'IC_HamiltonianZoomZoom.png'), dpi=500, bbox_inches='tight')
+# plt.savefig(os.path.join(plotDir, 'IC_HamiltonianZoomZoom.png'), dpi=500)
 plt.close(fig)
 
 #plot the motor displacement
@@ -898,9 +895,9 @@ for count, dir in enumerate(outputSubDirArray):
 ax.legend()
 #plt.show()
 if plotPNG:
-    plt.savefig(os.path.join(plotDir, 'IC4DOFDisplacement.eps'), dpi=500, bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'IC4DOFDisplacement.eps'), dpi=500)
 if plotEPS:
-    plt.savefig(os.path.join(plotDir, 'IC4DOFDisplacement.png'), bbox_inches='tight')
+    plt.savefig(os.path.join(plotDir, 'IC4DOFDisplacement.png'))
 plt.close(fig)
 
 
