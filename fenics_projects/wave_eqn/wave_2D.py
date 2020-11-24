@@ -8,11 +8,32 @@ import os
 import mshr
 from mpi4py import MPI
 
+class Control_input(UserExpression):
+    def __init__(self, t, h_1, input_stop_t, control_start_t, **kwargs):
+        super().__init__(kwargs)
+        self.t = t
+        self.h_1 = h_1
+        self.input_stop_t = input_stop_t
+        self.control_start_t = control_start_t
+        self.eps = 0.001
+
+    def eval_cell(self, value, x, ufc_cell):
+        if self.t < self.input_stop_t:
+            value[0] = 10*sin(8*pi*self.t)
+        elif self.t < self.control_start_t:
+            value[0] = 0.0
+        else:
+            value[0] = -100.0*self.h_1
+
+    def value_shape(self):
+        return ()
+
 def wave_2D_solve(tFinal, numSteps, outputDir,
                   nx, xLength, yLength,
                   domainShape='R', timeIntScheme='SV', dirichletImp='weak',
                   K_wave=1, rho=1, BOUNDARYPLOT=False, interConnection=None,
-                  analytical=False, saveP=True):
+                  analytical=False, saveP=True, controlType=None,
+                  input_stop_t=None, control_start_t=None):
 
     """ function for solving the 2D wave equation in fenics
 
@@ -342,7 +363,15 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             quit()
 
         if domainShape == 'R':
-            uInput = Expression('(t<0.25) ? 10*sin(8*pi*t) : 0.0', degree=2, t=0)
+            if controlType == None:
+                uInput = Expression('(t<0.25) ? 10*sin(8*pi*t) : 0.0', degree=2, t=0)
+            elif controlType == 'passivity':
+                # cpp_code = '''
+                #     (t<input_stop_t) ? 10*sin(8*pi*t) : (t<control_start_t) ? 0.0 : (h_1>1) ? -10.0 : 10.0
+                # '''
+                uInput = Control_input(t=0.0, h_1=0.0,
+                                    input_stop_t=input_stop_t, control_start_t=control_start_t)
+
         elif domainShape == 'S_1C':
             uInput = Expression('(t<0.25) ? 10*sin(8*pi*t) : 0.0', degree=2, t=0)
 
@@ -787,6 +816,10 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             pLeftBoundary.t = t
         else:
             uInput.t = t
+            if controlType == 'passivity':
+                if t >= control_start_t:
+                    # we can get the value anywhere in the domain, as xode is a the same throughout the domain
+                    uInput.h_1 = out_xode_0(0.01, 0.01)
 
 
         # set up 1st sub-step if the timeIntScheme has 2 sub-steps
@@ -821,6 +854,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
                 pLeftBoundary.t = t
             else:
                 uInput.t = t
+                # TODO include passivity part here as well
 
         # Assemble matrix for second step
         # The values from u_temp are now automatically in a and L for multi-sub-step methods
