@@ -21,7 +21,7 @@ plotDir = os.path.join(outputDir, 'plots')
 if not os.path.exists(plotDir):
     os.mkdir(plotDir)
 
-caseArray = [['R', 'SM', 'weak', 40, 'IC', 4.0, 4000]]
+caseArray = [['R', 'SM', 'weak', 40, 'IC', 8.0, 8000]]
 outputSubDirArray = []
 for caseVec in caseArray:
     subDir = caseVec[0] + '_' + caseVec[1] + '_' +caseVec[2] + \
@@ -40,7 +40,7 @@ ax.set_ylabel('Hamiltonian [J]')
 for count, dir in enumerate(outputSubDirArray):
     dataArray = np.load(os.path.join(dir, 'H_array.npy'))
     plt.plot(dataArray[:, 0], dataArray[:, 1], lw=0.5, color='r', linestyle='-',
-             label='Interconnection SV')
+             label='Passivity Control')
 ax.legend()
 if plotPNG:
     plt.savefig(os.path.join(plotDir, 'ICHamiltonian.png'), dpi=500)

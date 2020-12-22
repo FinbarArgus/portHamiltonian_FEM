@@ -277,12 +277,36 @@ plotDir = os.path.join(outputDir, 'plots')
 if not os.path.exists(plotDir):
     os.mkdir(plotDir)
 
-caseArray = [['R', 'SV', 'weak', 60, 'analytical', 1.5, 3000],
-             ['R', 'SV', 'weak', 80, 'analytical', 1.5, 3000],
-             ['R', 'SV', 'weak', 100, 'analytical', 1.5, 3000],
-             ['R', 'SV', 'weak', 120, 'analytical', 1.5, 3000],
-             ['R', 'SV', 'weak', 140, 'analytical', 1.5, 3000],
-             ['R', 'SV', 'weak', 160, 'analytical', 1.5, 3000]]
+caseArray = [['R', 'SV', 'weak', 20, 'analytical', 1.5, 3000, (1, 1)],
+             ['R', 'SV', 'weak', 30, 'analytical', 1.5, 3000, (1, 1)],
+             ['R', 'SV', 'weak', 40, 'analytical', 1.5, 3000, (1, 1)],
+             ['R', 'SV', 'weak', 60, 'analytical', 1.5, 3000, (1, 1)],
+             ['R', 'SV', 'weak', 80, 'analytical', 1.5, 3000, (1, 1)],
+             ['R', 'SV', 'weak', 100, 'analytical', 1.5, 3000, (1, 1)],
+             ['R', 'SV', 'weak', 8, 'analytical', 1.5, 3000, (2, 2)],
+             ['R', 'SV', 'weak', 12, 'analytical', 1.5, 3000, (2, 2)],
+             ['R', 'SV', 'weak', 16, 'analytical', 1.5, 3000, (2, 2)],
+             ['R', 'SV', 'weak', 20, 'analytical', 1.5, 3000, (2, 2)],
+             ['R', 'SV', 'weak', 24, 'analytical', 1.5, 3000, (2, 2)],
+             ['R', 'SV', 'weak', 30, 'analytical', 1.5, 3000, (2, 2)],
+             ['R', 'SV', 'weak', 20, 'analytical', 1.5, 3000, (2, 1)],
+             ['R', 'SV', 'weak', 30, 'analytical', 1.5, 3000, (2, 1)],
+             ['R', 'SV', 'weak', 40, 'analytical', 1.5, 3000, (2, 1)],
+             ['R', 'SV', 'weak', 60, 'analytical', 1.5, 3000, (2, 1)],
+             ['R', 'SV', 'weak', 80, 'analytical', 1.5, 3000, (2, 1)],
+             ['R', 'SV', 'weak', 100, 'analytical', 1.5, 3000, (2, 1)],
+             ['R', 'SV', 'weak', 20, 'analytical', 1.5, 3000, (1, 2)],
+             ['R', 'SV', 'weak', 30, 'analytical', 1.5, 3000, (1, 2)],
+             ['R', 'SV', 'weak', 40, 'analytical', 1.5, 3000, (1, 2)],
+             ['R', 'SV', 'weak', 60, 'analytical', 1.5, 3000, (1, 2)],
+             ['R', 'SV', 'weak', 80, 'analytical', 1.5, 3000, (1, 2)],
+             ['R', 'SV', 'weak', 100, 'analytical', 1.5, 3000, (1, 2)],
+             ['R', 'SV', 'weak', 6, 'analytical', 1.5, 3000, (3, 3)],
+             ['R', 'SV', 'weak', 8, 'analytical', 1.5, 3000, (3, 3)],
+             ['R', 'SV', 'weak', 10, 'analytical', 1.5, 3000, (3, 3)],
+             ['R', 'SV', 'weak', 12, 'analytical', 1.5, 3000, (3, 3)],
+             ['R', 'SV', 'weak', 14, 'analytical', 1.5, 3000, (3, 3)],
+             ['R', 'SV', 'weak', 16, 'analytical', 1.5, 3000, (3, 3)]]
 
 #             ['R', 'SE', 'weak', 60, 'analytical', 1.5, 6000],
 #             ['R', 'SE', 'weak', 80, 'analytical', 1.5, 6000],
@@ -296,6 +320,8 @@ for caseVec in caseArray:
     subDir = caseVec[0] + '_' + caseVec[1] + '_' +caseVec[2] + \
              '_nx' + str(caseVec[3]) + '_' + caseVec[4] + '_t' + \
              str(caseVec[5]).replace('.','_') + '_steps' + str(caseVec[6])
+    if len(caseVec) > 7:
+        subDir = subDir + '_P{}_RT{}'.format(caseVec[7][0], caseVec[7][1])
 
     outputSubDirArray.append(os.path.join(outputDir, subDir))
 
@@ -315,14 +341,39 @@ fig, ax = plt.subplots(1, 1)
 ax.set_xlabel('Characteristic Element Length [$m$]')
 ax.set_ylabel('Max $L^2$ Error Norm')
 plt.plot(numCell_Res[0:6, 2], numCell_Res[0:6, 3], lw=1.5, color='r', linestyle='', marker='x',
-         label='SV, $\Delta t$ = {}'.format(caseArray[0][5]/caseArray[0][6]))
+         label='SV P1RT1'.format(caseArray[0][5]/caseArray[0][6]))
+plt.plot(numCell_Res[12:18, 2], numCell_Res[12:18, 3], lw=1.5, color='g', linestyle='', marker='v',
+         label='SV P2RT1'.format(caseArray[12][5]/caseArray[12][6]))
+plt.plot(numCell_Res[18:24, 2], numCell_Res[18:24, 3], lw=1.5, color='m', linestyle='', marker='^',
+         label='SV P1RT2'.format(caseArray[18][5]/caseArray[18][6]))
+plt.plot(numCell_Res[6:12, 2], numCell_Res[6:12, 3], lw=1.5, color='b', linestyle='', marker='o',
+        label='SV P2RT2'.format(caseArray[6][5]/caseArray[6][6]))
+plt.plot(numCell_Res[24:30, 2], numCell_Res[24:30, 3], lw=1.5, color='c', linestyle='', marker='*',
+         label='SV P3RT3'.format(caseArray[24][5]/caseArray[24][6]))
 
-# plt.plot(numCell_Res[6:12, 2], numCell_Res[6:12, 4], lw=1.5, color='b', linestyle='', marker='o',
+# plt.plot(numCell_Res[6:12, 2], numCell_Res[6:12, 3], lw=1.5, color='b', linestyle='', marker='o',
 #         label='SE, $\Delta t$ = {:.1E}'.format(caseArray[6][5]/caseArray[6][6]))
 
+print('1st order elements, the following should be 2')
 print(numCell_Res[0:6, 2])
 print(numCell_Res[0:6, 3])
-print(np.log10((numCell_Res[0:5, 3] - numCell_Res[1:6, 3]) / (numCell_Res[0:5, 2] - numCell_Res[1:6, 2])))
+print((np.log10(numCell_Res[0:5, 3]) - np.log10(numCell_Res[1:6, 3])) / (np.log10(numCell_Res[0:5, 2]) - np.log10(numCell_Res[1:6, 2])))
+print('2nd order elements, the following should be 3')
+print(numCell_Res[6:12, 2])
+print(numCell_Res[6:12, 3])
+print((np.log10(numCell_Res[6:11, 3]) - np.log10(numCell_Res[7:12, 3])) / (np.log10(numCell_Res[6:11, 2]) - np.log10(numCell_Res[7:12, 2])))
+print('P2RT1')
+print(numCell_Res[12:18, 2])
+print(numCell_Res[12:18, 3])
+print((np.log10(numCell_Res[12:17, 3]) - np.log10(numCell_Res[13:18, 3])) / (np.log10(numCell_Res[12:17, 2]) - np.log10(numCell_Res[13:18, 2])))
+print('P1RT2')
+print(numCell_Res[18:24, 2])
+print(numCell_Res[18:24, 3])
+print((np.log10(numCell_Res[18:23, 3]) - np.log10(numCell_Res[19:24, 3])) / (np.log10(numCell_Res[18:23, 2]) - np.log10(numCell_Res[19:24, 2])))
+print('P3RT3')
+print(numCell_Res[24:30, 2])
+print(numCell_Res[24:30, 3])
+print((np.log10(numCell_Res[24:29, 3]) - np.log10(numCell_Res[25:30, 3])) / (np.log10(numCell_Res[24:29, 2]) - np.log10(numCell_Res[25:30, 2])))
 
 #create quadratic line to plot
 xQuad = np.linspace(numCell_Res[0,2], numCell_Res[5,2], 1000)
@@ -330,15 +381,25 @@ scale = 10000
 yQuad = scale*np.square(xQuad)
 plt.plot(xQuad, yQuad, lw=1.0, color='k', linestyle='--', label='Quadratic Trend ({}$x^2$)'.format(scale))
 
-ax.legend(loc='upper left')
+xCubic = np.linspace(numCell_Res[6,2], numCell_Res[11,2], 1000)
+scale = 20000
+yCubic = scale*np.power(xCubic, 3)
+plt.plot(xCubic, yCubic , lw=1.0, color='k', linestyle=':', label='Cubic Trend ({}$x^3$)'.format(scale))
+
+xQuartic = np.linspace(numCell_Res[24,2], numCell_Res[29,2], 1000)
+scale = 7000
+yQuartic = scale*np.power(xQuartic, 4)
+plt.plot(xQuartic, yQuartic, lw=1.0, color='k', linestyle='-', label='Quartic Trend ({}$x^4$)'.format(scale))
+
+ax.legend(loc='lower right')
 plt.grid()
 #plt.show()
 if plotPNG:
     plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsAvCellLength.png'), dpi=500)
 if plotEPS:
     plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsAvCellLength.eps'))
-ax.set_xlim(1e-3, 1e-2)
-ax.set_ylim(1e-2, 1)
+ax.set_xlim(1e-3, 10)
+ax.set_ylim(1e-3, 10)
 plt.xscale('log')
 plt.yscale('log')
 if plotPNG:

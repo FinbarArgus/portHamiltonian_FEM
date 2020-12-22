@@ -25,16 +25,19 @@ if __name__ == '__main__':
     # density
     rho = 2.0 # 2.0
 
-    caseName = 'passivity_control_IC_t4_5'
-    quick = False
+    # caseName = 'passivity_control_IC_t4_5'
+    caseName = 'lqr_control_t8_0'
+    quick = True
     if quick:
-        caseArray = [['R', 'SM', 'weak', 40, 'IC', 0.4, 400]]
+        # caseArray = [['R', 'SM', 'weak', 40, 'IC', 0.4, 400, 'Mem', 'passivity']]
+        caseArray = [['R', 'SM', 'weak', 3, 'IC', 0.4, 400, 'Mem', 'lqr']]
         input_stop_t = 0.1
         control_start_t = 0.2
     else:
-        caseArray = [['R', 'SM', 'weak', 40, 'IC', 8.0, 8000]]
-        input_stop_t = 1.5
-        control_start_t = 2.0
+        # caseArray = [['R', 'SM', 'weak', 40, 'IC', 8.0, 8000, 'Mem', 'passivity']]
+        caseArray = [['R', 'SM', 'weak', 40, 'IC', 8.0, 8000, 'Mem', 'lqr']]
+        input_stop_t = 0.0
+        control_start_t = 1.0
     # Create output dir
     outputBaseDir = 'control_output'
     if not os.path.exists(outputBaseDir):
@@ -48,7 +51,7 @@ if __name__ == '__main__':
         timeIntScheme = caseVec[1]
         dirichletImp = caseVec[2]
 
-        assert len(caseVec) in [7, 8], 'caseArray should be vectors of length 7 or 8'
+        assert len(caseVec) in [7, 8, 9], 'caseArray should be vectors of length 7 or 8'
         # ------------------------------# Setup Directories #-------------------------------#
 
         IC_BOOL = False
@@ -92,13 +95,18 @@ if __name__ == '__main__':
             if caseVec[7] == 'noMem':
                 saveP = False
 
+        if len(caseVec) > 8:
+            controlType = caseVec[8]
+        else:
+            controlType = None
+
         # solve the wave equation
         H_array, numCells = wave_2D_solve(tFinal, numSteps, outputSubDir,
                                     nx, xLength, yLength,
                                     domainShape=domainShape, timeIntScheme=timeIntScheme,
                                     dirichletImp=dirichletImp,
                                     K_wave=K_wave, rho=rho, interConnection=IC,
-                                    analytical=ANALYTICAL_BOOL, saveP=saveP, controlType='passivity',
+                                    analytical=ANALYTICAL_BOOL, saveP=saveP, controlType=controlType,
                                     input_stop_t=input_stop_t, control_start_t=control_start_t)
 
         # -------------------------------# Set up output and plotting #---------------------------------#

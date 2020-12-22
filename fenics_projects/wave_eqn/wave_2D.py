@@ -7,6 +7,9 @@ import time
 import os
 import mshr
 from mpi4py import MPI
+import control.matlab as ctrl
+import sys
+import petsc4py.PETSc as pet
 
 class Control_input(UserExpression):
     def __init__(self, t, h_1, input_stop_t, control_start_t, **kwargs):
@@ -33,7 +36,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
                   domainShape='R', timeIntScheme='SV', dirichletImp='weak',
                   K_wave=1, rho=1, BOUNDARYPLOT=False, interConnection=None,
                   analytical=False, saveP=True, controlType=None,
-                  input_stop_t=None, control_start_t=None):
+                  input_stop_t=None, control_start_t=None, basis_order=(1, 1)):
 
     """ function for solving the 2D wave equation in fenics
 
@@ -70,6 +73,14 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         
     rank = comm.Get_rank()
 
+    # check case combinations
+    if controlType is 'lqr':
+        if interConnection is not 'IC':
+            print('lqr control only implemented for IC interconnection')
+            quit()
+
+    # CALCULATE_EIGENS = False
+    CALCULATE_EIGENS = True
     BOUNDARYPLOT = False
     # Find initial time
     tic = time.time()
@@ -130,6 +141,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         numIntSubSteps = 2
     # Constant wave speed
     c_squared = Constant(K_wave/rho)
+    c_squared_float = K_wave/rho
     c = np.sqrt(K_wave/rho)
     K_wave = Constant(K_wave)
     rho_val = rho
@@ -159,7 +171,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         A_em = Constant((J_em - R_em).dot(A_conv_em))
     elif interConnection == 'IC':
         if timeIntScheme not in ['SV', 'SE', 'SM']:
-            print('only SE and SV time int schemes implemented for interconnection model')
+            print('only SE, SV and SM time int schemes implemented for interconnection model')
             quit()
 
         Bl_em = 5
@@ -188,8 +200,8 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             quit()
 
         # create function spaces for mesh and for Electromechanical ODE variables
-        P1 = FiniteElement('P', triangle, 1)
-        RT = FiniteElement('RT', triangle, 1)
+        P1 = FiniteElement('P', triangle, basis_order[0])
+        RT = FiniteElement('RT', triangle, basis_order[1])
         odeSpace = FiniteElement('R', triangle, 0) #order 0, 1 variable
         element = MixedElement([P1, RT, odeSpace, odeSpace, odeSpace, odeSpace])
         U = FunctionSpace(mesh, element)
@@ -213,6 +225,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         p_temp, q_temp, xode_0_temp, xode_1_temp, xode_2_temp, xode_3_temp = split(u_temp)
         xode_temp = as_vector([xode_0_temp, xode_1_temp, xode_2_temp, xode_3_temp])
 
+
     elif interConnection == 'IC':
         # ensure weak boundary conditions for interconnection
         if not dirichletImp == 'weak':
@@ -220,8 +233,8 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             quit()
 
         # create function spaces for mesh and for Electromechanical ODE variables
-        P1 = FiniteElement('P', triangle, 1)
-        RT = FiniteElement('RT', triangle, 1)
+        P1 = FiniteElement('P', triangle, basis_order[0])
+        RT = FiniteElement('RT', triangle, basis_order[1])
         odeSpace = FiniteElement('R', triangle, 0)  # order 0, 1 variable
         element = MixedElement([P1, RT, odeSpace, odeSpace, odeSpace])
         U = FunctionSpace(mesh, element)
@@ -245,16 +258,16 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         p_temp, q_temp, xode_0_temp, xode_1_temp, xode_2_temp = split(u_temp)
         xode_temp = as_vector([xode_0_temp, xode_1_temp, xode_2_temp])
 
+        if controlType is 'lqr':
+            p_ctrl, q_ctrl, xode_0_ctrl, xode_1_ctrl, xode_2_ctrl = TrialFunctions(U)
+            v_p_ctrl, v_q_ctrl, v_xode_0_ctrl, v_xode_1_ctrl, v_xode_2_ctrl = TestFunctions(U)
+            xode_ctrl = as_vector([xode_0_ctrl, xode_1_ctrl, xode_2_ctrl])
+            v_xode_ctrl = as_vector([v_xode_0_ctrl, v_xode_1_ctrl, v_xode_2_ctrl])
+
     else:
         # interconnection is not used, this is the basic wave equation
-        if analytical:
-            # Use 3rd order elements for analytical
-            P1 = FiniteElement('P', triangle, 3)
-            RT = FiniteElement('RT', triangle, 3)
-        else:
-            # first order elements for non-analytic comparison
-            P1 = FiniteElement('P', triangle, 1)
-            RT = FiniteElement('RT', triangle, 1)
+        P1 = FiniteElement('P', triangle, basis_order[0])
+        RT = FiniteElement('RT', triangle, basis_order[1])
 
         element = MixedElement([P1, RT])
         U = FunctionSpace(mesh, element)
@@ -271,8 +284,16 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         u_ = Function(U)
         p_, q_ = split(u_)
 
-        u_temp= Function(U)
-        p_temp, q_temp= split(u_temp)
+        u_temp = Function(U)
+        p_temp, q_temp = split(u_temp)
+
+        if CALCULATE_EIGENS:
+            p_eigs, q_eigs = TrialFunctions(U)
+            v_p_eigs, v_q_eigs = TestFunctions(U)
+
+            p_eigs_n, q_eigs_n = TrialFunctions(U)
+            v_p_eigs_n, v_q_eigs_n = TestFunctions(U)
+
 
 
     # -------------------------------# Boundary Conditions #---------------------------------#
@@ -333,6 +354,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
     # Get normal
     n = FacetNormal(mesh)
 
+    mirrorBoundary = Constant(0.0)
     # Make an expression for the boundary term for top and bottom edges
     q_bNormal = Constant(0.0)
     # Forced boundary
@@ -342,7 +364,9 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             pLeftBoundary = Expression('cSqrtConst*sin(2*pi*x[1]/(yLength) + pi/2)*cos(t*cSqrtConst)',
                        degree=8, t=0, yLength=yLength, cSqrtConst=cSqrtConst)
         else:
-            pLeftBoundary = Expression('(t<0.25) ? 5*sin(8*pi*t) : 0.0', degree=2, t=0)
+            if controlType is None:
+                pLeftBoundary = Expression('(t<0.25) ? 5*sin(8*pi*t) : 0.0', degree=2, t=0)
+
         pLeftBoundary_temp = pLeftBoundary
         pLeftBoundary_temp_ = pLeftBoundary
         pLeftBoundary_ = pLeftBoundary
@@ -361,6 +385,8 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         else:
             print('only SV and SE time int schemes have been implemented for interconnection')
             quit()
+        if controlType is 'lqr':
+            pLeftBoundary_ctrl = xode_ctrl[1]/(m_em)
 
         if domainShape == 'R':
             if controlType == None:
@@ -371,11 +397,86 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
                 # '''
                 uInput = Control_input(t=0.0, h_1=0.0,
                                     input_stop_t=input_stop_t, control_start_t=control_start_t)
+            elif controlType is 'lqr':
+                # Here is where I need to calculate the control on the left boundary
+                #TODO turn this part into a Class similar to Control_Input
+                if dirichletImp == 'weak':
+                    # This is the variational form of the wave equation with x_dot = 0 or rather the RHS of x_dot = Ax
+                    F_ctrl = c_squared*(-dot(q_ctrl, grad(v_p_ctrl))*dx + q_bNormal*v_p_ctrl*ds(1) +
+                                        dot(q_ctrl, n)*v_p_ctrl*ds(0) + dot(q_ctrl, n)*v_p_ctrl*ds(2)) - \
+                             div(v_q_ctrl)*p_ctrl*dx + dot(v_q_ctrl, n)*pLeftBoundary_ctrl*ds(0) +  \
+                             dot(v_q_ctrl, n)*mirrorBoundary*ds(2) + dot(v_q_ctrl, n)*p_ctrl*ds(1)
+
+                    if interConnection == 'IC':
+                        # TODO try changin this to vector notation
+                        F_em_ctrl = (v_xode_ctrl[0]*(A_em[0, 0]*xode_ctrl[0] + A_em[0, 1]*xode_ctrl[1] + A_em[0, 2]*xode_ctrl[2]) +
+                                     v_xode_ctrl[1]*(A_em[1, 0]*xode_ctrl[0] + A_em[1, 1]*xode_ctrl[1] + A_em[1, 2]*xode_ctrl[2]) +
+                                     v_xode_ctrl[2]*(A_em[2, 0]*xode_ctrl[0] + A_em[2, 1]*xode_ctrl[1] + A_em[2, 2]*xode_ctrl[2]) +
+                                     K_wave*yLength*v_xode_ctrl[1]*dot(q_ctrl, n))*ds(0)
+
+                        F_ctrl += F_em_ctrl
+                    else:
+                        print('only IC implemented for lqr control')
+                        quit()
+
+                    a_ctrl = lhs(F_ctrl)
+                    # L_zero = rhs(F_ctrl)
+                    A_ctrl = assemble(a_ctrl)
+                    # B_zero = assemble(L_zero)
+
+                    # A_ctrl_array is the A matrix in x_dot = Ax, the dynamics of the discrete system.
+                    A_ctrl_array = A_ctrl.array()
+                    # create control array with a one in the spot for the h_1 equation, the current of the EM system
+                    B_ctrl_array = np.zeros((len(A_ctrl_array), 1))
+                    B_ctrl_array[-3] = 1
+                    num_dofs = len(A_ctrl_array)
+                    num_p = (num_dofs - 3) // 3
+                    # we have one control variable, the voltage input
+                    num_control = 1
+                    # check controllability
+                    controllable_matrix = ctrl.ctrb(A_ctrl_array, B_ctrl_array)
+                    controllable_rank = np.linalg.matrix_rank(controllable_matrix)
+                    if controllable_rank is 0:
+                        print('lqr control matrices are not controllable')
+                        quit()
+
+                    # Choose our weight matrices for controller Q_lqr and R_lqr
+                    # Q_lqr is the weighting on our model prediction of observables
+                    Q_lqr = 2*np.identity(num_dofs)
+                    # R_lqr is the weighting on our measurement
+                    R_lqr = 0.5*np.identity(num_control)
+                    # calculate our controller gains with lqr
+                    K = ctrl.lqr(A_ctrl_array, B_ctrl_array, Q_lqr, R_lqr)
+                    # TODO Check that A - BK is Hurwitz
+
+                    # formulate the Q matrix
+                    Q_d = np.identity(num_dofs)
+                    Q_d[0:num_p, 0:num_p] = Q_d[0:num_p, 0:num_p]
+                    Q_d[num_p:3*num_p, num_p:3*num_p] = c_squared*Q_d[num_p:3*num_p, num_p:3*num_p]
+                    #last 3 rows/columns are for the EM system
+                    Q_d[3*num_p, 3*num_p] = (1/L_em)*Q_d[3*num_p, 3*num_p]
+                    Q_d[3*num_p+1, 3*num_p+1] = (1/m_em)*Q_d[3*num_p+1, 3*num_p+1]
+                    Q_d[3*num_p+2, 3*num_p+2] = K_em*Q_d[3*num_p+2, 3*num_p+2]
+
+
+                    # Temporarily have a full state observer, so C in y=Cx is the identity
+                    # Eventually we need to choose a subset of dofs to observe, g_obs_array will map all dofs
+                    # to the dofs we observe
+                    g_obs_array = np.identity(len(A_ctrl_array))
+                    C_obs_array = g_obs_array*Q_d
+
+
+
+
+                    print('control matrices calculated for lqr control')
+
+                else:
+                    print('dirichlet implementation {} not implemented'.format(dirichletImp))
+                    exit()
 
         elif domainShape == 'S_1C':
             uInput = Expression('(t<0.25) ? 10*sin(8*pi*t) : 0.0', degree=2, t=0)
 
-    mirrorBoundary = Constant(0.0)
 
     # If we have dirichlet conditions applied in the strong way set them here, otherwise
     # they are set in the integration by parts term in the problem definition
@@ -632,6 +733,213 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         a_temp = lhs(F_temp)
         L_temp = rhs(F_temp)
 
+    if CALCULATE_EIGENS:
+        # calculate exact eigenvalues
+        #TODO make sure this is calculating all of the eigenvalues correctly, i.e am I doubling up on eigenvalues
+        # maybe II=0 and JJ=0 shouldn't be used?
+        comp_eig_vals_exact = []
+        for II in range(10):
+            for JJ in range(10):
+                comp_eig_val = c*np.sqrt((JJ*np.pi/xLength)**2 + (II*np.pi/yLength)**2)
+                # if comp_eig_val not in comp_eig_vals_exact:
+                comp_eig_vals_exact.append(comp_eig_val)
+        comp_eig_vals_exact.sort()
+
+        # create petsc matrix and calculate eigenvalues of the A matrix
+        attempt = 2
+        if attempt == 2:
+            A_wbc_dofs = PETScMatrix()
+            M_wbc_dofs = PETScMatrix()
+            # This is the variational form of the wave equation with x_dot = 0 or rather the RHS of x_dot = Ax
+#            F_eigs = c_squared*(-dot(q_eigs, grad(v_p_eigs))*dx + q_bNormal*v_p_eigs*ds(1) +
+#                                dot(q_eigs, n)*v_p_eigs*ds(0) + dot(q_eigs, n)*v_p_eigs*ds(2)) - \
+#                     div(v_q_eigs)*p_eigs*dx + dot(v_q_eigs, n)*pLeftBoundary*ds(0) + \
+#                     dot(v_q_eigs, n)*mirrorBoundary*ds(2) + dot(v_q_eigs, n)*p_eigs*ds(1)
+            # Without boundary terms
+            F_eigs = c_squared*(-dot(q_eigs, grad(v_p_eigs))*dx +
+                                dot(q_eigs, n)*v_p_eigs*ds(0) + dot(q_eigs, n)*v_p_eigs*ds(2)) - \
+                     div(v_q_eigs)*p_eigs*dx + dot(v_q_eigs, n)*p_eigs*ds(1)
+            F_eigs_M = p_eigs_n*v_p_eigs_n*dx + dot(q_eigs_n, v_q_eigs_n)*dx
+
+            a_eigs = lhs(F_eigs)
+            m_eigs = lhs(F_eigs_M)
+
+            assemble(a_eigs, tensor=A_wbc_dofs)
+            assemble(m_eigs, tensor=M_wbc_dofs)
+
+            bc_eigens = DirichletBC(U.sub(0), Constant(0.0), 'on_boundary')
+            bdry_dofs = bc_eigens.get_boundary_values().keys()
+            boundary_dofs = list(bdry_dofs)
+
+            # Remove dofs with boundary conditions
+            # A_numpy = np.delete(np.delete(A_wbc_dofs.array(), boundary_dofs, axis=0), boundary_dofs, axis=1)
+            # M_numpy = np.delete(np.delete(M_wbc_dofs.array(), boundary_dofs, axis=0), boundary_dofs, axis=1)
+            A_numpy = A_wbc_dofs.array()
+            M_numpy = M_wbc_dofs.array()
+
+            # if this is true use simple numpy inverse and np.linalg.eig to calculate eigs
+            # if it is False use SLEPc
+            compare_with_numpy = True
+            if compare_with_numpy:
+                # Use numpy inv and eig to check f followinf SLEPc works
+                M_numpy_inv = np.linalg.inv(M_numpy)
+                Minv_A_numpy = M_numpy_inv.dot(A_numpy)
+                eig_vals_numpy, eig_vecs_numpy = np.linalg.eig(Minv_A_numpy)
+
+                eig_vals_list_numpy = []
+                for eig_val in eig_vals_numpy:
+                    if abs(eig_val) > 1e-8:
+                        eig_vals_list_numpy.append(eig_val)
+                eig_vals_list_numpy.sort(key=lambda x: abs(x.imag), reverse=False)
+                comp_eig_vals_list_numpy = [x.imag for x in eig_vals_list_numpy]
+                comp_eig_vals_pos_numpy = [x for x in comp_eig_vals_list_numpy if x>1e-8]
+                comp_eig_vals_pos_numpy.insert(0, 0.0)
+
+                num_eigs = len(comp_eig_vals_pos_numpy)
+                print('exact eigenvalues complex parts are')
+                print(comp_eig_vals_exact)
+                print('The first {} eigenvalues positive complex parts from numpy are'.format(num_eigs))
+                print(comp_eig_vals_pos_numpy)
+                # Calculate percent error on eigenvalues
+                eig_error_percent = 100*(np.array(comp_eig_vals_exact)[:30] - comp_eig_vals_pos_numpy[:30])/ \
+                                    np.array(comp_eig_vals_pos_numpy)[:30]
+                print('eigenvalue percentage error is')
+                print(eig_error_percent)
+                # check skew symmetricness of M_inv_A_numpy
+                should_be_zero = Minv_A_numpy.T + Minv_A_numpy
+                print('This should be zero if the matrix is skew symmetric')
+                print(np.max(np.abs(should_be_zero)))
+
+            else:
+                #create petsc array
+                A_petsc = pet.Mat().create()
+                A_petsc.setSizes(A_numpy.shape)
+                A_petsc.setType('aij')
+                A_petsc.setUp()
+                A_petsc.setValues(range(0, A_numpy.shape[0]), range(0, A_numpy.shape[0]), A_numpy)
+                A_petsc.assemble()
+                A_petsc = PETScMatrix(A_petsc)
+
+                M_petsc = pet.Mat().create()
+                M_petsc.setSizes(M_numpy.shape)
+                M_petsc.setType('aij')
+                M_petsc.setUp()
+                M_petsc.setValues(range(0, M_numpy.shape[0]), range(0, M_numpy.shape[0]), M_numpy)
+                M_petsc.assemble()
+                M_petsc = PETScMatrix(M_petsc)
+
+
+                eigensolver = SLEPcEigenSolver(A_petsc, M_petsc)
+                eigensolver.parameters['spectrum'] = 'smallest imaginary'
+                eigensolver.parameters['solver'] = 'arnoldi'
+                eigensolver.solve()
+                conv = eigensolver.get_number_converged()
+                print('number of eigenvalues converged = {}'.format(conv))
+                num_eigs_full = conv
+                # extract first num_eigs eigenpair
+                real_eig_vals_list_full = []
+                comp_eig_vals_list_full = []
+                for i in range(num_eigs_full):
+                    real_eig_vals, comp_eig_vals, real_eig_vecs, comp_eig_vecs = eigensolver.get_eigenpair(i)
+                    real_eig_vals_list_full.append(real_eig_vals)
+                    comp_eig_vals_list_full.append(comp_eig_vals)
+
+                real_eig_vals_list = []
+                comp_eig_vals_list = []
+                comp_eig_vals_pos = [0.0]
+                for real_val, comp_val in zip(real_eig_vals_list_full, comp_eig_vals_list_full):
+                    if abs(comp_val) > 1e-8:
+                        real_eig_vals_list.append(real_val)
+                        comp_eig_vals_list.append(comp_val)
+                        if comp_val > 0:
+                            comp_eig_vals_pos.append(comp_val)
+
+                num_eigs = len(real_eig_vals_list)
+
+
+                # Calculate percent error on eigenvalues
+                eig_error_percent = 100*(np.array(comp_eig_vals_exact)[:30] - np.array(comp_eig_vals_pos)[:30])/\
+                                    np.array(comp_eig_vals_pos)[:30]
+
+                print('The first {} eigenvalues real parts are'.format(num_eigs))
+                print(real_eig_vals_list)
+
+                print('exact eigenvalues complex parts are'.format(num_eigs))
+                print(comp_eig_vals_exact)
+                print('The positive eigenvalue complex parts are'.format(num_eigs))
+                print(comp_eig_vals_pos)
+                print('eigenvalue percentage error is')
+                print(eig_error_percent)
+
+#            u_eigs = Function(U)
+#            u_eigs.vector()[:] = real_eig_vecs
+#            p_eig_vec, q_eig_vec = u_eigs.split(True)
+#
+#            xdmfFile_eig_p_vec = XDMFFile(os.path.join(outputDir, 'eig_p.xdmf'))
+#            xdmfFile_eig_p_vec.parameters["flush_output"] = True
+#            xdmfFile_eig_p_vec.write(p_eig_vec)
+
+
+        elif attempt == 3:
+            # This is finding the eigenvalues for the time discretised system
+            # TODO include this for the control to ensure eigenvalues are below 1
+            if timeIntScheme == 'SE':
+                F_eigs = p_eigs*v_p_eigs*dx + dot(q_eigs, v_q_eigs)*dx - dt*div(v_q_eigs)*p_eigs*dx + \
+                          dt*dot(v_q_eigs, n)*p_eigs*ds(1)
+                        #dt*dot(v_q_eigs, n)*pLeftBoundary*ds(0) +
+                F_eigs_n = -p_eigs_n*v_p_eigs_n*dx + dt*c_squared*(-dot(q_eigs_n, grad(v_p_eigs_n))*dx + \
+                            dot(q_eigs_n, n)*v_p_eigs_n*ds(0) + dot(q_eigs_n, n)*v_p_eigs_n*ds(2)) - dot(q_eigs_n, v_q_eigs_n)*dx
+            else:
+                print('eigen problem not implemented for any timeIntScheme but SE')
+                quit()
+
+            A_eigs_petsc = PETScMatrix()
+            A_eigs_n_petsc = PETScMatrix()
+
+            a_eigs = lhs(F_eigs)
+            a_eigs_n = lhs(F_eigs_n)
+            B1 = rhs(F_eigs)
+            B2 = rhs(F_eigs_n)
+
+            assemble(a_eigs, tensor=A_eigs_petsc)
+            assemble(a_eigs_n, tensor=A_eigs_n_petsc)
+
+            A_eigs_numpy = A_eigs_petsc.array()
+            A_eigs_numpy_inv = np.linalg.inv(A_eigs_numpy)
+            A_eigs_n_numpy = A_eigs_n_petsc.array()
+            A_numpy = -A_eigs_numpy_inv.dot(A_eigs_n_numpy)
+
+            # calculate eigenvalues and ves with numpy
+            eig_vals, eig_vecs = np.linalg.eig(A_numpy)
+
+            #create petsc array
+            A_petsc = pet.Mat().create()
+            A_petsc.setSizes(A_numpy.shape)
+            A_petsc.setType('aij')
+            A_petsc.setUp()
+            A_petsc.setValues(range(0, A_numpy.shape[0]), range(0, A_numpy.shape[0]), A_numpy)
+            A_petsc.assemble()
+            A_petsc = PETScMatrix(A_petsc)
+            # A.setType('dense')
+
+            # calculate eigenvalues and vecs with SLEPc
+            eigensolver = SLEPcEigenSolver(A_petsc)
+            eigensolver.solve()
+            # extract first eigenpair
+            real_eig_vals, comp_eig_vals, real_eig_vecs, comp_eig_vecs = eigensolver.get_eigenpair(0)
+
+            print('first 10 eigenvalues are')
+            print(eig_vals[:10])
+            print('first SLEPc eigenvalue is')
+            print(real_eig_vals)
+            print('maximum numpy eigenvalue is {}'.format(max(eig_vals)))
+
+        # If calculating eigenvalues don't do the full simulation
+        print('only calculating eigen values when CALCULATE_EIGENS is True')
+        quit()
+
+
+
     # Assemble matrices
     A = assemble(a)
     B = assemble(L)
@@ -727,18 +1035,26 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             line, = ax.plot([], lw=0.5, color='k', linestyle='-',
                         label='analytical error {}, {}, {}'.format(domainShape,timeIntScheme,dirichletImp))
         else:
-            line, = ax.plot([], lw=0.5, color='k', linestyle='-',
-                            label='Energy Residual {}, {}, {}'.format(domainShape,timeIntScheme,dirichletImp))
+            if controlType is None:
+                line, = ax.plot([], lw=0.5, color='k', linestyle='-',
+                                label='Energy Residual {}, {}, {}'.format(domainShape,timeIntScheme,dirichletImp))
+            else:
+                line, = ax.plot([], lw=0.5, color='k', linestyle='-',
+                                label='Hamiltonian {}, {}, {}'.format(domainShape,timeIntScheme,dirichletImp))
 
         # text = ax.text(0.001, 0.001, "")
         ax.set_xlim(0, tFinal)
         if domainShape == 'R':
             if analytical:
-                ax.set_ylim(0, 0.1)
+                # ax.set_ylim(0, 0.1)
+                ax.set_ylim(0, 2.0)
             else:
-                ax.set_ylim(-0.03, 0.05)
-                if dirichletImp == 'weak' and timeIntScheme in ['SV', 'SE', 'EH']:
-                    ax.set_ylim(-0.0005, 0.0008)
+                if controlType is None:
+                    ax.set_ylim(-0.03, 0.05)
+                    if dirichletImp == 'weak' and timeIntScheme in ['SV', 'SE', 'EH']:
+                        ax.set_ylim(-0.0005, 0.0008)
+                else:
+                    ax.set_ylim(0, 0.4)
 
         elif domainShape == 'S_1C':
             ax.set_ylim(-0.001, 0.001)
@@ -747,7 +1063,11 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         if analytical:
             ax.set_ylabel('analytical error')
         else:
-            ax.set_ylabel('Energy Residual [J]')
+            if controlType is None:
+                ax.set_ylabel('Energy Residual [J]')
+            else:
+                ax.set_ylabel('Hamiltonian [J]')
+
         ax.set_xlabel('Time [s]')
 
         ax.add_artist(line)
@@ -782,7 +1102,20 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             print('Initial L2 Error = {}'.format(err_L2))
             print('Initial Int Error = {}'.format(err_integral))
     else:
-        H_init = 0
+        if controlType is None:
+            H_init = 0
+        else:
+            p_init = Expression('sin(4*pi*x[0]/(xLength))',
+                                degree=8, xLength=xLength)
+            q_init = Expression(('sin(4*pi*x[0]/(xLength))', '0.0'),
+                                degree=8, xLength=xLength)
+            p_init_interp = interpolate(p_init, U.sub(0).collapse())
+            q_init_interp = interpolate(q_init, U.sub(1).collapse())
+            xode_0_init_interp = interpolate(Constant(0.0), U.sub(2).collapse())
+            xode_1_init_interp = interpolate(Constant(0.0), U.sub(3).collapse())
+            xode_2_init_interp = interpolate(Constant(0.0), U.sub(4).collapse())
+            assign(u_n,[p_init_interp, q_init_interp, xode_0_init_interp, xode_1_init_interp, xode_2_init_interp])
+            H_init = assemble((0.5*p_n*p_n + 0.5*c_squared*inner(q_n, q_n))*dx)*rho_val
 
     # -------------------------------# Solve Loop #---------------------------------#
 
@@ -929,7 +1262,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
                 H_em = assemble(0.5*(xode_[0]*xode_[0]/L_em + xode_[1]*xode_[1]/m_em +
                                      K_em*xode_[2]*xode_[2])*ds(0))/yLength
 
-            E = -inputEnergy + H_wave + H_em
+            E = -inputEnergy + H_wave + H_em - H_init
             H = H_wave + H_em
 
             boundaryEnergy += assemble(pT_L_q)
@@ -1007,7 +1340,10 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             if analytical:
                 line.set_data(t_vec, error_vec)
             else:
-                line.set_data(t_vec, E_vec)
+                if controlType is None:
+                    line.set_data(t_vec, E_vec)
+                else:
+                    line.set_data(t_vec, H_vec)
             # text.set_text('HI')
             # restore background
             fig.canvas.restore_region(axBackground)
