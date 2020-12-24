@@ -1,12 +1,6 @@
-from fenics import *
-import matplotlib
-matplotlib.use('Qt5Agg')
-import matplotlib.pyplot as plt
 import numpy as np
 import time
 import os
-import mshr
-# import paperPlotSetup
 from wave_2D import *
 from mpi4py import MPI
 
@@ -24,6 +18,8 @@ if __name__ == '__main__':
     K_wave = 3.0 # 3.0
     # density
     rho = 2.0 # 2.0
+
+#TODO double check that all cases run before uploading to github
 
 #    caseName = 'strong_and_weak_method_variation'
 #    caseArray = [['R', 'IE', 'weak', 80, 'wave', 1.5, 3000, 'Mem'],
@@ -150,7 +146,7 @@ if __name__ == '__main__':
 #    caseName = 'IC4_SV_singleRun'
 #    caseArray = [['R', 'SV', 'weak', 120, 'IC4', 1.5, 3000, 'Mem']]
 
-# The above are confirmed cases for paper
+    # The above are confirmed cases for paper
 # The below are temporary cases
 #    caseName = 'analytical_t1_5_visualisation'
 #    caseArray = [['R', 'SV', 'weak', 80, 'analytical', 1.5, 3000, 'Mem', (3, 3)]]
@@ -227,7 +223,6 @@ if __name__ == '__main__':
             if caseVec[7] == 'noMem':
                 saveP = False
 
-
         # solve the wave equation
         H_array, numCells = wave_2D_solve(tFinal, numSteps, outputSubDir,
                                     nx, xLength, yLength,
@@ -236,6 +231,7 @@ if __name__ == '__main__':
                                     K_wave=K_wave, rho=rho, interConnection=IC,
                                     analytical=ANALYTICAL_BOOL, saveP=saveP, basis_order=basis_order)
 
+
         # -------------------------------# Set up output and plotting #---------------------------------#
 
         np.save(os.path.join(outputSubDir, 'H_array.npy'), H_array)
@@ -243,6 +239,8 @@ if __name__ == '__main__':
         numCells_save = np.zeros((1))
         numCells_save[0] = numCells
         np.save(os.path.join(outputSubDir, 'numCells.npy'), numCells_save)
+
+
 
     if rank == 0:
         totalTime = time.time() - tic

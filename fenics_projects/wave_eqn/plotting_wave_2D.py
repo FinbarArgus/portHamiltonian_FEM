@@ -621,6 +621,102 @@ if plotEPS:
     plt.savefig(os.path.join(plotDir, 'analyticL2LongTimeSchemeVariation.eps'))
 plt.close(fig)
 
+# ------------# Plotting results for eigenvalues #---------------#
+
+caseName = 'eigenValue_spaceVariation'
+outputDir = os.path.join('output', caseName)
+if not os.path.exists(outputDir):
+    print('The output dir {} doesn\'t exist'.format(outputDir))
+    quit()
+
+plotDir = os.path.join(outputDir, 'plots')
+if not os.path.exists(plotDir):
+    os.mkdir(plotDir)
+
+caseArray = [['R', 'SE', 'weak', 5, 'analytical', 0.5, 1000, (1, 1)],
+             ['R', 'SE', 'weak', 10, 'analytical', 0.5, 1000, (1, 1)],
+             ['R', 'SE', 'weak', 15, 'analytical', 0.5, 1000, (1, 1)],
+             ['R', 'SE', 'weak', 20, 'analytical', 0.5, 1000, (1, 1)],
+             ['R', 'SE', 'weak', 25, 'analytical', 0.5, 1000, (1, 1)],
+             ['R', 'SE', 'weak', 30, 'analytical', 0.5, 1000, (1, 1)]]
+
+outputSubDirArray = []
+for caseVec in caseArray:
+    subDir = caseVec[0] + '_' + caseVec[1] + '_' +caseVec[2] + \
+             '_nx' + str(caseVec[3]) + '_' + caseVec[4] + '_t' + \
+             str(caseVec[5]).replace('.','_') + '_steps' + str(caseVec[6])
+    if len(caseVec) > 7:
+        subDir = subDir + '_P{}_RT{}'.format(caseVec[7][0], caseVec[7][1])
+
+    outputSubDirArray.append(os.path.join(outputDir, subDir))
+
+numCell_Res = np.zeros((len(caseArray), 3))
+eig_error_array = np.zeros((len(caseArray),))
+data_list = []
+for count, dir in enumerate(outputSubDirArray):
+    dataArray = np.load(os.path.join(dir, 'out_array.npy'))
+    data_list.append(dataArray)
+    numCells = np.load(os.path.join(dir, 'numCells.npy'))[0]
+    avCellSize = 0.25/numCells
+    avCellLength = np.sqrt(avCellSize)
+    numCell_Res[count, :] = [numCells, avCellSize, avCellLength]
+    # calculate the percentage error on the first eigenvalue
+    eig_error_array[count] = 100*(dataArray[0, 0] - dataArray[0, 1])/ \
+                    dataArray[0, 0]
+
+# Plot the convergence of the first eigenvalue
+
+fig, ax = plt.subplots(1, 1)
+# ax.set_xlim(0, 0.04)
+# ax.set_ylim(0, 0.16)
+ax.set_xlabel('Characteristic Element Length [$m$]')
+ax.set_ylabel('First Eigenvalue % Error')
+plt.plot(numCell_Res[0:6, 2], eig_error_array[0:6], lw=1.5, color='r', linestyle='', marker='x',
+         label='P1RT1')
+
+xQuad = np.linspace(numCell_Res[0,2], numCell_Res[-1,2], 1000)
+scale = 50
+yQuad = scale*np.square(xQuad)
+plt.plot(xQuad, yQuad, lw=1.0, color='k',linestyle='--', label='Quadratic Trend ($50x^2$)')
+
+ax.legend(loc='lower right')
+plt.grid()
+#plt.show()
+
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'eigenValuePercentErrorVsAvCellLength.png'), dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'eigenValuePercentErrorVsAvCellLength.eps'))
+ax.set_xlim(1e-2, 1e-1)
+ax.set_ylim(1e-3, 1)
+plt.xscale('log')
+plt.yscale('log')
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'eigenValuePercentErrorVsAvCellLengthLogScale.png'), dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'eigenValuePercentErrorVsAvCellLengthLogScale.eps'))
+plt.close(fig)
+
+fig, ax = plt.subplots(1, 1)
+ax.set_xlabel('Eigenvalue Number')
+ax.set_ylabel('Complex Eigenvalue')
+plt.plot(range(1, 52), data_list[5][:, 1], color='b', linestyle='', marker='o', markersize=5.0, label='P1RT1',
+         markerfacecolor='none')
+plt.plot(range(1, 52), data_list[5][:, 0], color='r', linestyle='', marker='x', markersize=5.0, label='Analytic')
+ax.set_xlim(0, 50)
+ax.set_ylim(0, 80)
+ax.legend(loc='lower right')
+plt.grid()
+
+if plotPNG:
+    plt.savefig(os.path.join(plotDir, 'eigenValueVsAnalytic.png'), dpi=500)
+if plotEPS:
+    plt.savefig(os.path.join(plotDir, 'eigenValueVsAnalytic.eps'))
+
+# plt.show()
+
+plt.close(fig)
+
 # ------------# Plotting results for interconnection wave and electromechanical #---------------#
 caseName = 'IC_SV_t_20_0_singleRun'
 outputDir = os.path.join('output', caseName)
@@ -960,6 +1056,7 @@ if plotPNG:
 if plotEPS:
     plt.savefig(os.path.join(plotDir, 'IC4DOFDisplacement.png'))
 plt.close(fig)
+
 
 
 
