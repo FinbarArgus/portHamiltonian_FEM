@@ -269,7 +269,6 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
 
         element = MixedElement([P1, RT])
         U = FunctionSpace(mesh, element)
-        #Also create function space for just P1
 
         # Define trial and test functions
         p, q = TrialFunctions(U)
