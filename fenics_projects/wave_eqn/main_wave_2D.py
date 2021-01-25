@@ -10,6 +10,7 @@ if __name__ == '__main__':
     print('starting script and timer')
     tic = time.time()
 
+    # get parallel processing info
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     # -------------------------------# Define params #---------------------------------#
@@ -18,8 +19,6 @@ if __name__ == '__main__':
     K_wave = 3.0 # 3.0
     # density
     rho = 2.0 # 2.0
-
-#TODO double check that all cases run before uploading to github
 
 #    caseName = 'strong_and_weak_method_variation'
 #    caseArray = [['R', 'IE', 'weak', 80, 'wave', 1.5, 3000, 'Mem'],
@@ -35,7 +34,7 @@ if __name__ == '__main__':
 #    caseArray = [['R', 'SM', 'weak', 80, 'wave', 1.5, 3000, 'Mem'],
 #                ['R', 'SM', 'strong', 80, 'wave', 1.5, 3000, 'Mem']]
 
-    #    caseName = 'strong_and_weak_spatial_variation'
+#    caseName = 'strong_and_weak_spatial_variation'
 #    caseArray = [['R', 'SV', 'strong', 20, 'wave', 1.5, 3000, 'Mem'],
 #                 ['R', 'SV', 'strong', 40, 'wave', 1.5, 3000, 'Mem'],
 #                 ['R', 'SV', 'strong', 60, 'wave', 1.5, 3000, 'Mem'],
@@ -170,7 +169,7 @@ if __name__ == '__main__':
         timeIntScheme = caseVec[1]
         dirichletImp = caseVec[2]
 
-        assert len(caseVec) in [7, 8, 9], 'caseArray should be vectors of length 7 or 8'
+        assert len(caseVec) in [7, 8, 9], 'caseArray should be vectors of length 7, 8, or 9'
         # ------------------------------# Setup Directories #-------------------------------#
 
         # Create output dir
@@ -187,8 +186,9 @@ if __name__ == '__main__':
         else:
             IC = None
 
+        # create boolean that determines whether the simulation that compares with the analytical is being run
         ANALYTICAL_BOOL = (caseVec[4] == 'analytical')
-        # add 'IC', 'wave', or 'analytical' to the subDir name to denote interconnection
+        # add 'IC', 'wave', or 'analytical' to the subDir name to denote the type of model
         subDir = subDir + '_' + caseVec[4]
         # add time of sim and number of steps
         subDir = subDir + '_t' + str(caseVec[5]).replace('.','_') +\
@@ -209,15 +209,15 @@ if __name__ == '__main__':
         xLength = 1.0
 
         if caseVec[0] == 'R':
-            yLength = 0.25 #0.25
+            yLength = 0.25
         elif caseVec[0] == 'S_1C':
-            yLength = 0.1 #0.25
+            yLength = 0.1
 
         # set final time and number of steps
         tFinal = caseVec[5]
         numSteps = caseVec[6]
 
-        # whether we want to save a p xdf file
+        # whether we want to save a xdf file for the p variable
         saveP = True
         if len(caseVec) > 7:
             if caseVec[7] == 'noMem':
@@ -232,10 +232,11 @@ if __name__ == '__main__':
                                     analytical=ANALYTICAL_BOOL, saveP=saveP, basis_order=basis_order)
 
 
-        # -------------------------------# Set up output and plotting #---------------------------------#
+        # -------------------------------# Set up output #---------------------------------#
 
         np.save(os.path.join(outputSubDir, 'H_array.npy'), H_array)
 
+        # Save number of cells
         numCells_save = np.zeros((1))
         numCells_save[0] = numCells
         np.save(os.path.join(outputSubDir, 'numCells.npy'), numCells_save)
@@ -245,5 +246,4 @@ if __name__ == '__main__':
     if rank == 0:
         totalTime = time.time() - tic
         print('All Simulations finished in {} seconds'.format(totalTime))
-
 
