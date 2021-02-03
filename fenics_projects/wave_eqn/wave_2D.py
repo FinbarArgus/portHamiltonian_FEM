@@ -180,13 +180,21 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         if timeIntScheme not in ['SV', 'SE', 'SM']:
             print('only SE, SV and SM time int schemes implemented for interconnection model')
             quit()
-
-        Bl_em = 5
-        R1_em = 0.0
-        R2_em = 0.0
-        K_em = 5
-        m_em = 0.15
-        L_em = 0.1
+        if controlType is None:
+            Bl_em = 5
+            R1_em = 0.0
+            R2_em = 0.0
+            K_em = 5
+            m_em = 0.15
+            L_em = 0.1
+        else:
+            # TODO make sure if i'm comparing control to no control I use these params
+            Bl_em = 1
+            R1_em = 0.0
+            R2_em = 0.0
+            K_em = 1.5
+            m_em = 0.2
+            L_em = 0.15
 
         J_em = np.array([[0, Bl_em, 0], [-Bl_em, 0, -1], [0, 1, 0]])
 
@@ -243,33 +251,60 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         P1 = FiniteElement('P', triangle, basis_order[0])
         RT = FiniteElement('RT', triangle, basis_order[1])
         odeSpace = FiniteElement('R', triangle, 0)  # order 0, 1 variable
-        element = MixedElement([P1, RT, odeSpace, odeSpace, odeSpace])
-        U = FunctionSpace(mesh, element)
 
-        # Define trial and test functions
-        p, q, xode_0, xode_1, xode_2 = TrialFunctions(U)
-        xode = as_vector([xode_0, xode_1, xode_2])
-        v_p, v_q, v_xode_0, v_xode_1, v_xode_2 = TestFunctions(U)
-        v_xode = as_vector([v_xode_0, v_xode_1, v_xode_2])
+        if controlType is not 'lqr':
+            element = MixedElement([P1, RT, odeSpace, odeSpace, odeSpace])
+            U = FunctionSpace(mesh, element)
 
-        # Define functions for solutions at previous and current time steps
-        u_m = Function(U)
-        p_m, q_m, xode_0_m, xode_1_m, xode_2_m = split(u_m)
-        xode_m = as_vector([xode_0_m, xode_1_m, xode_2_m])
+            # Define trial and test functions
+            p, q, xode_0, xode_1, xode_2 = TrialFunctions(U)
+            xode = as_vector([xode_0, xode_1, xode_2])
+            v_p, v_q, v_xode_0, v_xode_1, v_xode_2 = TestFunctions(U)
+            v_xode = as_vector([v_xode_0, v_xode_1, v_xode_2])
 
-        u_ = Function(U)
-        p_, q_, xode_0_, xode_1_, xode_2_ = split(u_)
-        xode_ = as_vector([xode_0_, xode_1_, xode_2_])
+            # Define functions for solutions at previous and current time steps
+            u_m = Function(U)
+            p_m, q_m, xode_0_m, xode_1_m, xode_2_m = split(u_m)
+            xode_m = as_vector([xode_0_m, xode_1_m, xode_2_m])
 
-        u_temp = Function(U)
-        p_temp, q_temp, xode_0_temp, xode_1_temp, xode_2_temp = split(u_temp)
-        xode_temp = as_vector([xode_0_temp, xode_1_temp, xode_2_temp])
+            u_ = Function(U)
+            p_, q_, xode_0_, xode_1_, xode_2_ = split(u_)
+            xode_ = as_vector([xode_0_, xode_1_, xode_2_])
 
-        if controlType is 'lqr':
-            p_ctrl, q_ctrl, xode_0_ctrl, xode_1_ctrl, xode_2_ctrl = TrialFunctions(U)
-            v_p_ctrl, v_q_ctrl, v_xode_0_ctrl, v_xode_1_ctrl, v_xode_2_ctrl = TestFunctions(U)
-            xode_ctrl = as_vector([xode_0_ctrl, xode_1_ctrl, xode_2_ctrl])
-            v_xode_ctrl = as_vector([v_xode_0_ctrl, v_xode_1_ctrl, v_xode_2_ctrl])
+            u_temp = Function(U)
+            p_temp, q_temp, xode_0_temp, xode_1_temp, xode_2_temp = split(u_temp)
+            xode_temp = as_vector([xode_0_temp, xode_1_temp, xode_2_temp])
+        elif controlType is 'lqr':
+            #If control type is lqr we have another dirichlet boundary on the top edge
+            element = MixedElement([P1, RT, odeSpace, odeSpace, odeSpace, odeSpace, odeSpace, odeSpace])
+            U = FunctionSpace(mesh, element)
+
+            # Define trial and test functions
+            p, q, xode_0, xode_1, xode_2, zode_0, zode_1, zode_2 = TrialFunctions(U)
+            xode = as_vector([xode_0, xode_1, xode_2])
+            zode = as_vector([zode_0, zode_1, zode_2])
+            v_p, v_q, v_xode_0, v_xode_1, v_xode_2, v_zode_0, v_zode_1, v_zode_2  = TestFunctions(U)
+            v_xode = as_vector([v_xode_0, v_xode_1, v_xode_2])
+            v_zode = as_vector([v_zode_0, v_zode_1, v_zode_2])
+
+            # Define functions for solutions at previous and current time steps
+            u_m = Function(U)
+            p_m, q_m, xode_0_m, xode_1_m, xode_2_m, zode_0_m, zode_1_m, zode_2_m = split(u_m)
+            xode_m = as_vector([xode_0_m, xode_1_m, xode_2_m])
+            zode_m = as_vector([zode_0_m, zode_1_m, zode_2_m])
+
+            u_ = Function(U)
+            p_, q_, xode_0_, xode_1_, xode_2_, zode_0_, zode_1_, zode_2_ = split(u_)
+            xode_ = as_vector([xode_0_, xode_1_, xode_2_])
+            zode_ = as_vector([zode_0_, zode_1_, zode_2_])
+
+            if timeIntScheme != 'SM':
+                print('only doing SM method for control atm')
+                quit()
+            # below isn't needed atm because be only do 1 step methods
+            # u_temp = Function(U)
+            # p_temp, q_temp, xode_0_temp, xode_1_temp, xode_2_temp = split(u_temp)
+            # xode_temp = as_vector([xode_0_temp, xode_1_temp, xode_2_temp])
 
     else:
         # interconnection is not used, this is the basic wave equation
@@ -315,7 +350,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         def inside(self, x, on_boundary):
             return on_boundary and near(x[0], xLength)
 
-    # all other boundaries for marking
+    # Top boundary for marking
     class GeneralMarker(SubDomain):
         if domainShape == 'R':
             def inside(self, x, on_boundary):
@@ -328,18 +363,30 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
                                         near(x[1], xLength/2 + yLength/2) or
                                         near(x[0], 0))
 
-    # Initialise mesh function for neumann boundary. Facets are dim()-1, initialise subdomains to index 0
-    boundaryDomains = MeshFunction('size_t', mesh, mesh.topology().dim()-1)
-    boundaryDomains.set_all(3)
+    # Bottom boundary for marking
+    class BottomMarker(SubDomain):
+        if domainShape == 'R':
+            def inside(self, x, on_boundary):
+                return on_boundary and near(x[1], 0)
 
-    leftMark= LeftMarker()
+    # Initialise mesh function for neumann boundary. Facets are dim()-1, initialise subdomains to index 4
+    boundaryDomains = MeshFunction('size_t', mesh, mesh.topology().dim()-1)
+    boundaryDomains.set_all(4)
+
+    leftMark = LeftMarker()
     leftMark.mark(boundaryDomains, 0)
 
-    generalMark= GeneralMarker()
+    generalMark = GeneralMarker()
     generalMark.mark(boundaryDomains, 1)
 
-    rightMark= RightMarker()
+    rightMark = RightMarker()
     rightMark.mark(boundaryDomains, 2)
+
+    if controlType == 'lqr':
+        # if control type is 'lqr' remark bottom boundary
+        assert domainShape == 'R', 'control only works for rectangle at the moment'
+        bottomMark = BottomMarker()
+        bottomMark.mark(boundaryDomains, 3)
 
     # redefine ds so that ds(0) is left boundary, ds(1) is general and ds(2) is right boundary
     ds = Measure('ds', domain=mesh, subdomain_data=boundaryDomains)
@@ -362,8 +409,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             pLeftBoundary = Expression('cSqrtConst*sin(2*pi*x[1]/(yLength) + pi/2)*cos(t*cSqrtConst)',
                        degree=8, t=0, yLength=yLength, cSqrtConst=cSqrtConst)
         else:
-            if controlType is None:
-                pLeftBoundary = Expression('(t<0.25) ? 5*sin(8*pi*t) : 0.0', degree=2, t=0)
+            pLeftBoundary = Expression('(t<0.25) ? 5*sin(8*pi*t) : 0.0', degree=2, t=0)
 
         pLeftBoundary_temp = pLeftBoundary
         pLeftBoundary_temp_ = pLeftBoundary
@@ -380,11 +426,13 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         elif timeIntScheme == 'SM':
             pLeftBoundary = 0.5*(xode_m[1] + xode[1])/(m_em)
             pLeftBoundary_ = 0.5*(xode_m[1] + xode_[1])/(m_em)
+            if controlType == 'lqr':
+                pTopBoundary = 0.5*(zode_m[1] + zode[1])/(m_em)
+                pTopBoundary_ = 0.5*(zode_m[1] + zode_[1])/(m_em)
+
         else:
             print('only SV and SE time int schemes have been implemented for interconnection')
             quit()
-        if controlType is 'lqr':
-            pLeftBoundary_ctrl = xode_ctrl[1]/(m_em)
 
         if domainShape == 'R':
             if controlType == None:
@@ -398,12 +446,34 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             elif controlType is 'lqr':
                 # Here is where I need to calculate the control on the left boundary
                 #TODO turn this part into a Class similar to Control_Input
+                #TODO in that class I can create the variational forms
                 if dirichletImp == 'weak':
+                    # create function spaces
+                    element_ctrl = MixedElement([P1, RT, odeSpace, odeSpace, odeSpace, odeSpace, odeSpace, odeSpace])
+                    U_ctrl = FunctionSpace(mesh, element_ctrl)
+
+                    # TODO fix the below to work for top force input
+                    p_ctrl, q_ctrl, xode_0_ctrl, xode_1_ctrl, xode_2_ctrl, \
+                                        zode_0_ctrl, zode_1_ctrl, zode_2_ctrl = TrialFunctions(U_ctrl)
+
+                    v_p_ctrl, v_q_ctrl, v_xode_0_ctrl, v_xode_1_ctrl, v_xode_2_ctrl, \
+                                        v_zode_0_ctrl, v_zode_1_ctrl, v_zode_2_ctrl = TestFunctions(U_ctrl)
+                    xode_ctrl = as_vector([xode_0_ctrl, xode_1_ctrl, xode_2_ctrl])
+                    v_xode_ctrl = as_vector([v_xode_0_ctrl, v_xode_1_ctrl, v_xode_2_ctrl])
+                    zode_ctrl = as_vector([zode_0_ctrl, zode_1_ctrl, zode_2_ctrl])
+                    v_zode_ctrl = as_vector([v_zode_0_ctrl, v_zode_1_ctrl, v_zode_2_ctrl])
+
+                    # set control inputs
+                    pLeftBoundary_ctrl = xode_ctrl[1]/(m_em)
+                    pTopBoundary_ctrl = zode_ctrl[1]/(m_em)
+
                     # This is the variational form of the wave equation with x_dot = 0 or rather the RHS of x_dot = Ax
-                    F_ctrl = c_squared*(-dot(q_ctrl, grad(v_p_ctrl))*dx + q_bNormal*v_p_ctrl*ds(1) +
-                                        dot(q_ctrl, n)*v_p_ctrl*ds(0) + dot(q_ctrl, n)*v_p_ctrl*ds(2)) - \
+                    F_ctrl = c_squared*(-dot(q_ctrl, grad(v_p_ctrl))*dx + q_bNormal*v_p_ctrl*ds(3) +
+                                        dot(q_ctrl, n)*v_p_ctrl*ds(0) + dot(q_ctrl, n)*v_p_ctrl*ds(2) +
+                                        dot(q_ctrl, n)*v_p_ctrl*ds(1) ) - \
                              div(v_q_ctrl)*p_ctrl*dx + dot(v_q_ctrl, n)*pLeftBoundary_ctrl*ds(0) +  \
-                             dot(v_q_ctrl, n)*mirrorBoundary*ds(2) + dot(v_q_ctrl, n)*p_ctrl*ds(1)
+                             dot(v_q_ctrl, n)*mirrorBoundary*ds(2) + dot(v_q_ctrl, n)*p_ctrl*ds(3) + \
+                             dot(v_q_ctrl, n)*pTopBoundary_ctrl*ds(1)
 
                     if interConnection == 'IC':
                         # TODO try changin this to vector notation
@@ -412,7 +482,12 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
                                      v_xode_ctrl[2]*(A_em[2, 0]*xode_ctrl[0] + A_em[2, 1]*xode_ctrl[1] + A_em[2, 2]*xode_ctrl[2]) +
                                      K_wave*yLength*v_xode_ctrl[1]*dot(q_ctrl, n))*ds(0)
 
-                        F_ctrl += F_em_ctrl
+                        F_em_ctrl_z = (v_zode_ctrl[0]*(A_em[0, 0]*zode_ctrl[0] + A_em[0, 1]*zode_ctrl[1] + A_em[0, 2]*zode_ctrl[2]) +
+                                     v_zode_ctrl[1]*(A_em[1, 0]*zode_ctrl[0] + A_em[1, 1]*zode_ctrl[1] + A_em[1, 2]*zode_ctrl[2]) +
+                                     v_zode_ctrl[2]*(A_em[2, 0]*zode_ctrl[0] + A_em[2, 1]*zode_ctrl[1] + A_em[2, 2]*zode_ctrl[2]) +
+                                     K_wave*xLength*v_zode_ctrl[1]*dot(q_ctrl, n))*ds(1)
+
+                        F_ctrl += F_em_ctrl + F_em_ctrl_z
                     else:
                         print('only IC implemented for lqr control')
                         quit()
@@ -421,22 +496,30 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
                     # L_zero = rhs(F_ctrl)
                     A_ctrl = assemble(a_ctrl)
                     # B_zero = assemble(L_zero)
+                    num_control = 2
 
                     # A_ctrl_array is the A matrix in x_dot = Ax, the dynamics of the discrete system.
                     A_ctrl_array = A_ctrl.array()
-                    # create control array with a one in the spot for the h_1 equation, the current of the EM system
-                    B_ctrl_array = np.zeros((len(A_ctrl_array), 1))
-                    B_ctrl_array[-3] = 1
+                    # get number of dofs
                     num_dofs = len(A_ctrl_array)
-                    num_p = (num_dofs - 3) // 3
+                    num_p = (num_dofs - 6) // 3
+                    # create control array with a one in the spot for the h_1 equation, the current of the EM system
+                    B_ctrl_array = np.zeros((len(A_ctrl_array), num_control))
+                    B_ctrl_array[-3, 0] = 1
+                    B_ctrl_array[-6, 1] = 1
+                    # Create temporary control matrix for control on each state
+                    # B_ctrl_array = np.eye(len(A_ctrl_array))
                     # we have one control variable, the voltage input
-                    num_control = 1
                     # check controllability
-                    controllable_matrix = ctrl.ctrb(A_ctrl_array, B_ctrl_array)
+                    controllable_matrix = np.asarray(ctrl.ctrb(A_ctrl_array, B_ctrl_array))
                     controllable_rank = np.linalg.matrix_rank(controllable_matrix)
-                    if controllable_rank is 0:
+                    controllable_svd = np.linalg.svd(controllable_matrix)[1]
+
+                    if controllable_rank < len(B_ctrl_array):
+                        print('rank of controllability matrix is {}, less than full rank of {}'.format(
+                           controllable_rank, len(B_ctrl_array)))
                         print('lqr control matrices are not controllable')
-                        quit()
+                        # quit()
 
                     # Choose our weight matrices for controller Q_lqr and R_lqr
                     # Q_lqr is the weighting on our model prediction of observables
@@ -444,7 +527,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
                     # R_lqr is the weighting on our measurement
                     R_lqr = 0.5*np.identity(num_control)
                     # calculate our controller gains with lqr
-                    K = ctrl.lqr(A_ctrl_array, B_ctrl_array, Q_lqr, R_lqr)
+                    K, sol_ric, eigs_closed_loop = ctrl.lqr(A_ctrl_array, B_ctrl_array, Q_lqr, R_lqr)
                     # TODO Check that A - BK is Hurwitz
 
                     # formulate the Q matrix
@@ -463,8 +546,9 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
                     g_obs_array = np.identity(len(A_ctrl_array))
                     C_obs_array = g_obs_array*Q_d
 
-
-
+                    # temporarily make standard inputs without control
+                    uInput = Expression('(t<0.25) ? 10*sin(8*pi*t) : 0.0', degree=2, t=0)
+                    uInput_z = Expression('(t<0.25) ? 10*sin(8*pi*t) : 0.0', degree=2, t=0)
 
                     print('control matrices calculated for lqr control')
 
@@ -648,12 +732,36 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             F = (p - p_m)*v_p*dx + dt*c_squared*0.5*(-dot(q_m, grad(v_p))*dx - dot(q, grad(v_p))*dx + q_bNormal*v_p*ds(1)) + \
                 dot(q - q_m, v_q)*dx + dt*0.5*(dot(grad(p_m), v_q) + dot(grad(p), v_q))*dx
         elif dirichletImp == 'weak':
-            F = (p - p_m)*v_p*dx + 0.5*dt*c_squared*(-dot(q_m, grad(v_p))*dx - dot(q, grad(v_p))*dx + 2*q_bNormal*v_p*ds(1) +
-                                                 dot(q_m, n)*v_p*ds(0) + dot(q_m, n)*v_p*ds(2) +
-                                                 dot(q, n)*v_p*ds(0) + dot(q, n)*v_p*ds(2)) + \
-                dot(q - q_m, v_q)*dx + 0.5*dt*(-div(v_q)*p_m*dx - div(v_q)*p*dx +
-                                        2*dot(v_q, n)*pLeftBoundary*ds(0) + 2*dot(v_q, n)*mirrorBoundary*ds(2) +
-                                        dot(v_q, n)*p_m*ds(1) + dot(v_q, n)*p*ds(1))
+            if controlType != 'lqr':
+                F = (p - p_m)*v_p*dx + 0.5*dt*c_squared*(-dot(q_m, grad(v_p))*dx -
+                                                         dot(q, grad(v_p))*dx +
+                                                         2*q_bNormal*v_p*ds(1) +
+                                                         dot(q_m, n)*v_p*ds(0) +
+                                                         dot(q_m, n)*v_p*ds(2) +
+                                                         dot(q, n)*v_p*ds(0) +
+                                                         dot(q, n)*v_p*ds(2)) + \
+                    dot(q - q_m, v_q)*dx + 0.5*dt*(-div(v_q)*p_m*dx -
+                                                   div(v_q)*p*dx +
+                                                   2*dot(v_q, n)*pLeftBoundary*ds(0) +
+                                                   2*dot(v_q, n)*mirrorBoundary*ds(2) +
+                                                   dot(v_q, n)*p_m*ds(1) +
+                                                   dot(v_q, n)*p*ds(1))
+            elif controlType == 'lqr':
+                F = (p - p_m)*v_p*dx + 0.5*dt*c_squared*(-dot(q_m, grad(v_p))*dx -
+                                                         dot(q, grad(v_p))*dx +
+                                                         2*q_bNormal*v_p*ds(3) +
+                                                         dot(q_m, n)*v_p*ds(0) +
+                                                         dot(q_m, n)*v_p*ds(1) +
+                                                         dot(q_m, n)*v_p*ds(2) +
+                                                         dot(q, n)*v_p*ds(0) +
+                                                         dot(q, n)*v_p*ds(1) +
+                                                         dot(q, n)*v_p*ds(2)) + \
+                    dot(q - q_m, v_q)*dx + 0.5*dt*(-div(v_q)*p_m*dx - div(v_q)*p*dx +
+                                                   2*dot(v_q, n)*pLeftBoundary*ds(0) +
+                                                   2*dot(v_q, n)*pTopBoundary*ds(1) +
+                                                   2*dot(v_q, n)*mirrorBoundary*ds(2) +
+                                                   dot(v_q, n)*p_m*ds(3) +
+                                                   dot(v_q, n)*p*ds(3))
 
             if interConnection == 'IC4':
                 F_em = (-dot(v_xode, xode - xode_m)/dt +
@@ -688,6 +796,19 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
                                        A_em[2, 1]*xode[1] + A_em[2, 1]*xode_m[1] +
                                        A_em[2, 2]*xode[2] + A_em[2, 2]*xode_m[2]) +
                         v_xode[0]*uInput + 0.5*K_wave*yLength*v_xode[1]*(dot(q_m, n) + dot(q, n)))*ds(0)
+                if controlType == 'lqr':
+                    F_em += (-dot(v_zode, zode - zode_m)/dt +
+                        0.5*v_zode[0]*(A_em[0, 0]*zode[0] + A_em[0, 0]*zode_m[0] +
+                                       A_em[0, 1]*zode[1] + A_em[0, 1]*zode_m[1] +
+                                       A_em[0, 2]*zode[2] + A_em[0, 2]*zode_m[2]) +
+                        0.5*v_zode[1]*(A_em[1, 0]*zode[0] + A_em[1, 0]*zode_m[0] +
+                                       A_em[1, 1]*zode[1] + A_em[1, 1]*zode_m[1] +
+                                       A_em[1, 2]*zode[2] + A_em[1, 2]*zode_m[2]) +
+                        0.5*v_zode[2]*(A_em[2, 0]*zode[0] + A_em[2, 0]*zode_m[0] +
+                                       A_em[2, 1]*zode[1] + A_em[2, 1]*zode_m[1] +
+                                       A_em[2, 2]*zode[2] + A_em[2, 2]*zode_m[2]) +
+                        v_zode[0]*uInput_z + 0.5*K_wave*xLength*v_zode[1]*(dot(q_m, n) + dot(q, n)))*ds(1)
+
 
                 F += F_em
 
@@ -768,7 +889,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         q1 = q_temp
 
     if numIntSubSteps >1:
-        # These are the energy contributions from the left, general and right boundaries for the first half timestep
+        # These are the energy contributions from the left and top boundaries for the first half timestep
         pT_L_q_temp_left = 0.5*dt*K_wave*dot(q0, n)*pLeftBoundary_temp_*ds(0)
 
         # These are the energy contributions from the left, general and right boundaries for the second half timestep
@@ -779,10 +900,14 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
 
     else:
         pT_L_q_left = dt*K_wave*dot(q1, n)*pLeftBoundary_*ds(0)
+        if controlType == 'lqr':
+            pT_L_q_top = dt*K_wave*dot(q1, n)*pTopBoundary_*ds(1)
+        else:
+            pT_L_q_top = 0.0
         # pT_L_q_gen = dt*K_wave*q_bNormal*p1*ds(1)
         # pT_L_q_right = dt*K_wave*dot(q1, n)*mirrorBoundary*ds(2)
 
-        pT_L_q = pT_L_q_left # + pT_L_q_gen + pT_L_q_right
+        pT_L_q = pT_L_q_left + pT_L_q_top # + pT_L_q_right
 
     # -------------------------------# Set up output and plotting #---------------------------------#
 

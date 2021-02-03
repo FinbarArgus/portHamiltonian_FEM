@@ -30,7 +30,7 @@ if __name__ == '__main__':
     quick = True
     if quick:
         # caseArray = [['R', 'SM', 'weak', 40, 'IC', 0.4, 400, 'Mem', 'passivity']]
-        caseArray = [['R', 'SM', 'weak', 3, 'IC', 0.4, 400, 'Mem', 'lqr']]
+        caseArray = [['R', 'SM', 'weak', 1, 'IC', 0.4, 400, 'Mem', 'lqr']]
         input_stop_t = 0.1
         control_start_t = 0.2
     else:
