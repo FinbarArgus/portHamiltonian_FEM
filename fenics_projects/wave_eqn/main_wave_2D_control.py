@@ -28,7 +28,7 @@ if __name__ == '__main__':
     # caseName = 'passivity_control_IC_t4_5'
     caseName = 'passivity_control_IC_t4_5_TEST'
     # caseName = 'lqr_control_t8_0'
-    quick = False
+    quick = True
     if quick:
         caseArray = [['R', 'SM', 'weak', 40, 'IC', 0.4, 400, 'Mem', 'passivity']]
         # caseArray = [['R', 'SM', 'weak', 5, 'wave', 0.4, 400, 'Mem', 'casimir']]

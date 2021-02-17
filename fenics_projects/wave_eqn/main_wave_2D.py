@@ -85,25 +85,6 @@ if __name__ == '__main__':
 #                 ['R', 'SV', 'weak', 60, 'analytical', 1.5, 3000, 'noMem', (1, 2)],
 #                 ['R', 'SV', 'weak', 80, 'analytical', 1.5, 3000, 'noMem', (1, 2)],
 #                 ['R', 'SV', 'weak', 100, 'analytical', 1.5, 3000, 'noMem', (1, 2)]]
-    # For these analytic sims leave without order and will resort to 1st order for P and RT
-#    caseArray = [['R', 'SV', 'weak', 60, 'analytical', 1.5, 3000, 'noMem'],
-#                ['R', 'SV', 'weak', 80, 'analytical', 1.5, 3000, 'noMem'],
-#                ['R', 'SV', 'weak', 100, 'analytical', 1.5, 3000, 'noMem'],
-#                ['R', 'SV', 'weak', 120, 'analytical', 1.5, 3000, 'noMem'],
-#                ['R', 'SV', 'weak', 140, 'analytical', 1.5, 3000, 'noMem'],
-#                ['R', 'SV', 'weak', 160, 'analytical', 1.5, 3000, 'noMem']]
-#                ['R', 'SE', 'weak', 60, 'analytical', 1.5, 6000, 'noMem'],
-#                ['R', 'SE', 'weak', 80, 'analytical', 1.5, 6000, 'noMem'],
-#                ['R', 'SE', 'weak', 100, 'analytical', 1.5, 6000, 'noMem'],
-#                ['R', 'SE', 'weak', 120, 'analytical', 1.5, 6000, 'noMem'],
-#                ['R', 'SE', 'weak', 140, 'analytical', 1.5, 6000, 'noMem'],
-#                ['R', 'SE', 'weak', 160, 'analytical', 1.5, 6000, 'noMem'],
-#                ['R', 'SM', 'weak', 60, 'analytical', 1.5, 6000, 'noMem'],
-#                ['R', 'SM', 'weak', 80, 'analytical', 1.5, 6000, 'noMem'],
-#                ['R', 'SM', 'weak', 100, 'analytical', 1.5, 6000, 'noMem'],
-#                ['R', 'SM', 'weak', 120, 'analytical', 1.5, 6000, 'noMem'],
-#                ['R', 'SM', 'weak', 140, 'analytical', 1.5, 6000, 'noMem'],
-#                ['R', 'SM', 'weak', 160, 'analytical', 1.5, 6000, 'noMem']]
 
     #    caseName = 'analytical_t10_0_schemeVariation_3rdOrder'
 #    caseArray = [['R', 'SV', 'weak', 80, 'analytical', 10.0, 20000, 'noMem', (3, 3)],

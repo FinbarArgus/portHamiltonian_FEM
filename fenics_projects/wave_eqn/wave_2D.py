@@ -37,10 +37,10 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
     :param rho: [float] material density
     :param BOUNDARYPLOT: [bool] whether the boundary conditions should be plotted for debugging
     :param interConnection: [string] type of model for the electromechanical system at the boundary
-                            either IC for 3 dof or IC4 for 4 dof, or None for non interconnection (just wave equation).
-                            For IC, the electromechanical system doesn't have have a capacitor, for IC4 it does.
+                            either IC for 3 dof or None for non interconnection (just wave equation).
+                            For IC, the electromechanical system doesn't have have a capacitor.
     :param saveP: [bool] whether to save p throughout the domain as an xdf file for paraview postprocessing
-    :param controlType: If control is implemented this is the type of control, either 'lqr' or 'passivity'
+    :param controlType: If control is implemented this is the type of control, either 'casimir' or 'passivity'
                         TODO Currently only Passivity based control is working
     :param input_stop_t: For control, when the input voltage stops
     :param control_start_t: Time that control starts
@@ -49,7 +49,6 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             H_array: array of output vectors of length numSteps
             numCells: number of cells in mesh
     """
-
 
     # set up parallel processing if it is used
     comm = MPI.comm_world
@@ -63,8 +62,24 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
 
     # check case combinations
     if controlType is 'lqr':
+        print('lqr no longer implemented')
+        quit()
+    if controlType is 'passivity':
         if interConnection is not 'IC':
-            print('lqr control only implemented for IC interconnection')
+            print('passivity control only implemented for IC interconnection')
+            quit()
+    if controlType is 'casimir':
+        if interConnection is not None:
+            print('casimir control not implemented for IC interconnection')
+            quit()
+    if analytical:
+        if not domainShape == 'R':
+            print('analytical solution for rectangle domain only')
+            quit()
+    if interConnection == 'IC':
+        # ensure weak boundary conditions for interconnection
+        if not dirichletImp == 'weak':
+            print('can only do interconnection model with weak boundary conditions')
             quit()
 
     # This is a boolean for outputting bc types for visualisation of the boundary conditions in paraview
@@ -103,16 +118,9 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             # Refine mesh
             mesh = refine(mesh, cell_markers)
 
-        # plt.figure()
-        # plot(mesh)
-        # plt.show()
     else:
-        print('domainShape \"{}\" hasnt been created'.format(domainShape))
+        print('domainShape \"{}\" hasn\'t been created'.format(domainShape))
         quit()
-
-    if analytical:
-        if not domainShape == 'R':
-            print('analytical solution for rectangle domain only')
 
     #get number of cells in mesh
     numCells = mesh.num_cells()
@@ -135,47 +143,17 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
     rho_val = rho
     # rho = Constant(rho)
 
-    if interConnection == 'IC4':
+    if interConnection == 'IC':
         if timeIntScheme not in ['SV', 'SE', 'SM']:
-            print('only SE and SV time int schemes implemented for interconnection model')
+            print('only SE, SV and SM time int schemes implemented for interconnection model')
             quit()
 
-        # Constants for the Electromechanical model
         Bl_em = 5
         R1_em = 0.0
         R2_em = 0.0
         K_em = 5
         m_em = 0.15
         L_em = 0.1
-        C_em = 1.0
-
-        #Create A matrix for the electromechanical part of the model
-        J_em = np.array([[0, Bl_em, -1, 0], [-Bl_em, 0, 0, -1], [1, 0, 0, 0], [0, 1, 0, 0]])
-
-        R_em = np.array([[R1_em, 0, 0, 0], [0, R2_em, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]])
-
-        A_conv_em = np.array([[1/L_em, 0, 0, 0], [0, 1/m_em, 0, 0], [0, 0, 1/C_em, 0], [0, 0, 0, K_em]])
-
-        A_em = Constant((J_em - R_em).dot(A_conv_em))
-    elif interConnection == 'IC':
-        if timeIntScheme not in ['SV', 'SE', 'SM']:
-            print('only SE, SV and SM time int schemes implemented for interconnection model')
-            quit()
-        if controlType is None:
-            Bl_em = 5
-            R1_em = 0.0
-            R2_em = 0.0
-            K_em = 5
-            m_em = 0.15
-            L_em = 0.1
-        else:
-            # TODO make sure if i'm comparing control to no control I use these params
-            Bl_em = 1
-            R1_em = 0.0
-            R2_em = 0.0
-            K_em = 1.5
-            m_em = 0.2
-            L_em = 0.15
 
         J_em = np.array([[0, Bl_em, 0], [-Bl_em, 0, -1], [0, 1, 0]])
 
@@ -188,104 +166,34 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
     # ------------------------------# Create Function Spaces and functions#-------------------------------#
 
     # Create function spaces
-
-    if interConnection == 'IC4':
-        # ensure weak boundary conditions for interconnection
-        if not dirichletImp == 'weak':
-            print('can only do interconnection model with weak boundary conditions')
-            quit()
-
-        # create function spaces for mesh and for Electromechanical ODE variables
-        P1 = FiniteElement('P', triangle, basis_order[0])
-        RT = FiniteElement('RT', triangle, basis_order[1])
-        odeSpace = FiniteElement('R', triangle, 0) #order 0, 1 variable
-        element = MixedElement([P1, RT, odeSpace, odeSpace, odeSpace, odeSpace])
-        U = FunctionSpace(mesh, element)
-
-        # Define trial and test functions
-        p, q, xode_0, xode_1, xode_2, xode_3 = TrialFunctions(U)
-        xode = as_vector([xode_0, xode_1, xode_2, xode_3])
-        v_p, v_q, v_xode_0, v_xode_1, v_xode_2, v_xode_3 = TestFunctions(U)
-        v_xode = as_vector([v_xode_0, v_xode_1, v_xode_2, v_xode_3])
-
-        # Define functions for solutions at previous and current time steps
-        u_m = Function(U)
-        p_m, q_m, xode_0_m, xode_1_m, xode_2_m, xode_3_m = split(u_m)
-        xode_m = as_vector([xode_0_m, xode_1_m, xode_2_m, xode_3_m])
-
-        u_ = Function(U)
-        p_, q_, xode_0_, xode_1_, xode_2_, xode_3_ = split(u_)
-        xode_ = as_vector([xode_0_, xode_1_, xode_2_, xode_3_])
-
-        u_temp = Function(U)
-        p_temp, q_temp, xode_0_temp, xode_1_temp, xode_2_temp, xode_3_temp = split(u_temp)
-        xode_temp = as_vector([xode_0_temp, xode_1_temp, xode_2_temp, xode_3_temp])
-
-
-    elif interConnection == 'IC':
-        # ensure weak boundary conditions for interconnection
-        if not dirichletImp == 'weak':
-            print('can only do interconnection model with weak boundary conditions')
-            quit()
+    if interConnection == 'IC':
 
         # create function spaces for mesh and for Electromechanical ODE variables
         P1 = FiniteElement('P', triangle, basis_order[0])
         RT = FiniteElement('RT', triangle, basis_order[1])
         odeSpace = FiniteElement('R', triangle, 0)  # order 0, 1 variable
 
-        if controlType is not 'lqr':
-            element = MixedElement([P1, RT, odeSpace, odeSpace, odeSpace])
-            U = FunctionSpace(mesh, element)
+        element = MixedElement([P1, RT, odeSpace, odeSpace, odeSpace])
+        U = FunctionSpace(mesh, element)
 
-            # Define trial and test functions
-            p, q, xode_0, xode_1, xode_2 = TrialFunctions(U)
-            xode = as_vector([xode_0, xode_1, xode_2])
-            v_p, v_q, v_xode_0, v_xode_1, v_xode_2 = TestFunctions(U)
-            v_xode = as_vector([v_xode_0, v_xode_1, v_xode_2])
+        # Define trial and test functions
+        p, q, xode_0, xode_1, xode_2 = TrialFunctions(U)
+        xode = as_vector([xode_0, xode_1, xode_2])
+        v_p, v_q, v_xode_0, v_xode_1, v_xode_2 = TestFunctions(U)
+        v_xode = as_vector([v_xode_0, v_xode_1, v_xode_2])
 
-            # Define functions for solutions at previous and current time steps
-            u_m = Function(U)
-            p_m, q_m, xode_0_m, xode_1_m, xode_2_m = split(u_m)
-            xode_m = as_vector([xode_0_m, xode_1_m, xode_2_m])
+        # Define functions for solutions at previous and current time steps
+        u_m = Function(U)
+        p_m, q_m, xode_0_m, xode_1_m, xode_2_m = split(u_m)
+        xode_m = as_vector([xode_0_m, xode_1_m, xode_2_m])
 
-            u_ = Function(U)
-            p_, q_, xode_0_, xode_1_, xode_2_ = split(u_)
-            xode_ = as_vector([xode_0_, xode_1_, xode_2_])
+        u_ = Function(U)
+        p_, q_, xode_0_, xode_1_, xode_2_ = split(u_)
+        xode_ = as_vector([xode_0_, xode_1_, xode_2_])
 
-            u_temp = Function(U)
-            p_temp, q_temp, xode_0_temp, xode_1_temp, xode_2_temp = split(u_temp)
-            xode_temp = as_vector([xode_0_temp, xode_1_temp, xode_2_temp])
-        elif controlType is 'lqr':
-            #If control type is lqr we have another dirichlet boundary on the top edge
-            element = MixedElement([P1, RT, odeSpace, odeSpace, odeSpace, odeSpace, odeSpace, odeSpace])
-            U = FunctionSpace(mesh, element)
-
-            # Define trial and test functions
-            p, q, xode_0, xode_1, xode_2, zode_0, zode_1, zode_2 = TrialFunctions(U)
-            xode = as_vector([xode_0, xode_1, xode_2])
-            zode = as_vector([zode_0, zode_1, zode_2])
-            v_p, v_q, v_xode_0, v_xode_1, v_xode_2, v_zode_0, v_zode_1, v_zode_2  = TestFunctions(U)
-            v_xode = as_vector([v_xode_0, v_xode_1, v_xode_2])
-            v_zode = as_vector([v_zode_0, v_zode_1, v_zode_2])
-
-            # Define functions for solutions at previous and current time steps
-            u_m = Function(U)
-            p_m, q_m, xode_0_m, xode_1_m, xode_2_m, zode_0_m, zode_1_m, zode_2_m = split(u_m)
-            xode_m = as_vector([xode_0_m, xode_1_m, xode_2_m])
-            zode_m = as_vector([zode_0_m, zode_1_m, zode_2_m])
-
-            u_ = Function(U)
-            p_, q_, xode_0_, xode_1_, xode_2_, zode_0_, zode_1_, zode_2_ = split(u_)
-            xode_ = as_vector([xode_0_, xode_1_, xode_2_])
-            zode_ = as_vector([zode_0_, zode_1_, zode_2_])
-
-            if timeIntScheme != 'SM':
-                print('only doing SM method for control atm')
-                quit()
-            # below isn't needed atm because be only do 1 step methods
-            # u_temp = Function(U)
-            # p_temp, q_temp, xode_0_temp, xode_1_temp, xode_2_temp = split(u_temp)
-            # xode_temp = as_vector([xode_0_temp, xode_1_temp, xode_2_temp])
+        u_temp = Function(U)
+        p_temp, q_temp, xode_0_temp, xode_1_temp, xode_2_temp = split(u_temp)
+        xode_temp = as_vector([xode_0_temp, xode_1_temp, xode_2_temp])
 
     else:
         # interconnection with a lumped param model is not used, this is the basic wave equation
@@ -316,7 +224,6 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
     def forced_boundary(x, on_boundary):
         return on_boundary and near(x[0], xInputStart)
 
-
     # Right edge boundary condition for defining DirichletBC
     def fixed_boundary(x, on_boundary):
         return on_boundary and near(x[0], xLength)
@@ -331,11 +238,21 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         def inside(self, x, on_boundary):
             return on_boundary and near(x[0], xLength)
 
-    # Top boundary for marking
+    # This is the Top boundary for rectangle domain, empty boundary for square domain
+    class TopMarker(SubDomain):
+        if domainShape == 'R':
+            def inside(self, x, on_boundary):
+                return on_boundary and near(x[1], yLength)
+        elif domainShape == 'S_1C':
+            def inside(self, x, on_boundary):
+                return False
+
+
+    # general/bottom boundary for marking
     class GeneralMarker(SubDomain):
         if domainShape == 'R':
             def inside(self, x, on_boundary):
-                return on_boundary and (near(x[1], 0) or near(x[1], yLength))
+                return on_boundary and near(x[1], 0.0)
 
         elif domainShape == 'S_1C':
             def inside(self, x, on_boundary):
@@ -344,12 +261,6 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
                                         near(x[1], xLength/2 + yLength/2) or
                                         near(x[0], 0))
 
-    # Bottom boundary for marking
-    class BottomMarker(SubDomain):
-        if domainShape == 'R':
-            def inside(self, x, on_boundary):
-                return on_boundary and near(x[1], 0)
-
     # Initialise mesh function for neumann boundary. Facets are dim()-1, initialise subdomains to index 4
     boundaryDomains = MeshFunction('size_t', mesh, mesh.topology().dim()-1)
     boundaryDomains.set_all(4)
@@ -357,203 +268,137 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
     leftMark = LeftMarker()
     leftMark.mark(boundaryDomains, 0)
 
-    generalMark = GeneralMarker()
-    generalMark.mark(boundaryDomains, 1)
+    TopMark = TopMarker()
+    TopMark.mark(boundaryDomains, 1)
 
     rightMark = RightMarker()
     rightMark.mark(boundaryDomains, 2)
 
-    if controlType in ['lqr', 'casimir']:
-        # if control type is 'lqr' remark bottom boundary
-        #TODO generalise so the bottom is always marked
-        assert domainShape == 'R', 'control only works for rectangle at the moment'
-        bottomMark = BottomMarker()
-        bottomMark.mark(boundaryDomains, 3)
+    generalMark = GeneralMarker()
+    generalMark.mark(boundaryDomains, 3)
 
-    # redefine ds so that ds(0) is left boundary, ds(1) is general and ds(2) is right boundary
+    # redefine ds so that ds(0) is left boundary, ds(1) is top, ds(2) is right, and ds(3) is bottom/general boundary
     ds = Measure('ds', domain=mesh, subdomain_data=boundaryDomains)
+    # Get normal for boundaries
+    n = FacetNormal(mesh)
 
     if BOUNDARYPLOT:
         # output mesh to file if BOUNDARYPLOT is True
         File(os.path.join(outputDir,'markers.pvd')) << boundaryDomains
         quit()
 
-    # Get normal
-    n = FacetNormal(mesh)
-    mirrorBoundary = Constant(0.0)
-    # This boundary dissipates energy and should model the waves leaving the domain
-    impedanceBoundary = -0.5*(q_m + q)
-    impedanceBoundary = -0.5*(q_m + q_)
+    # Define what time step q and p variables are used in each substep
+    # The underscore variables are used to calculate the energy flow out of
+    # the boundaries
+    if timeIntScheme == 'SV':
+        q0 = q_m
+        q1 = q_temp
+        p0 = p_m
+        p1 = p
+    elif timeIntScheme == 'EE':
+        q0 = None
+        q1 = q_m
+        p0 = None
+        p1 = p_m
+    elif timeIntScheme == 'IE':
+        q0 = None
+        q1 = q
+        p0 = None
+        p1 = p
+    elif timeIntScheme == 'SE':
+        q0 = None
+        q1 = q_m
+        p0 = None
+        p1 = p
+    elif timeIntScheme == 'SM':
+        q0 = None
+        q1 = 0.5*(q_m + q)
+        p0 = None
+        p1 = 0.5*(p_m + p)
+    elif timeIntScheme == 'EH':
+        q0 = q_m
+        q1 = 0.5 * (q_m + q_temp)
+        p0 = p_m
+        p1 = 0.5 * (p_m + p_temp)
 
-    # Make an expression for the boundary term for zero Neumann condition
-    q_bNormal = Constant(0.0)
-    # Expression for control of the top boundary, TODO change this from 0
-    q_topControl = Constant(0.0)
-    # Forced boundary
+    # ___Top Boundary__
+    if controlType is 'casimir':
+        # TODO this top boundary will be the control
+        qTopBoundary1 = Constant([0.0, 0.0])
+        qTopBoundary1_ = qTopBoundary1
+        pTopBoundary1 = 0.5*(p_m + p)
+        # THe above currently only works for 1 substep methods
+    else:
+        # All other cases have a zero neumann condition
+        qTopBoundary0 = Constant([0.0, 0.0])
+        qTopBoundary1 = Constant([0.0, 0.0])
+        qTopBoundary1_ = qTopBoundary1
+
+        # all cases the pTopBoundary is the same as p0, p1
+        pTopBoundary0 = p0
+        pTopBoundary1 = p1
+
+    # ___Right Boundary__
+    if controlType is 'casimir':
+        # set right boundary to be an impedance boundary
+        # This boundary dissipates energy and should model the waves leaving the domain
+        pRightBoundary1 = -0.5*(q_m + q)
+        pRightBoundary1_ = -0.5*(q_m + q_)
+    else:
+        # all other cases right boundary is a zero dirichlet condition
+        pRightBoundary0 = Constant(0.0)
+        pRightBoundary1 = Constant(0.0)
+        pRightBoundary1_ = Constant(0.0)
+
+    # all cases the qRightBoundary is the same as q0, q1
+    qRightBoundary0 = q0
+    qRightBoundary1 = q1
+
+    # ___Bottom/general Boundary__
+    # All cases have a zero neumann condition
+    qGenBoundary0 = Constant([0.0, 0.0])
+    qGenBoundary1 = Constant([0.0, 0.0])
+
+    # all cases the pTopBoundary is the same as p0, p1
+    pGenBoundary0 = p0
+    pGenBoundary1 = p1
+
+    # __Left boundary__
     if not interConnection:
         if analytical:
             cSqrtConst = c*np.sqrt(pi**2/(4*xLength**2) + 4*pi**2/yLength**2)
-            pLeftBoundary = Expression('cSqrtConst*sin(2*pi*x[1]/(yLength) + pi/2)*cos(t*cSqrtConst)',
+            pLeftBoundary1 = Expression('cSqrtConst*sin(2*pi*x[1]/(yLength) + pi/2)*cos(t*cSqrtConst)',
                        degree=8, t=0, yLength=yLength, cSqrtConst=cSqrtConst)
         else:
-            pLeftBoundary = Expression('(t<0.25) ? 5*sin(8*pi*t) : 0.0', degree=2, t=0)
+            pLeftBoundary1 = Expression('(t<0.25) ? 5*sin(8*pi*t) : 0.0', degree=2, t=0)
 
-        pLeftBoundary_temp = pLeftBoundary
-        pLeftBoundary_temp_ = pLeftBoundary
-        pLeftBoundary_ = pLeftBoundary
+        pLeftBoundary0 = pLeftBoundary1
+        pLeftBoundary0_ = pLeftBoundary1
+        pLeftBoundary1_ = pLeftBoundary1
     else:
         if timeIntScheme == 'SV':
-            pLeftBoundary_temp = xode_m[1]/(m_em)
-            pLeftBoundary = xode[1]/(m_em)
-            pLeftBoundary_temp_ = xode_m[1]/(m_em)
-            pLeftBoundary_ = xode_[1]/(m_em)
+            pLeftBoundary0 = xode_m[1]/(m_em)
+            pLeftBoundary1 = xode[1]/(m_em)
+            pLeftBoundary0_ = xode_m[1]/(m_em)
+            pLeftBoundary1_ = xode_[1]/(m_em)
         elif timeIntScheme == 'SE':
-            pLeftBoundary = xode[1]/(m_em)
-            pLeftBoundary_ = xode_[1]/(m_em)
+            pLeftBoundary1 = xode[1]/(m_em)
+            pLeftBoundary1_ = xode_[1]/(m_em)
         elif timeIntScheme == 'SM':
-            pLeftBoundary = 0.5*(xode_m[1] + xode[1])/(m_em)
-            pLeftBoundary_ = 0.5*(xode_m[1] + xode_[1])/(m_em)
-            if controlType == 'lqr':
-                pTopBoundary = 0.5*(zode_m[1] + zode[1])/(m_em)
-                pTopBoundary_ = 0.5*(zode_m[1] + zode_[1])/(m_em)
-            elif controlType == 'casimir':
-                pTopBoundary = 0.5*(p_m + p)
-                pTopBoundary_ = 0.5*(p_m + p_)
+            pLeftBoundary1 = 0.5*(xode_m[1] + xode[1])/(m_em)
+            pLeftBoundary1_ = 0.5*(xode_m[1] + xode_[1])/(m_em)
 
         else:
             print('only SV and SE time int schemes have been implemented for interconnection')
             quit()
-
-        if domainShape == 'R':
-            if controlType == None:
-                uInput = Expression('(t<0.25) ? 10*sin(8*pi*t) : 0.0', degree=2, t=0)
-            elif controlType == 'passivity':
-                # cpp_code = '''
-                #     (t<input_stop_t) ? 10*sin(8*pi*t) : (t<control_start_t) ? 0.0 : (h_1>1) ? -10.0 : 10.0
-                # '''
-                uInput = Passive_control_input(t=0.0, h_1=0.0,
-                                    input_stop_t=input_stop_t, control_start_t=control_start_t)
-            elif controlType is 'lqr':
-                # Here is where I need to calculate the control on the left boundary
-                #TODO turn this part into a Class similar to Passive_control_input
-                #TODO in that class I can create the variational forms
-                if dirichletImp == 'weak':
-                    # create function spaces
-                    element_ctrl = MixedElement([P1, RT, odeSpace, odeSpace, odeSpace, odeSpace, odeSpace, odeSpace])
-                    U_ctrl = FunctionSpace(mesh, element_ctrl)
-
-                    # TODO fix the below to work for top force input
-                    p_ctrl, q_ctrl, xode_0_ctrl, xode_1_ctrl, xode_2_ctrl, \
-                                        zode_0_ctrl, zode_1_ctrl, zode_2_ctrl = TrialFunctions(U_ctrl)
-
-                    v_p_ctrl, v_q_ctrl, v_xode_0_ctrl, v_xode_1_ctrl, v_xode_2_ctrl, \
-                                        v_zode_0_ctrl, v_zode_1_ctrl, v_zode_2_ctrl = TestFunctions(U_ctrl)
-                    xode_ctrl = as_vector([xode_0_ctrl, xode_1_ctrl, xode_2_ctrl])
-                    v_xode_ctrl = as_vector([v_xode_0_ctrl, v_xode_1_ctrl, v_xode_2_ctrl])
-                    zode_ctrl = as_vector([zode_0_ctrl, zode_1_ctrl, zode_2_ctrl])
-                    v_zode_ctrl = as_vector([v_zode_0_ctrl, v_zode_1_ctrl, v_zode_2_ctrl])
-
-                    # set control inputs
-                    pLeftBoundary_ctrl = xode_ctrl[1]/(m_em)
-                    pTopBoundary_ctrl = zode_ctrl[1]/(m_em)
-
-                    # This is the variational form of the wave equation with x_dot = 0 or rather the RHS of x_dot = Ax
-                    F_ctrl = c_squared*(-dot(q_ctrl, grad(v_p_ctrl))*dx + q_bNormal*v_p_ctrl*ds(3) +
-                                        dot(q_ctrl, n)*v_p_ctrl*ds(0) + dot(q_ctrl, n)*v_p_ctrl*ds(2) +
-                                        dot(q_ctrl, n)*v_p_ctrl*ds(1) ) - \
-                             div(v_q_ctrl)*p_ctrl*dx + dot(v_q_ctrl, n)*pLeftBoundary_ctrl*ds(0) +  \
-                             dot(v_q_ctrl, n)*mirrorBoundary*ds(2) + dot(v_q_ctrl, n)*p_ctrl*ds(3) + \
-                             dot(v_q_ctrl, n)*pTopBoundary_ctrl*ds(1)
-
-                    if interConnection == 'IC':
-                        # TODO try changin this to vector notation
-                        F_em_ctrl = (v_xode_ctrl[0]*(A_em[0, 0]*xode_ctrl[0] + A_em[0, 1]*xode_ctrl[1] + A_em[0, 2]*xode_ctrl[2]) +
-                                     v_xode_ctrl[1]*(A_em[1, 0]*xode_ctrl[0] + A_em[1, 1]*xode_ctrl[1] + A_em[1, 2]*xode_ctrl[2]) +
-                                     v_xode_ctrl[2]*(A_em[2, 0]*xode_ctrl[0] + A_em[2, 1]*xode_ctrl[1] + A_em[2, 2]*xode_ctrl[2]) +
-                                     K_wave*yLength*v_xode_ctrl[1]*dot(q_ctrl, n))*ds(0)
-
-                        F_em_ctrl_z = (v_zode_ctrl[0]*(A_em[0, 0]*zode_ctrl[0] + A_em[0, 1]*zode_ctrl[1] + A_em[0, 2]*zode_ctrl[2]) +
-                                     v_zode_ctrl[1]*(A_em[1, 0]*zode_ctrl[0] + A_em[1, 1]*zode_ctrl[1] + A_em[1, 2]*zode_ctrl[2]) +
-                                     v_zode_ctrl[2]*(A_em[2, 0]*zode_ctrl[0] + A_em[2, 1]*zode_ctrl[1] + A_em[2, 2]*zode_ctrl[2]) +
-                                     K_wave*xLength*v_zode_ctrl[1]*dot(q_ctrl, n))*ds(1)
-
-                        F_ctrl += F_em_ctrl + F_em_ctrl_z
-                    else:
-                        print('only IC implemented for lqr control')
-                        quit()
-
-                    a_ctrl = lhs(F_ctrl)
-                    # L_zero = rhs(F_ctrl)
-                    A_ctrl = assemble(a_ctrl)
-                    # B_zero = assemble(L_zero)
-                    num_control = 2
-
-                    # A_ctrl_array is the A matrix in x_dot = Ax, the dynamics of the discrete system.
-                    A_ctrl_array = A_ctrl.array()
-                    # get number of dofs
-                    num_dofs = len(A_ctrl_array)
-                    num_p = (num_dofs - 6) // 3
-                    # create control array with a one in the spot for the h_1 equation, the current of the EM system
-                    B_ctrl_array = np.zeros((len(A_ctrl_array), num_control))
-                    B_ctrl_array[-3, 0] = 1
-                    B_ctrl_array[-6, 1] = 1
-                    # Create temporary control matrix for control on each state
-                    # B_ctrl_array = np.eye(len(A_ctrl_array))
-                    # we have one control variable, the voltage input
-                    # check controllability
-                    controllable_matrix = np.asarray(ctrl.ctrb(A_ctrl_array, B_ctrl_array))
-                    controllable_rank = np.linalg.matrix_rank(controllable_matrix)
-                    controllable_svd = np.linalg.svd(controllable_matrix)[1]
-
-                    if controllable_rank < len(B_ctrl_array):
-                        print('rank of controllability matrix is {}, less than full rank of {}'.format(
-                           controllable_rank, len(B_ctrl_array)))
-                        print('lqr control matrices are not controllable')
-                        # quit()
-
-                    # Choose our weight matrices for controller Q_lqr and R_lqr
-                    # Q_lqr is the weighting on our model prediction of observables
-                    Q_lqr = 2*np.identity(num_dofs)
-                    # R_lqr is the weighting on our measurement
-                    R_lqr = 0.5*np.identity(num_control)
-                    # calculate our controller gains with lqr
-                    K, sol_ric, eigs_closed_loop = ctrl.lqr(A_ctrl_array, B_ctrl_array, Q_lqr, R_lqr)
-                    # TODO Check that A - BK is Hurwitz
-
-                    # formulate the Q matrix
-                    Q_d = np.identity(num_dofs)
-                    Q_d[0:num_p, 0:num_p] = Q_d[0:num_p, 0:num_p]
-                    Q_d[num_p:3*num_p, num_p:3*num_p] = c_squared*Q_d[num_p:3*num_p, num_p:3*num_p]
-                    #last 3 rows/columns are for the EM system
-                    Q_d[3*num_p, 3*num_p] = (1/L_em)*Q_d[3*num_p, 3*num_p]
-                    Q_d[3*num_p+1, 3*num_p+1] = (1/m_em)*Q_d[3*num_p+1, 3*num_p+1]
-                    Q_d[3*num_p+2, 3*num_p+2] = K_em*Q_d[3*num_p+2, 3*num_p+2]
-
-
-                    # Temporarily have a full state observer, so C in y=Cx is the identity
-                    # Eventually we need to choose a subset of dofs to observe, g_obs_array will map all dofs
-                    # to the dofs we observe
-                    g_obs_array = np.identity(len(A_ctrl_array))
-                    C_obs_array = g_obs_array*Q_d
-
-                    # temporarily make standard inputs without control
-                    uInput = Expression('(t<0.25) ? 10*sin(8*pi*t) : 0.0', degree=2, t=0)
-                    uInput_z = Expression('(t<0.25) ? 10*sin(8*pi*t) : 0.0', degree=2, t=0)
-
-                    print('control matrices calculated for lqr control')
-
-                else:
-                    print('dirichlet implementation {} not implemented'.format(dirichletImp))
-                    exit()
-
-        elif domainShape == 'S_1C':
-            uInput = Expression('(t<0.25) ? 10*sin(8*pi*t) : 0.0', degree=2, t=0)
-
+    # all cases the qLeftBoundary is the same as q0, q1
+    qLeftBoundary0 = q0
+    qLeftBoundary1 = q1
 
     # If we have dirichlet conditions applied in the strong way set them here, otherwise
     # they are set in the integration by parts term in the problem definition
     if dirichletImp == 'strong':
-        bc_forced = DirichletBC(U.sub(0), pLeftBoundary, forced_boundary)
+        bc_forced = DirichletBC(U.sub(0), pLeftBoundary1, forced_boundary)
 
         # fixed boundary at right boundary
         bc_fixed = DirichletBC(U.sub(0), Constant(0.0), fixed_boundary)
@@ -564,301 +409,154 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         bcs = []
 
 
+    # -------------------------------# define interconnection voltage input #---------------------------------#
+
+    if interConnection:
+        if domainShape == 'R':
+            if controlType == None:
+                uInput = Expression('(t<0.25) ? 10*sin(8*pi*t) : 0.0', degree=2, t=0)
+            elif controlType == 'passivity':
+                # cpp_code = '''
+                #     (t<input_stop_t) ? 10*sin(8*pi*t) : (t<control_start_t) ? 0.0 : (h_1>1) ? -10.0 : 10.0
+                # '''
+                uInput = Passive_control_input(t=0.0, h_1=0.0,
+                                               input_stop_t=input_stop_t, control_start_t=control_start_t)
+
+        elif domainShape == 'S_1C':
+            uInput = Expression('(t<0.25) ? 10*sin(8*pi*t) : 0.0', degree=2, t=0)
+
     # -------------------------------# Problem Definition #---------------------------------#
 
-    # TODO rewrite all in terms of p_leftBoundary, p_topBoundary and so on, to generalise this part.
-    # TODO Check it is working after each change
     # Define variational problem
-    if timeIntScheme == 'SV':
-    # Implement Stormer Verlet Scheme
+    if timeIntScheme is 'SV':
         if dirichletImp == 'strong':
-            F_temp = (p - p_m)*v_p*dx + 0.5*dt*c_squared*(-dot(q_m, grad(v_p))*dx + q_bNormal*v_p*ds(1)) + \
-                     dot(q - q_m, v_q)*dx + 0.5*dt*dot(grad(p_m), v_q)*dx
-            F = (p - p_m)*v_p*dx + dt*c_squared*(-dot(q_temp, grad(v_p))*dx + q_bNormal*v_p*ds(1)) + \
-                dot(q - q_temp, v_q)*dx + 0.5*dt*dot(grad(p), v_q)*dx
+            if numIntSubSteps > 1:
+                F_temp = (p - p_m)*v_p*dx + 0.5*dt*c_squared*(-dot(q0, grad(v_p))*dx +
+                                                                 dot(qTopBoundary0, n)*v_p*ds(1) +
+                                                                 dot(qGenBoundary0, n)*v_p*ds(3)) + \
+                         dot(q - q_m, v_q)*dx + 0.5*dt*(dot(grad(p0), v_q))*dx
+
+            F = (p - p_m)*v_p*dx + dt*c_squared*(-dot(q1, grad(v_p))*dx +
+                                                 dot(qTopBoundary1, n)*v_p*ds(1) +
+                                                 dot(qGenBoundary1, n)*v_p*ds(3)) + \
+                dot(q - q_temp, v_q)*dx + 0.5*dt*(dot(grad(p1), v_q))*dx
         elif dirichletImp == 'weak':
+            if numIntSubSteps > 1:
+                F_temp = (p - p_m)*v_p*dx + 0.5*dt*c_squared*(-dot(q0, grad(v_p))*dx +
+                                                              dot(qLeftBoundary0, n)*v_p*ds(0) +
+                                                              dot(qTopBoundary0, n)*v_p*ds(1) +
+                                                              dot(qRightBoundary0, n)*v_p*ds(2) +
+                                                              dot(qGenBoundary0, n)*v_p*ds(3)) + \
+                         dot(q - q_m, v_q)*dx + 0.5*dt*(-div(v_q)*p0*dx +
+                                                              dot(v_q, n)*pLeftBoundary0*ds(0) +
+                                                              dot(v_q, n)*pTopBoundary0*ds(1) +
+                                                              dot(v_q, n)*pRightBoundary0*ds(2) +
+                                                              dot(v_q, n)*pGenBoundary0*ds(3))
 
-            # This is the variational form for the wave equation
-            #TODO(only the q part of this temp equation (the first step of stormer-verlet
-            # needs to be solved, for now just solve it all
-            F_temp = (p - p_m)*v_p*dx + 0.5*dt*c_squared*(-dot(q_m, grad(v_p))*dx + q_bNormal*v_p*ds(1) +
-                                                          dot(q_m, n)*v_p*ds(0) + dot(q_m, n)*v_p*ds(2)) + \
-                     dot(q - q_m, v_q)*dx + 0.5*dt*(-div(v_q)*p_m*dx + dot(v_q, n)*pLeftBoundary_temp*ds(0) +
-                                                    dot(v_q, n)*mirrorBoundary*ds(2) + dot(v_q, n)*p_m*ds(1))
-            F = (p - p_m)*v_p*dx + dt*c_squared*(-dot(q_temp, grad(v_p))*dx + q_bNormal*v_p*ds(1) +
-                                                 dot(q_temp, n)*v_p*ds(0) + dot(q_temp, n)*v_p*ds(2)) + \
-                dot(q - q_temp, v_q)*dx + 0.5*dt*(-div(v_q)*p*dx + dot(v_q, n)*pLeftBoundary*ds(0) +
-                                                  dot(v_q, n)*mirrorBoundary*ds(2) + dot(v_q, n)*p*ds(1))
+            F = (p - p_m)*v_p*dx + dt*c_squared*(-dot(q1, grad(v_p))*dx +
+                                                 dot(qLeftBoundary1, n)*v_p*ds(0) +
+                                                 dot(qTopBoundary1, n)*v_p*ds(1) +
+                                                 dot(qRightBoundary1, n)*v_p*ds(2) +
+                                                 dot(qGenBoundary1, n)*v_p*ds(3)) + \
+                dot(q - q_temp, v_q)*dx + 0.5*dt*(-div(v_q)*p1*dx +
+                                                 dot(v_q, n)*pLeftBoundary1*ds(0) +
+                                                 dot(v_q, n)*pTopBoundary1*ds(1) +
+                                                 dot(v_q, n)*pRightBoundary1*ds(2) +
+                                                 dot(v_q, n)*pGenBoundary1*ds(3))
+    elif timeIntScheme in ['IE', 'EE', 'SE', 'SM', 'EH']:
+        if dirichletImp == 'strong':
+            if numIntSubSteps >1:
+                F_temp = (p - p_m)*v_p*dx + dt*c_squared*(-dot(q0, grad(v_p))*dx +
+                                                     dot(qTopBoundary0, n)*v_p*ds(1) +
+                                                     dot(qGenBoundary0, n)*v_p*ds(3)) + \
+                    dot(q - q_m, v_q)*dx + dt*(dot(grad(p0), v_q))*dx
 
-            # include variational form of electromechanical equation
-            if interConnection == 'IC4':
-                # For some reason Fenics doesn't work when I try to implement the vector/matrix form of the
-                # below equations, so we have to write out each entry in the maatrix/vector operation.
-                F_temp_em = (-dot(v_xode, xode - xode_m)/(0.5*dt) +
-                          v_xode[0]*(A_em[0, 0]*xode_m[0] + A_em[0, 1]*xode_m[1] +
-                                     A_em[0, 2]*xode[2] + A_em[0, 3]*xode[3]) +
-                          v_xode[1]*(A_em[1, 0]*xode_m[0] + A_em[1, 1]*xode_m[1] +
-                                     A_em[1, 2]*xode[2] + A_em[1, 3]*xode[3]) +
-                          v_xode[2]*(A_em[2, 0]*xode_m[0] + A_em[2, 1]*xode_m[1] +
-                                     A_em[2, 2]*xode[2] + A_em[2, 3]*xode[3]) +
-                          v_xode[3]*(A_em[3, 0]*xode_m[0] + A_em[3, 1]*xode_m[1] +
-                                     A_em[3, 2]*xode[2] + A_em[3, 3]*xode[3]) +
-                          v_xode[0]*uInput + K_wave*yLength*v_xode[1]*dot(q_m,n))*ds(0) #I dont think it matters what q_ here
+            F = (p - p_m)*v_p*dx + dt*c_squared*(-dot(q1, grad(v_p))*dx +
+                                                 dot(qTopBoundary1, n)*v_p*ds(1) +
+                                                 dot(qGenBoundary1, n)*v_p*ds(3)) + \
+                dot(q - q_m, v_q)*dx + dt*(dot(grad(p1), v_q))*dx
+        elif dirichletImp == 'weak':
+            if numIntSubSteps >1:
+                F_temp = (p - p_m)*v_p*dx + dt*c_squared*(-dot(q0, grad(v_p))*dx +
+                                                     dot(qLeftBoundary0, n)*v_p*ds(0) +
+                                                     dot(qTopBoundary0, n)*v_p*ds(1) +
+                                                     dot(qRightBoundary0, n)*v_p*ds(2) +
+                                                     dot(qGenBoundary0, n)*v_p*ds(3)) + \
+                    dot(q - q_m, v_q)*dx + dt*(-div(v_q)*p0*dx +
+                                                     dot(v_q, n)*pLeftBoundary0*ds(0) +
+                                                     dot(v_q, n)*pTopBoundary0*ds(1) +
+                                                     dot(v_q, n)*pRightBoundary0*ds(2) +
+                                                     dot(v_q, n)*pGenBoundary0*ds(3))
 
-                F_temp += F_temp_em
-
-                F_em = (-(v_xode[0]*(xode[0] - xode_m[0]) +
-                       v_xode[1]*(xode[1] - xode_m[1]) +
-                       v_xode[2]*(xode[2] - xode_temp[2]) +
-                       v_xode[3]*(xode[3] - xode_temp[3]))/dt +
-                     0.5*v_xode[0]*(A_em[0, 0]*xode_m[0] + A_em[0, 1]*xode_m[1] +
-                                    A_em[0, 2]*xode_temp[2] + A_em[0, 3]*xode_temp[3] +
-                                    A_em[0, 0]*xode[0] + A_em[0, 1]*xode[1] +
-                                    A_em[0, 2]*xode_temp[2] + A_em[0, 3]*xode_temp[3]) +
-                     0.5*v_xode[1]*(A_em[1, 0]*xode_m[0] + A_em[1, 1]*xode_m[1] +
-                                    A_em[1, 2]*xode_temp[2] + A_em[1, 3]*xode_temp[3] +
-                                    A_em[1, 0]*xode[0] + A_em[1, 1]*xode[1] +
-                                    A_em[1, 2]*xode_temp[2] + A_em[1, 3]*xode_temp[3]) +
-                     0.5*v_xode[2]*(A_em[2, 0]*xode[0] + A_em[2, 1]*xode[1] +
-                                    A_em[2, 2]*xode_temp[2] + A_em[2, 3]*xode_temp[3]) +
-                     0.5*v_xode[3]*(A_em[3, 0]*xode[0] + A_em[3, 1]*xode[1] +
-                                    A_em[3, 2]*xode_temp[2] + A_em[3, 3]*xode_temp[3]) +
-                     v_xode[0]*uInput + K_wave*yLength*v_xode[1]*dot(q_temp,n))*ds(0)
-                # don't multiply the input by a half because it is for a full step
-
-                F += F_em
-
-            elif interConnection == 'IC':
-                F_temp_em = (-dot(v_xode, xode - xode_m)/(0.5*dt) +
-                             v_xode[0]*(A_em[0, 0]*xode_m[0] + A_em[0, 1]*xode_m[1] + A_em[0, 2]*xode[2]) +
-                             v_xode[1]*(A_em[1, 0]*xode_m[0] + A_em[1, 1]*xode_m[1] + A_em[1, 2]*xode[2]) +
-                             v_xode[2]*(A_em[2, 0]*xode_m[0] + A_em[2, 1]*xode_m[1] + A_em[2, 2]*xode[2]) +
-                             v_xode[0]*uInput + K_wave*yLength*v_xode[1]*dot(q_m, n))*ds(0)
-
-                F_temp += F_temp_em
-
-                F_em = (-(v_xode[0]*(xode[0] - xode_m[0]) +
-                          v_xode[1]*(xode[1] - xode_m[1]) +
-                          v_xode[2]*(xode[2] - xode_temp[2]))/dt +
-                        0.5*v_xode[0]*(A_em[0, 0]*xode_m[0] + A_em[0, 1]*xode_m[1] + A_em[0, 2]*xode_temp[2] +
-                                       A_em[0, 0]*xode[0] + A_em[0, 1]*xode[1] + A_em[0, 2]*xode_temp[2]) +
-                        0.5*v_xode[1]*(A_em[1, 0]*xode_m[0] + A_em[1, 1]*xode_m[1] + A_em[1, 2]*xode_temp[2] +
-                                       A_em[1, 0]*xode[0] + A_em[1, 1]*xode[1] + A_em[1, 2]*xode_temp[2]) +
-                        0.5*v_xode[2]*(A_em[2, 0]*xode[0] + A_em[2, 1]*xode[1] + A_em[2, 2]*xode_temp[2]) +
-                        v_xode[0]*uInput + K_wave*yLength*v_xode[1]*dot(q_temp, n))*ds(0)
-                # don't multiply the input by a half because it is for a full step
-
-                F += F_em
+            F = (p - p_m)*v_p*dx + dt*c_squared*(-dot(q1, grad(v_p))*dx +
+                                                 dot(qLeftBoundary1, n)*v_p*ds(0) +
+                                                 dot(qTopBoundary1, n)*v_p*ds(1) +
+                                                 dot(qRightBoundary1, n)*v_p*ds(2) +
+                                                 dot(qGenBoundary1, n)*v_p*ds(3)) + \
+                dot(q - q_m, v_q)*dx + dt*(-div(v_q)*p1*dx +
+                                                 dot(v_q, n)*pLeftBoundary1*ds(0) +
+                                                 dot(v_q, n)*pTopBoundary1*ds(1) +
+                                                 dot(v_q, n)*pRightBoundary1*ds(2) +
+                                                 dot(v_q, n)*pGenBoundary1*ds(3))
 
         else:
             print('dirichlet implementation {} not implemented'.format(dirichletImp))
-            exit()
+            quit()
 
-    elif timeIntScheme == 'EE':
-    # implement Explicit Euler
-        if dirichletImp == 'strong':
-            F = (p - p_m)*v_p*dx + dt*c_squared*(-dot(q_m, grad(v_p))*dx + q_bNormal*v_p*ds(1)) + \
-                dot(q - q_m, v_q)*dx + dt*dot(grad(p_m), v_q)*dx
-        elif dirichletImp == 'weak':
-            F = (p - p_m)*v_p*dx + dt*c_squared*(-dot(q_m, grad(v_p))*dx + q_bNormal*v_p*ds(1) +
-                                                 dot(q_m, n)*v_p*ds(0) + dot(q_m, n)*v_p*ds(2)) + \
-                dot(q - q_m, v_q)*dx - dt*div(v_q)*p_m*dx + dt*dot(v_q, n)*pLeftBoundary*ds(0) + \
-                dt*dot(v_q, n)*mirrorBoundary*ds(2) + dt*dot(v_q, n)*p_m*ds(1)
-        else:
-            print('dirichlet implementation {} not implemented'.format(dirichletImp))
-            exit()
-    elif timeIntScheme == 'IE':
-    # implement Implicit Euler
-        if dirichletImp == 'strong':
-            F = (p - p_m)*v_p*dx + dt*c_squared*(-dot(q, grad(v_p))*dx + q_bNormal*v_p*ds(1)) + \
-                dot(q - q_m, v_q)*dx + dt*dot(grad(p), v_q)*dx
-        elif dirichletImp == 'weak':
-            F = (p - p_m)*v_p*dx + dt*c_squared*(-dot(q, grad(v_p))*dx + q_bNormal*v_p*ds(1) +
-                                                 dot(q, n)*v_p*ds(0) + dot(q, n)*v_p*ds(2)) + \
-                dot(q - q_m, v_q)*dx - dt*div(v_q)*p*dx + dt*dot(v_q, n)*pLeftBoundary*ds(0) + \
-                dt*dot(v_q, n)*mirrorBoundary*ds(2) + dt*dot(v_q, n)*p*ds(1)
-        else:
-            print('dirichlet implementation {} not implemented'.format(dirichletImp))
-            exit()
-    elif timeIntScheme == 'SE':
-    #implement Symplectic Euler
-        if dirichletImp == 'strong':
-            F = (p - p_m)*v_p*dx + dt*c_squared*(-dot(q_m, grad(v_p))*dx + q_bNormal*v_p*ds(1)) + \
-                dot(q - q_m, v_q)*dx + dt*dot(grad(p), v_q)*dx
+    else:
+        print('time integration scheme {} not implemented'.format(timeIntScheme))
+        quit()
 
-        elif dirichletImp == 'weak':
-            # This is the variational form of the wave equation
-            F = (p - p_m)*v_p*dx + dt*c_squared*(-dot(q_m, grad(v_p))*dx + q_bNormal*v_p*ds(1) +
-                dot(q_m, n)*v_p*ds(0) + dot(q_m, n)*v_p*ds(2)) + \
-                dot(q - q_m, v_q)*dx - dt*div(v_q)*p*dx + dt*dot(v_q, n)*pLeftBoundary*ds(0) + \
-                dt*dot(v_q, n)*mirrorBoundary*ds(2) + dt*dot(v_q, n)*p*ds(1)
+    if interConnection == 'IC':
+        if timeIntScheme is 'SV':
+            F_temp_em = (-dot(v_xode, xode - xode_m)/(0.5*dt) +
+                         v_xode[0]*(A_em[0, 0]*xode_m[0] + A_em[0, 1]*xode_m[1] + A_em[0, 2]*xode[2]) +
+                         v_xode[1]*(A_em[1, 0]*xode_m[0] + A_em[1, 1]*xode_m[1] + A_em[1, 2]*xode[2]) +
+                         v_xode[2]*(A_em[2, 0]*xode_m[0] + A_em[2, 1]*xode_m[1] + A_em[2, 2]*xode[2]) +
+                         v_xode[0]*uInput + K_wave*yLength*v_xode[1]*dot(qLeftBoundary0, n))*ds(0)
 
-            if interConnection == 'IC4':
-                F_em = (-dot(v_xode, xode - xode_m)/dt +
-                             v_xode[0]*(A_em[0, 0]*xode[0] + A_em[0, 1]*xode[1] +
-                                        A_em[0, 2]*xode_m[2] + A_em[0, 3]*xode_m[3]) +
-                             v_xode[1]*(A_em[1, 0]*xode[0] + A_em[1, 1]*xode[1] +
-                                        A_em[1, 2]*xode_m[2] + A_em[1, 3]*xode_m[3]) +
-                             v_xode[2]*(A_em[2, 0]*xode[0] + A_em[2, 1]*xode[1] +
-                                        A_em[2, 2]*xode_m[2] + A_em[2, 3]*xode_m[3]) +
-                             v_xode[3]*(A_em[3, 0]*xode[0] + A_em[3, 1]*xode[1] +
-                                        A_em[3, 2]*xode_m[2] + A_em[3, 3]*xode_m[3]) +
-                        v_xode[0]*uInput + K_wave*yLength*v_xode[1]*dot(q_m,n))*ds(0)
+            F_temp += F_temp_em
 
-                F += F_em
-            elif interConnection == 'IC':
-                F_em = (-dot(v_xode, xode - xode_m)/dt +
+            F_em = (-(v_xode[0]*(xode[0] - xode_m[0]) +
+                      v_xode[1]*(xode[1] - xode_m[1]) +
+                      v_xode[2]*(xode[2] - xode_temp[2]))/dt +
+                    0.5*v_xode[0]*(A_em[0, 0]*xode_m[0] + A_em[0, 1]*xode_m[1] + A_em[0, 2]*xode_temp[2] +
+                                   A_em[0, 0]*xode[0] + A_em[0, 1]*xode[1] + A_em[0, 2]*xode_temp[2]) +
+                    0.5*v_xode[1]*(A_em[1, 0]*xode_m[0] + A_em[1, 1]*xode_m[1] + A_em[1, 2]*xode_temp[2] +
+                                   A_em[1, 0]*xode[0] + A_em[1, 1]*xode[1] + A_em[1, 2]*xode_temp[2]) +
+                    0.5*v_xode[2]*(A_em[2, 0]*xode[0] + A_em[2, 1]*xode[1] + A_em[2, 2]*xode_temp[2]) +
+                    v_xode[0]*uInput + K_wave*yLength*v_xode[1]*dot(qLeftBoundary1, n))*ds(0)
+            # don't multiply the input by a half because it is for a full step
+
+            F += F_em
+        elif timeIntScheme is 'SE':
+
+            F_em = (-dot(v_xode, xode - xode_m)/dt +
                         v_xode[0]*(A_em[0, 0]*xode[0] + A_em[0, 1]*xode[1] + A_em[0, 2]*xode_m[2]) +
                         v_xode[1]*(A_em[1, 0]*xode[0] + A_em[1, 1]*xode[1] + A_em[1, 2]*xode_m[2]) +
                         v_xode[2]*(A_em[2, 0]*xode[0] + A_em[2, 1]*xode[1] + A_em[2, 2]*xode_m[2]) +
-                        v_xode[0]*uInput + K_wave*yLength*v_xode[1]*dot(q_m, n))*ds(0)
+                        v_xode[0]*uInput + K_wave*yLength*v_xode[1]*dot(q1, n))*ds(0)
 
-                F += F_em
+            F += F_em
 
+        elif timeIntScheme is 'SM':
+
+            F_em = (-dot(v_xode, xode - xode_m)/dt +
+                    0.5*v_xode[0]*(A_em[0, 0]*xode[0] + A_em[0, 0]*xode_m[0] +
+                                   A_em[0, 1]*xode[1] + A_em[0, 1]*xode_m[1] +
+                                   A_em[0, 2]*xode[2] + A_em[0, 2]*xode_m[2]) +
+                    0.5*v_xode[1]*(A_em[1, 0]*xode[0] + A_em[1, 0]*xode_m[0] +
+                                   A_em[1, 1]*xode[1] + A_em[1, 1]*xode_m[1] +
+                                   A_em[1, 2]*xode[2] + A_em[1, 2]*xode_m[2]) +
+                    0.5*v_xode[2]*(A_em[2, 0]*xode[0] + A_em[2, 0]*xode_m[0] +
+                                   A_em[2, 1]*xode[1] + A_em[2, 1]*xode_m[1] +
+                                   A_em[2, 2]*xode[2] + A_em[2, 2]*xode_m[2]) +
+                    v_xode[0]*uInput + K_wave*yLength*v_xode[1]*(dot(q1, n)))*ds(0)
+
+            F += F_em
         else:
-            print('dirichlet implementation {} not implemented'.format(dirichletImp))
-            exit()
-    elif timeIntScheme == 'SM':
-        #Symplectic Midpoint Rule
-        if dirichletImp == 'strong':
-            F = (p - p_m)*v_p*dx + dt*c_squared*0.5*(-dot(q_m, grad(v_p))*dx - dot(q, grad(v_p))*dx + q_bNormal*v_p*ds(1)) + \
-                dot(q - q_m, v_q)*dx + dt*0.5*(dot(grad(p_m), v_q) + dot(grad(p), v_q))*dx
-        elif dirichletImp == 'weak':
-            if controlType in [None, 'passivity']:
-                F = (p - p_m)*v_p*dx + 0.5*dt*c_squared*(-dot(q_m, grad(v_p))*dx -
-                                                         dot(q, grad(v_p))*dx +
-                                                         2*q_bNormal*v_p*ds(1) +
-                                                         dot(q_m, n)*v_p*ds(0) +
-                                                         dot(q_m, n)*v_p*ds(2) +
-                                                         dot(q, n)*v_p*ds(0) +
-                                                         dot(q, n)*v_p*ds(2)) + \
-                    dot(q - q_m, v_q)*dx + 0.5*dt*(-div(v_q)*p_m*dx -
-                                                   div(v_q)*p*dx +
-                                                   2*dot(v_q, n)*pLeftBoundary*ds(0) +
-                                                   2*dot(v_q, n)*mirrorBoundary*ds(2) +
-                                                   dot(v_q, n)*p_m*ds(1) +
-                                                   dot(v_q, n)*p*ds(1))
-            elif controlType == 'lqr':
-                F = (p - p_m)*v_p*dx + 0.5*dt*c_squared*(-dot(q_m, grad(v_p))*dx -
-                                                         dot(q, grad(v_p))*dx +
-                                                         2*q_bNormal*v_p*ds(3) +
-                                                         dot(q_m, n)*v_p*ds(0) +
-                                                         dot(q_m, n)*v_p*ds(1) +
-                                                         dot(q_m, n)*v_p*ds(2) +
-                                                         dot(q, n)*v_p*ds(0) +
-                                                         dot(q, n)*v_p*ds(1) +
-                                                         dot(q, n)*v_p*ds(2)) + \
-                    dot(q - q_m, v_q)*dx + 0.5*dt*(-div(v_q)*p_m*dx - div(v_q)*p*dx +
-                                                   2*dot(v_q, n)*pLeftBoundary*ds(0) +
-                                                   2*dot(v_q, n)*pTopBoundary*ds(1) +
-                                                   2*dot(v_q, n)*mirrorBoundary*ds(2) +
-                                                   dot(v_q, n)*p_m*ds(3) +
-                                                   dot(v_q, n)*p*ds(3))
-            elif controlType == 'casimir':
-                F = (p - p_m)*v_p*dx + 0.5*dt*c_squared*(-dot(q_m, grad(v_p))*dx -
-                                                         dot(q, grad(v_p))*dx +
-                                                         dot(q_m, n)*v_p*ds(0) +
-                                                         dot(q, n)*v_p*ds(0) +
-                                                         2*q_topControl*v_p*ds(1) +
-                                                         dot(q_m, n)*v_p*ds(2) +
-                                                         dot(q, n)*v_p*ds(2) +
-                                                         2*q_bNormal*v_p*ds(3)) + \
-                dot(q - q_m, v_q)*dx + 0.5*dt*(-div(v_q)*p_m*dx - div(v_q)*p*dx +
-                                                   2*dot(v_q, n)*pLeftBoundary*ds(0) +
-                                                   dot(v_q, n)*p_m*ds(1) +
-                                                   dot(v_q, n)*p*ds(1) +
-                                                   2*dot(v_q, n)*impedanceBoundary*ds(2) +
-                                                   dot(v_q, n)*p_m*ds(3) +
-                                                   dot(v_q, n)*p*ds(3))
-
-            else:
-                print('the control type of {} had not been implemented'.format(controlType))
-                exit()
-
-            if interConnection == 'IC4':
-                F_em = (-dot(v_xode, xode - xode_m)/dt +
-                        0.5*v_xode[0]*(A_em[0, 0]*xode[0] + A_em[0, 0]*xode_m[0] +
-                                       A_em[0, 1]*xode[1] + A_em[0, 1]*xode_m[1] +
-                                       A_em[0, 2]*xode[2] + A_em[0, 2]*xode_m[2] +
-                                       A_em[0, 3]*xode[3] + A_em[0, 3]*xode_m[3]) +
-                        0.5*v_xode[1]*(A_em[1, 0]*xode[0] + A_em[1, 0]*xode_m[0] +
-                                       A_em[1, 1]*xode[1] + A_em[1, 1]*xode_m[1] +
-                                       A_em[1, 2]*xode[2] + A_em[1, 2]*xode_m[2] +
-                                       A_em[1, 3]*xode[3] + A_em[1, 3]*xode_m[3]) +
-                        0.5*v_xode[2]*(A_em[2, 0]*xode[0] + A_em[2, 0]*xode_m[0] +
-                                       A_em[2, 1]*xode[1] + A_em[2, 1]*xode_m[1] +
-                                       A_em[2, 2]*xode[2] + A_em[2, 2]*xode_m[2] +
-                                       A_em[2, 3]*xode[3] + A_em[2, 3]*xode_m[3]) +
-                        0.5*v_xode[3]*(A_em[3, 0]*xode[0] + A_em[3, 0]*xode_m[0] +
-                                       A_em[3, 1]*xode[1] + A_em[3, 1]*xode_m[1] +
-                                       A_em[3, 2]*xode[2] + A_em[3, 2]*xode_m[2] +
-                                       A_em[3, 3]*xode[3] + A_em[3, 3]*xode_m[3]) +
-                        v_xode[0]*uInput + 0.5*K_wave*yLength*v_xode[1]*(dot(q_m, n) + dot(q, n)))*ds(0)
-
-                F += F_em
-            elif interConnection == 'IC':
-                F_em = (-dot(v_xode, xode - xode_m)/dt +
-                        0.5*v_xode[0]*(A_em[0, 0]*xode[0] + A_em[0, 0]*xode_m[0] +
-                                       A_em[0, 1]*xode[1] + A_em[0, 1]*xode_m[1] +
-                                       A_em[0, 2]*xode[2] + A_em[0, 2]*xode_m[2]) +
-                        0.5*v_xode[1]*(A_em[1, 0]*xode[0] + A_em[1, 0]*xode_m[0] +
-                                       A_em[1, 1]*xode[1] + A_em[1, 1]*xode_m[1] +
-                                       A_em[1, 2]*xode[2] + A_em[1, 2]*xode_m[2]) +
-                        0.5*v_xode[2]*(A_em[2, 0]*xode[0] + A_em[2, 0]*xode_m[0] +
-                                       A_em[2, 1]*xode[1] + A_em[2, 1]*xode_m[1] +
-                                       A_em[2, 2]*xode[2] + A_em[2, 2]*xode_m[2]) +
-                        v_xode[0]*uInput + 0.5*K_wave*yLength*v_xode[1]*(dot(q_m, n) + dot(q, n)))*ds(0)
-                if controlType == 'lqr':
-                    F_em += (-dot(v_zode, zode - zode_m)/dt +
-                        0.5*v_zode[0]*(A_em[0, 0]*zode[0] + A_em[0, 0]*zode_m[0] +
-                                       A_em[0, 1]*zode[1] + A_em[0, 1]*zode_m[1] +
-                                       A_em[0, 2]*zode[2] + A_em[0, 2]*zode_m[2]) +
-                        0.5*v_zode[1]*(A_em[1, 0]*zode[0] + A_em[1, 0]*zode_m[0] +
-                                       A_em[1, 1]*zode[1] + A_em[1, 1]*zode_m[1] +
-                                       A_em[1, 2]*zode[2] + A_em[1, 2]*zode_m[2]) +
-                        0.5*v_zode[2]*(A_em[2, 0]*zode[0] + A_em[2, 0]*zode_m[0] +
-                                       A_em[2, 1]*zode[1] + A_em[2, 1]*zode_m[1] +
-                                       A_em[2, 2]*zode[2] + A_em[2, 2]*zode_m[2]) +
-                        v_zode[0]*uInput_z + 0.5*K_wave*xLength*v_zode[1]*(dot(q_m, n) + dot(q, n)))*ds(1)
-
-
-                F += F_em
-
-        else:
-            print('dirichlet implementation {} not implemented'.format(dirichletImp))
-            exit()
-
-    elif timeIntScheme == 'EH':
-    # implement Explicit Heuns
-        if dirichletImp == 'strong':
-            F_temp = (p - p_m)*v_p*dx + dt*c_squared*(-dot(q_m, grad(v_p))*dx + q_bNormal*v_p*ds(1)) + \
-                     dot(q - q_m, v_q)*dx + dt*dot(grad(p_m), v_q)*dx
-            F = (p - p_m)*v_p*dx + 0.5*(dt*c_squared*(-dot(q_m, grad(v_p))*dx + q_bNormal*v_p*ds(1)) + \
-                                        dt*c_squared*(-dot(q_temp, grad(v_p))*dx + dt*q_bNormal*v_p*ds(1))) + \
-                 dot(q - q_m, v_q)*dx + 0.5*(dt*dot(grad(p_m), v_q)*dx + \
-                                            dt*dot(grad(p_temp), v_q)*dx)
-
-        elif dirichletImp == 'weak':
-            F_temp = (p - p_m)*v_p*dx + dt*c_squared*(-dot(q_m, grad(v_p))*dx + q_bNormal*v_p*ds(1) + \
-                                                      dot(q_m, n)*v_p*ds(0) + dot(q_m, n)*v_p*ds(2)) + \
-                      dot(q - q_m, v_q)*dx + dt*(-div(v_q)*p_m*dx + dot(v_q, n)*pLeftBoundary_temp*ds(0) + \
-                                                dot(v_q, n)*mirrorBoundary*ds(2) + dot(v_q, n)*p_m*ds(1))
-            F = (p - p_m)*v_p*dx + 0.5*dt*c_squared*(-dot(q_m, grad(v_p))*dx + q_bNormal*v_p*ds(1) + \
-                                                      dot(q_m, n)*v_p*ds(0) + dot(q_m, n)*v_p*ds(2) + \
-                                                      -dot(q_temp, grad(v_p))*dx + q_bNormal*v_p*ds(1) + \
-                                                      dot(q_temp, n)*v_p*ds(0) + dot(q_temp, n)*v_p*ds(2)) + \
-                 dot(q - q_m, v_q)*dx + 0.5*dt*(-div(v_q)*p_m*dx + dot(v_q, n)*pLeftBoundary*ds(0) + \
-                                                dot(v_q, n)*mirrorBoundary*ds(2) + dot(v_q, n)*p_m*ds(1) + \
-                                                -div(v_q)*p_temp*dx + dot(v_q, n)*pLeftBoundary*ds(0) + \
-                                                dot(v_q, n)*mirrorBoundary*ds(2) + dot(v_q, n)*p_temp*ds(1))
-
-        else:
-            print('dirichlet implementation {} not implemented'.format(dirichletImp))
-            exit()
-    else:
-        print('time integration scheme {} not implemented'.format(timeIntScheme))
-        exit()
-
+            print('interconnection is not implemented for {}'.format(timeIntScheme))
+            quit()
 
     a = lhs(F)
     b = rhs(F)
@@ -882,46 +580,45 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
     # first I define what time step q and p variables are used in each substep in
     # order to calculate the energy flow through the boundaries
     if timeIntScheme == 'SV':
-        q0 = q_temp
-        q1 = q_temp
+        q0_ = q_temp
+        q1_ = q_temp
     elif timeIntScheme == 'EE':
-        q0 = None
-        q1 = q_m
+        q0_ = None
+        q1_ = q_m
     elif timeIntScheme == 'IE':
-        q0 = None
-        q1 = q_
+        q0_ = None
+        q1_ = q_
     elif timeIntScheme == 'SE':
-        q0 = None
-        q1 = q_m
+        q0_ = None
+        q1_ = q_m
     elif timeIntScheme == 'SM':
-        q0 = None
-        q1 = 0.5*(q_m + q_)
+        q0_ = None
+        q1_ = 0.5*(q_m + q_)
+        p1_ = 0.5*(p_m + p_)
     elif timeIntScheme == 'EH':
-        q0 = q_m
-        q1 = q_temp
+        q0_ = q_m
+        q1_ = q_temp
 
     if numIntSubSteps >1:
         # These are the energy contributions from the left and top boundaries for the first half timestep
-        pT_L_q_temp_left = 0.5*dt*K_wave*dot(q0, n)*pLeftBoundary_temp_*ds(0)
+        pT_L_q_temp_left = 0.5*dt*K_wave*dot(q0_, n)*pLeftBoundary0_*ds(0)
 
         # These are the energy contributions from the left, general and right boundaries for the second half timestep
-        pT_L_q_left = 0.5*dt*K_wave*dot(q1, n)*pLeftBoundary_*ds(0)
+        pT_L_q_left = 0.5*dt*K_wave*dot(q1_, n)*pLeftBoundary1_*ds(0)
 
         # Total energy contribution from the boundaries for the time step
         pT_L_q = pT_L_q_temp_left + pT_L_q_left  # + pT_L_q_gen + pT_L_q_right
 
     else:
-        pT_L_q_left = dt*K_wave*dot(q1, n)*pLeftBoundary_*ds(0)
-        if controlType == 'lqr':
-            pT_L_q_top = dt*K_wave*dot(q1, n)*pTopBoundary_*ds(1)
-        elif controlType == 'casimir':
-            pT_L_q_top = dt*K_wave*q_topControl*pTopBoundary_*ds(1)
-            pT_L_q_right = dt*K_wave*dot(q1, n)*impedanceBoundary*ds(2)
+        pT_L_q_left = dt*K_wave*dot(q1_, n)*pLeftBoundary1_*ds(0)
+        if controlType == 'casimir':
+            pT_L_q_top = dt*K_wave*qTopBoundary1_*p1_*ds(1)
+            pT_L_q_right = dt*K_wave*dot(q1_, n)*pRightBoundary1_*ds(2)
         else:
             pT_L_q_top = 0.0
             pT_L_q_right = 0.0
         # pT_L_q_gen = dt*K_wave*q_bNormal*p1*ds(1)
-        # pT_L_q_right = dt*K_wave*dot(q1, n)*mirrorBoundary*ds(2)
+        # pT_L_q_right = dt*K_wave*dot(q1, n)*pRightBoundary*ds(2)
 
         pT_L_q = pT_L_q_left + pT_L_q_top + pT_L_q_right
 
@@ -1080,7 +777,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
                 t += dt_value
 
         if not interConnection:
-            pLeftBoundary.t = t
+            pLeftBoundary1.t = t
         else:
             uInput.t = t
             if controlType == 'passivity':
@@ -1118,7 +815,8 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
                 pass
 
             if not interConnection:
-                pLeftBoundary.t = t
+                pLeftBoundary0.t = t
+                pLeftBoundary1.t = t
             else:
                 uInput.t = t
                 # TODO include passivity part here as well
@@ -1138,9 +836,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         if not interConnection:
             out_p, out_q = u_.split(True)
         else:
-            if interConnection == 'IC4':
-                out_p, out_q, out_xode_0, out_xode_1, out_xode_2, out_xode_3 = u_.split()
-            elif interConnection == 'IC':
+            if interConnection == 'IC':
                 out_p, out_q, out_xode_0, out_xode_1, out_xode_2 = u_.split()
 
         # Save solution to file
@@ -1180,7 +876,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
                 inpPowerXdt = 0.5*(dt*uInput*(xode_0_m + xode_0_)/L_em)*ds(0)
             else:
                 print('timeIntScheme = {} is not implemented for interconnection'.format(timeIntScheme))
-                exit()
+                quit()
 
             inputEnergy += assemble(inpPowerXdt)/yLength
 
@@ -1189,10 +885,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             H_wave = assemble((0.5*p_*p_ + 0.5*c_squared*inner(q_, q_))*dx)*rho_val
 
             # get Hamiltonian from electromechanical system
-            if interConnection == 'IC4':
-                H_em = assemble(0.5*(xode_[0]*xode_[0]/L_em + xode_[1]*xode_[1]/m_em +
-                                     xode_[2]*xode_[2]/C_em + K_em*xode_[3]*xode_[3])*ds(0))/yLength
-            elif interConnection == 'IC':
+            if interConnection == 'IC':
                 H_em = assemble(0.5*(xode_[0]*xode_[0]/L_em + xode_[1]*xode_[1]/m_em +
                                      K_em*xode_[2]*xode_[2])*ds(0))/yLength
 
@@ -1202,9 +895,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             boundaryEnergy += assemble(pT_L_q)
 
             #output displacement
-            if interConnection == 'IC4':
-                disp = assemble(xode_3_*ds(0))/yLength
-            elif interConnection == 'IC':
+            if interConnection == 'IC':
                 disp = assemble(xode_2_*ds(0))/yLength
 
             if rank == 0:
