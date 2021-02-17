@@ -25,8 +25,8 @@ if __name__ == '__main__':
     # density
     rho = 2.0 # 2.0
 
-    # caseName = 'passivity_control_IC_t4_5'
-    caseName = 'lqr_control_t8_0'
+    caseName = 'passivity_control_IC_t4_5'
+    # caseName = 'lqr_control_t8_0'
     quick = True
     if quick:
         # caseArray = [['R', 'SM', 'weak', 40, 'IC', 0.4, 400, 'Mem', 'passivity']]
