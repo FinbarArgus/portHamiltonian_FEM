@@ -10,26 +10,7 @@ from mpi4py import MPI
 import control.matlab as ctrl
 import sys
 import petsc4py.PETSc as pet
-
-class Control_input(UserExpression):
-    def __init__(self, t, h_1, input_stop_t, control_start_t, **kwargs):
-        super().__init__(kwargs)
-        self.t = t
-        self.h_1 = h_1
-        self.input_stop_t = input_stop_t
-        self.control_start_t = control_start_t
-        self.eps = 0.001
-
-    def eval_cell(self, value, x, ufc_cell):
-        if self.t < self.input_stop_t:
-            value[0] = 10*sin(8*pi*self.t)
-        elif self.t < self.control_start_t:
-            value[0] = 0.0
-        else:
-            value[0] = -100.0*self.h_1
-
-    def value_shape(self):
-        return ()
+from control_input import *
 
 def wave_2D_solve(tFinal, numSteps, outputDir,
                   nx, xLength, yLength,
@@ -71,7 +52,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
 
 
     # set up parallel processing if it is used
-    comm = MPI.COMM_WORLD
+    comm = MPI.comm_world
     numProcs = comm.Get_size()
     if numProcs > 1:
         parallel = True
@@ -307,7 +288,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             # xode_temp = as_vector([xode_0_temp, xode_1_temp, xode_2_temp])
 
     else:
-        # interconnection is not used, this is the basic wave equation
+        # interconnection with a lumped param model is not used, this is the basic wave equation
         P1 = FiniteElement('P', triangle, basis_order[0])
         RT = FiniteElement('RT', triangle, basis_order[1])
 
@@ -382,8 +363,9 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
     rightMark = RightMarker()
     rightMark.mark(boundaryDomains, 2)
 
-    if controlType == 'lqr':
+    if controlType in ['lqr', 'casimir']:
         # if control type is 'lqr' remark bottom boundary
+        #TODO generalise so the bottom is always marked
         assert domainShape == 'R', 'control only works for rectangle at the moment'
         bottomMark = BottomMarker()
         bottomMark.mark(boundaryDomains, 3)
@@ -398,10 +380,15 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
 
     # Get normal
     n = FacetNormal(mesh)
-
     mirrorBoundary = Constant(0.0)
-    # Make an expression for the boundary term for top and bottom edges
+    # This boundary dissipates energy and should model the waves leaving the domain
+    impedanceBoundary = -0.5*(q_m + q)
+    impedanceBoundary = -0.5*(q_m + q_)
+
+    # Make an expression for the boundary term for zero Neumann condition
     q_bNormal = Constant(0.0)
+    # Expression for control of the top boundary, TODO change this from 0
+    q_topControl = Constant(0.0)
     # Forced boundary
     if not interConnection:
         if analytical:
@@ -429,6 +416,9 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             if controlType == 'lqr':
                 pTopBoundary = 0.5*(zode_m[1] + zode[1])/(m_em)
                 pTopBoundary_ = 0.5*(zode_m[1] + zode_[1])/(m_em)
+            elif controlType == 'casimir':
+                pTopBoundary = 0.5*(p_m + p)
+                pTopBoundary_ = 0.5*(p_m + p_)
 
         else:
             print('only SV and SE time int schemes have been implemented for interconnection')
@@ -441,11 +431,11 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
                 # cpp_code = '''
                 #     (t<input_stop_t) ? 10*sin(8*pi*t) : (t<control_start_t) ? 0.0 : (h_1>1) ? -10.0 : 10.0
                 # '''
-                uInput = Control_input(t=0.0, h_1=0.0,
+                uInput = Passive_control_input(t=0.0, h_1=0.0,
                                     input_stop_t=input_stop_t, control_start_t=control_start_t)
             elif controlType is 'lqr':
                 # Here is where I need to calculate the control on the left boundary
-                #TODO turn this part into a Class similar to Control_Input
+                #TODO turn this part into a Class similar to Passive_control_input
                 #TODO in that class I can create the variational forms
                 if dirichletImp == 'weak':
                     # create function spaces
@@ -576,6 +566,8 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
 
     # -------------------------------# Problem Definition #---------------------------------#
 
+    # TODO rewrite all in terms of p_leftBoundary, p_topBoundary and so on, to generalise this part.
+    # TODO Check it is working after each change
     # Define variational problem
     if timeIntScheme == 'SV':
     # Implement Stormer Verlet Scheme
@@ -732,7 +724,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             F = (p - p_m)*v_p*dx + dt*c_squared*0.5*(-dot(q_m, grad(v_p))*dx - dot(q, grad(v_p))*dx + q_bNormal*v_p*ds(1)) + \
                 dot(q - q_m, v_q)*dx + dt*0.5*(dot(grad(p_m), v_q) + dot(grad(p), v_q))*dx
         elif dirichletImp == 'weak':
-            if controlType != 'lqr':
+            if controlType in [None, 'passivity']:
                 F = (p - p_m)*v_p*dx + 0.5*dt*c_squared*(-dot(q_m, grad(v_p))*dx -
                                                          dot(q, grad(v_p))*dx +
                                                          2*q_bNormal*v_p*ds(1) +
@@ -762,6 +754,26 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
                                                    2*dot(v_q, n)*mirrorBoundary*ds(2) +
                                                    dot(v_q, n)*p_m*ds(3) +
                                                    dot(v_q, n)*p*ds(3))
+            elif controlType == 'casimir':
+                F = (p - p_m)*v_p*dx + 0.5*dt*c_squared*(-dot(q_m, grad(v_p))*dx -
+                                                         dot(q, grad(v_p))*dx +
+                                                         dot(q_m, n)*v_p*ds(0) +
+                                                         dot(q, n)*v_p*ds(0) +
+                                                         2*q_topControl*v_p*ds(1) +
+                                                         dot(q_m, n)*v_p*ds(2) +
+                                                         dot(q, n)*v_p*ds(2) +
+                                                         2*q_bNormal*v_p*ds(3)) + \
+                dot(q - q_m, v_q)*dx + 0.5*dt*(-div(v_q)*p_m*dx - div(v_q)*p*dx +
+                                                   2*dot(v_q, n)*pLeftBoundary*ds(0) +
+                                                   dot(v_q, n)*p_m*ds(1) +
+                                                   dot(v_q, n)*p*ds(1) +
+                                                   2*dot(v_q, n)*impedanceBoundary*ds(2) +
+                                                   dot(v_q, n)*p_m*ds(3) +
+                                                   dot(v_q, n)*p*ds(3))
+
+            else:
+                print('the control type of {} had not been implemented'.format(controlType))
+                exit()
 
             if interConnection == 'IC4':
                 F_em = (-dot(v_xode, xode - xode_m)/dt +
@@ -902,12 +914,16 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         pT_L_q_left = dt*K_wave*dot(q1, n)*pLeftBoundary_*ds(0)
         if controlType == 'lqr':
             pT_L_q_top = dt*K_wave*dot(q1, n)*pTopBoundary_*ds(1)
+        elif controlType == 'casimir':
+            pT_L_q_top = dt*K_wave*q_topControl*pTopBoundary_*ds(1)
+            pT_L_q_right = dt*K_wave*dot(q1, n)*impedanceBoundary*ds(2)
         else:
             pT_L_q_top = 0.0
+            pT_L_q_right = 0.0
         # pT_L_q_gen = dt*K_wave*q_bNormal*p1*ds(1)
         # pT_L_q_right = dt*K_wave*dot(q1, n)*mirrorBoundary*ds(2)
 
-        pT_L_q = pT_L_q_left + pT_L_q_top # + pT_L_q_right
+        pT_L_q = pT_L_q_left + pT_L_q_top + pT_L_q_right
 
     # -------------------------------# Set up output and plotting #---------------------------------#
 
@@ -926,7 +942,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
     # Create progress bar
     progress = Progress('Time-stepping', numSteps)
 
-    # Create vector for hamiltonian
+    # Create vector for output
     E_vec = []
     H_vec = []
     # HLeft_vec= [0]

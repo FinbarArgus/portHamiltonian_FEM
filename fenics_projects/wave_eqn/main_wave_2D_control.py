@@ -26,16 +26,17 @@ if __name__ == '__main__':
     rho = 2.0 # 2.0
 
     # caseName = 'passivity_control_IC_t4_5'
-    caseName = 'lqr_control_t8_0'
-    quick = True
+    caseName = 'passivity_control_IC_t4_5_TEST'
+    # caseName = 'lqr_control_t8_0'
+    quick = False
     if quick:
-        # caseArray = [['R', 'SM', 'weak', 40, 'IC', 0.4, 400, 'Mem', 'passivity']]
-        caseArray = [['R', 'SM', 'weak', 1, 'IC', 0.4, 400, 'Mem', 'lqr']]
-        input_stop_t = 0.1
+        caseArray = [['R', 'SM', 'weak', 40, 'IC', 0.4, 400, 'Mem', 'passivity']]
+        # caseArray = [['R', 'SM', 'weak', 5, 'wave', 0.4, 400, 'Mem', 'casimir']]
+        input_stop_t = 0.0
         control_start_t = 0.2
     else:
-        # caseArray = [['R', 'SM', 'weak', 40, 'IC', 8.0, 8000, 'Mem', 'passivity']]
-        caseArray = [['R', 'SM', 'weak', 40, 'IC', 8.0, 8000, 'Mem', 'lqr']]
+        caseArray = [['R', 'SM', 'weak', 40, 'IC', 8.0, 8000, 'Mem', 'passivity']]
+        # caseArray = [['R', 'SM', 'weak', 40, 'IC', 8.0, 8000, 'Mem', 'lqr']]
         input_stop_t = 0.0
         control_start_t = 1.0
     # Create output dir
