@@ -26,17 +26,17 @@ if __name__ == '__main__':
     rho = 2.0 # 2.0
 
     # caseName = 'passivity_control_IC_t4_5'
-    caseName = 'passivity_control_IC_t4_5_TEST'
-    # caseName = 'lqr_control_t8_0'
-    quick = True
+    # caseName = 'passivity_control_IC_t4_5_TEST'
+    caseName = 'casimir_control_wave_3_0'
+    quick = False
     if quick:
-        caseArray = [['R', 'SM', 'weak', 40, 'IC', 0.4, 400, 'Mem', 'passivity']]
-        # caseArray = [['R', 'SM', 'weak', 5, 'wave', 0.4, 400, 'Mem', 'casimir']]
+        # caseArray = [['R', 'SM', 'weak', 40, 'IC', 0.4, 400, 'Mem', 'passivity']]
+        caseArray = [['R', 'SM', 'weak', 5, 'wave', 0.4, 400, 'Mem', 'casimir']]
         input_stop_t = 0.0
         control_start_t = 0.2
     else:
-        caseArray = [['R', 'SM', 'weak', 40, 'IC', 8.0, 8000, 'Mem', 'passivity']]
-        # caseArray = [['R', 'SM', 'weak', 40, 'IC', 8.0, 8000, 'Mem', 'lqr']]
+        # caseArray = [['R', 'SM', 'weak', 40, 'IC', 8.0, 8000, 'Mem', 'passivity']]
+        caseArray = [['R', 'SM', 'weak', 100, 'wave', 5.0, 5000, 'Mem', 'casimir']]
         input_stop_t = 0.0
         control_start_t = 1.0
     # Create output dir
@@ -77,15 +77,6 @@ if __name__ == '__main__':
             if rank == 0:
                 os.mkdir(outputSubDir)
 
-        # approx number of elems in x direction
-        nx = caseVec[3]
-        xLength = 1.0
-
-        if caseVec[0] == 'R':
-            yLength = 0.25 #0.25
-        elif caseVec[0] == 'S_1C':
-            yLength = 0.1 #0.25
-
         # set final time and number of steps
         tFinal = caseVec[5]
         numSteps = caseVec[6]
@@ -95,11 +86,23 @@ if __name__ == '__main__':
         if len(caseVec) > 7:
             if caseVec[7] == 'noMem':
                 saveP = False
-
         if len(caseVec) > 8:
             controlType = caseVec[8]
         else:
             controlType = None
+
+        # approx number of elems in x direction
+        nx = caseVec[3]
+        xLength = 1.0
+        if controlType == 'casimir':
+            xLength = 4.0
+
+        if caseVec[0] == 'R':
+            yLength = 0.25 #0.25
+        elif caseVec[0] == 'S_1C':
+            yLength = 0.1 #0.25
+
+
 
         # solve the wave equation
         H_array, numCells = wave_2D_solve(tFinal, numSteps, outputSubDir,

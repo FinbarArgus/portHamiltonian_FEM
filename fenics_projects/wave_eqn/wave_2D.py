@@ -324,17 +324,20 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
     # ___Top Boundary__
     if controlType is 'casimir':
         # TODO this top boundary will be the control
-        qTopBoundary1 = Constant([0.0, 0.0])
-        qTopBoundary1_ = qTopBoundary1
-        pTopBoundary1 = 0.5*(p_m + p)
+        # Neumann Impedance condition
+        qTopBoundary1 = 0.5*(p_m + p)
+        qTopBoundary1_ = 0.5*(p_m + p_)
+        pTopBoundary1 = p1
+        # Dirichlet Impedance condition should have the same result as above
+        # pTopBoundary1 = dot(0.5*q_m + q, n)
+        # qTopBoundary1 = dot(0.5*(q_m + q), n)
+        # qTopBoundary1_ = dot(0.5*(q_m + q_), n)
         # THe above currently only works for 1 substep methods
     else:
         # All other cases have a zero neumann condition
-        qTopBoundary0 = Constant([0.0, 0.0])
-        qTopBoundary1 = Constant([0.0, 0.0])
+        qTopBoundary0 = Constant(0.0)
+        qTopBoundary1 = Constant(0.0)
         qTopBoundary1_ = qTopBoundary1
-
-        # all cases the pTopBoundary is the same as p0, p1
         pTopBoundary0 = p0
         pTopBoundary1 = p1
 
@@ -342,8 +345,8 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
     if controlType is 'casimir':
         # set right boundary to be an impedance boundary
         # This boundary dissipates energy and should model the waves leaving the domain
-        pRightBoundary1 = -0.5*(q_m + q)
-        pRightBoundary1_ = -0.5*(q_m + q_)
+        pRightBoundary1 = dot(0.5*(q_m + q), n)
+        pRightBoundary1_ = dot(0.5*(q_m + q_), n)
     else:
         # all other cases right boundary is a zero dirichlet condition
         pRightBoundary0 = Constant(0.0)
@@ -351,13 +354,14 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         pRightBoundary1_ = Constant(0.0)
 
     # all cases the qRightBoundary is the same as q0, q1
-    qRightBoundary0 = q0
-    qRightBoundary1 = q1
+    if numIntSubSteps >1:
+        qRightBoundary0 = dot(q0, n)
+    qRightBoundary1 = dot(q1, n)
 
     # ___Bottom/general Boundary__
     # All cases have a zero neumann condition
-    qGenBoundary0 = Constant([0.0, 0.0])
-    qGenBoundary1 = Constant([0.0, 0.0])
+    qGenBoundary0 = Constant(0.0)
+    qGenBoundary1 = Constant(0.0)
 
     # all cases the pTopBoundary is the same as p0, p1
     pGenBoundary0 = p0
@@ -370,7 +374,11 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             pLeftBoundary1 = Expression('cSqrtConst*sin(2*pi*x[1]/(yLength) + pi/2)*cos(t*cSqrtConst)',
                        degree=8, t=0, yLength=yLength, cSqrtConst=cSqrtConst)
         else:
-            pLeftBoundary1 = Expression('(t<0.25) ? 5*sin(8*pi*t) : 0.0', degree=2, t=0)
+            if controlType is 'casimir':
+                pLeftBoundary1 = Expression('3*sin(8*pi*t)', degree=2, t=0)
+            else:
+                pLeftBoundary1 = Expression('(t<0.25) ? 5*sin(8*pi*t) : 0.0', degree=2, t=0)
+
 
         pLeftBoundary0 = pLeftBoundary1
         pLeftBoundary0_ = pLeftBoundary1
@@ -392,8 +400,9 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             print('only SV and SE time int schemes have been implemented for interconnection')
             quit()
     # all cases the qLeftBoundary is the same as q0, q1
-    qLeftBoundary0 = q0
-    qLeftBoundary1 = q1
+    if numIntSubSteps > 1:
+        qLeftBoundary0 = dot(q0, n)
+    qLeftBoundary1 = dot(q1, n)
 
     # If we have dirichlet conditions applied in the strong way set them here, otherwise
     # they are set in the integration by parts term in the problem definition
@@ -432,21 +441,21 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         if dirichletImp == 'strong':
             if numIntSubSteps > 1:
                 F_temp = (p - p_m)*v_p*dx + 0.5*dt*c_squared*(-dot(q0, grad(v_p))*dx +
-                                                                 dot(qTopBoundary0, n)*v_p*ds(1) +
-                                                                 dot(qGenBoundary0, n)*v_p*ds(3)) + \
+                                                                 qTopBoundary0*v_p*ds(1) +
+                                                                 qGenBoundary0*v_p*ds(3)) + \
                          dot(q - q_m, v_q)*dx + 0.5*dt*(dot(grad(p0), v_q))*dx
 
             F = (p - p_m)*v_p*dx + dt*c_squared*(-dot(q1, grad(v_p))*dx +
-                                                 dot(qTopBoundary1, n)*v_p*ds(1) +
-                                                 dot(qGenBoundary1, n)*v_p*ds(3)) + \
+                                                 qTopBoundary1*v_p*ds(1) +
+                                                 qGenBoundary1*v_p*ds(3)) + \
                 dot(q - q_temp, v_q)*dx + 0.5*dt*(dot(grad(p1), v_q))*dx
         elif dirichletImp == 'weak':
             if numIntSubSteps > 1:
                 F_temp = (p - p_m)*v_p*dx + 0.5*dt*c_squared*(-dot(q0, grad(v_p))*dx +
-                                                              dot(qLeftBoundary0, n)*v_p*ds(0) +
-                                                              dot(qTopBoundary0, n)*v_p*ds(1) +
-                                                              dot(qRightBoundary0, n)*v_p*ds(2) +
-                                                              dot(qGenBoundary0, n)*v_p*ds(3)) + \
+                                                              qLeftBoundary0*v_p*ds(0) +
+                                                              qTopBoundary0*v_p*ds(1) +
+                                                              qRightBoundary0*v_p*ds(2) +
+                                                              qGenBoundary0*v_p*ds(3)) + \
                          dot(q - q_m, v_q)*dx + 0.5*dt*(-div(v_q)*p0*dx +
                                                               dot(v_q, n)*pLeftBoundary0*ds(0) +
                                                               dot(v_q, n)*pTopBoundary0*ds(1) +
@@ -454,10 +463,10 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
                                                               dot(v_q, n)*pGenBoundary0*ds(3))
 
             F = (p - p_m)*v_p*dx + dt*c_squared*(-dot(q1, grad(v_p))*dx +
-                                                 dot(qLeftBoundary1, n)*v_p*ds(0) +
-                                                 dot(qTopBoundary1, n)*v_p*ds(1) +
-                                                 dot(qRightBoundary1, n)*v_p*ds(2) +
-                                                 dot(qGenBoundary1, n)*v_p*ds(3)) + \
+                                                 qLeftBoundary1*v_p*ds(0) +
+                                                 qTopBoundary1*v_p*ds(1) +
+                                                 qRightBoundary1*v_p*ds(2) +
+                                                 qGenBoundary1*v_p*ds(3)) + \
                 dot(q - q_temp, v_q)*dx + 0.5*dt*(-div(v_q)*p1*dx +
                                                  dot(v_q, n)*pLeftBoundary1*ds(0) +
                                                  dot(v_q, n)*pTopBoundary1*ds(1) +
@@ -467,21 +476,21 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         if dirichletImp == 'strong':
             if numIntSubSteps >1:
                 F_temp = (p - p_m)*v_p*dx + dt*c_squared*(-dot(q0, grad(v_p))*dx +
-                                                     dot(qTopBoundary0, n)*v_p*ds(1) +
-                                                     dot(qGenBoundary0, n)*v_p*ds(3)) + \
+                                                     qTopBoundary0*v_p*ds(1) +
+                                                     qGenBoundary0*v_p*ds(3)) + \
                     dot(q - q_m, v_q)*dx + dt*(dot(grad(p0), v_q))*dx
 
             F = (p - p_m)*v_p*dx + dt*c_squared*(-dot(q1, grad(v_p))*dx +
-                                                 dot(qTopBoundary1, n)*v_p*ds(1) +
-                                                 dot(qGenBoundary1, n)*v_p*ds(3)) + \
+                                                 qTopBoundary1*v_p*ds(1) +
+                                                 qGenBoundary1*v_p*ds(3)) + \
                 dot(q - q_m, v_q)*dx + dt*(dot(grad(p1), v_q))*dx
         elif dirichletImp == 'weak':
             if numIntSubSteps >1:
                 F_temp = (p - p_m)*v_p*dx + dt*c_squared*(-dot(q0, grad(v_p))*dx +
-                                                     dot(qLeftBoundary0, n)*v_p*ds(0) +
-                                                     dot(qTopBoundary0, n)*v_p*ds(1) +
-                                                     dot(qRightBoundary0, n)*v_p*ds(2) +
-                                                     dot(qGenBoundary0, n)*v_p*ds(3)) + \
+                                                     qLeftBoundary0*v_p*ds(0) +
+                                                     qTopBoundary0*v_p*ds(1) +
+                                                     qRightBoundary0*v_p*ds(2) +
+                                                     qGenBoundary0*v_p*ds(3)) + \
                     dot(q - q_m, v_q)*dx + dt*(-div(v_q)*p0*dx +
                                                      dot(v_q, n)*pLeftBoundary0*ds(0) +
                                                      dot(v_q, n)*pTopBoundary0*ds(1) +
@@ -489,10 +498,10 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
                                                      dot(v_q, n)*pGenBoundary0*ds(3))
 
             F = (p - p_m)*v_p*dx + dt*c_squared*(-dot(q1, grad(v_p))*dx +
-                                                 dot(qLeftBoundary1, n)*v_p*ds(0) +
-                                                 dot(qTopBoundary1, n)*v_p*ds(1) +
-                                                 dot(qRightBoundary1, n)*v_p*ds(2) +
-                                                 dot(qGenBoundary1, n)*v_p*ds(3)) + \
+                                                 qLeftBoundary1*v_p*ds(0) +
+                                                 qTopBoundary1*v_p*ds(1) +
+                                                 qRightBoundary1*v_p*ds(2) +
+                                                 qGenBoundary1*v_p*ds(3)) + \
                 dot(q - q_m, v_q)*dx + dt*(-div(v_q)*p1*dx +
                                                  dot(v_q, n)*pLeftBoundary1*ds(0) +
                                                  dot(v_q, n)*pTopBoundary1*ds(1) +
@@ -513,7 +522,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
                          v_xode[0]*(A_em[0, 0]*xode_m[0] + A_em[0, 1]*xode_m[1] + A_em[0, 2]*xode[2]) +
                          v_xode[1]*(A_em[1, 0]*xode_m[0] + A_em[1, 1]*xode_m[1] + A_em[1, 2]*xode[2]) +
                          v_xode[2]*(A_em[2, 0]*xode_m[0] + A_em[2, 1]*xode_m[1] + A_em[2, 2]*xode[2]) +
-                         v_xode[0]*uInput + K_wave*yLength*v_xode[1]*dot(qLeftBoundary0, n))*ds(0)
+                         v_xode[0]*uInput + K_wave*yLength*v_xode[1]*qLeftBoundary0)*ds(0)
 
             F_temp += F_temp_em
 
@@ -525,7 +534,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
                     0.5*v_xode[1]*(A_em[1, 0]*xode_m[0] + A_em[1, 1]*xode_m[1] + A_em[1, 2]*xode_temp[2] +
                                    A_em[1, 0]*xode[0] + A_em[1, 1]*xode[1] + A_em[1, 2]*xode_temp[2]) +
                     0.5*v_xode[2]*(A_em[2, 0]*xode[0] + A_em[2, 1]*xode[1] + A_em[2, 2]*xode_temp[2]) +
-                    v_xode[0]*uInput + K_wave*yLength*v_xode[1]*dot(qLeftBoundary1, n))*ds(0)
+                    v_xode[0]*uInput + K_wave*yLength*v_xode[1]*qLeftBoundary1)*ds(0)
             # don't multiply the input by a half because it is for a full step
 
             F += F_em
@@ -535,7 +544,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
                         v_xode[0]*(A_em[0, 0]*xode[0] + A_em[0, 1]*xode[1] + A_em[0, 2]*xode_m[2]) +
                         v_xode[1]*(A_em[1, 0]*xode[0] + A_em[1, 1]*xode[1] + A_em[1, 2]*xode_m[2]) +
                         v_xode[2]*(A_em[2, 0]*xode[0] + A_em[2, 1]*xode[1] + A_em[2, 2]*xode_m[2]) +
-                        v_xode[0]*uInput + K_wave*yLength*v_xode[1]*dot(q1, n))*ds(0)
+                        v_xode[0]*uInput + K_wave*yLength*v_xode[1]*qLeftBoundary1)*ds(0)
 
             F += F_em
 
@@ -551,7 +560,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
                     0.5*v_xode[2]*(A_em[2, 0]*xode[0] + A_em[2, 0]*xode_m[0] +
                                    A_em[2, 1]*xode[1] + A_em[2, 1]*xode_m[1] +
                                    A_em[2, 2]*xode[2] + A_em[2, 2]*xode_m[2]) +
-                    v_xode[0]*uInput + K_wave*yLength*v_xode[1]*(dot(q1, n)))*ds(0)
+                    v_xode[0]*uInput + K_wave*yLength*v_xode[1]*qLeftBoundary1)*ds(0)
 
             F += F_em
         else:
@@ -684,6 +693,8 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
                     ax.set_ylim(-0.03, 0.05)
                     if dirichletImp == 'weak' and timeIntScheme in ['SV', 'SE', 'EH']:
                         ax.set_ylim(-0.0005, 0.0008)
+                elif controlType is 'casimir':
+                    ax.set_ylim(0, 3.5)
                 else:
                     ax.set_ylim(0, 0.4)
 
@@ -733,9 +744,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             print('Initial L2 Error = {}'.format(err_L2))
             print('Initial Int Error = {}'.format(err_integral))
     else:
-        if controlType is None:
-            H_init = 0
-        else:
+        if controlType is 'passivity':
             p_init = Expression('sin(4*pi*x[0]/(xLength))',
                                 degree=8, xLength=xLength)
             q_init = Expression(('sin(4*pi*x[0]/(xLength))', '0.0'),
@@ -747,6 +756,8 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             xode_2_init_interp = interpolate(Constant(0.0), U.sub(4).collapse())
             assign(u_m,[p_init_interp, q_init_interp, xode_0_init_interp, xode_1_init_interp, xode_2_init_interp])
             H_init = assemble((0.5*p_m*p_m + 0.5*c_squared*inner(q_m, q_m))*dx)*rho_val
+        else:
+            H_init = 0
 
     # -------------------------------# Solve Loop #---------------------------------#
 
