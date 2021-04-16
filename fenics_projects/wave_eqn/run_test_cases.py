@@ -17,33 +17,40 @@ if __name__ == '__main__':
     K_wave = 3.0 # 3.0
     # density
     rho = 2.0 # 2.0
-    # caseName = 'test_cases_long'
-    # This is the old long tests for cases that are in the paper
-    #    caseArray = [['R', 'IE', 'weak', 80, 'wave', 1.5, 3000, 'noMem'],
-#                 ['R', 'EE', 'weak', 80, 'wave', 1.5, 3000, 'noMem'],
-#                 ['R', 'EH', 'weak', 80, 'wave', 1.5, 3000, 'noMem'],
-#                 ['R', 'SV', 'strong', 20, 'wave', 1.5, 3000, 'noMem'],
-#                 ['R', 'SV', 'weak', 20, 'wave', 1.5, 3000, 'noMem'],
-#                 ['R', 'SV', 'weak', 4, 'analytical', 1.5, 3000, 'noMem', (3, 3)],
-#                 ['R', 'SV', 'weak', 20, 'analytical', 1.5, 3000, 'noMem', (1, 2)],
-#                  ['R', 'SE', 'weak', 80, 'analytical', 1.5, 3000, 'noMem', (3, 3)],
-#                 ['R', 'SV', 'weak', 120, 'IC', 4.5, 3000, 'noMem'],
-#                 ['R', 'SM', 'weak', 120, 'IC', 4.5, 3000, 'noMem'],
-#                 ['S_1C', 'SV', 'weak', 60, 'IC', 8, 16000, 'noMem']]
 
+    # caseName = 'test_cases'
     caseName = 'test_cases'
-#    This is the quick test
-    caseArray = [['R', 'IE', 'weak', 40, 'wave', 0.1, 200, 'noMem'],
-                 ['R', 'EE', 'weak', 40, 'wave', 0.1, 200, 'noMem'],
-                 ['R', 'EH', 'weak', 40, 'wave', 0.1, 200, 'noMem'],
-                 ['R', 'SV', 'strong', 20, 'wave', 0.1, 200, 'noMem'],
-                 ['R', 'SV', 'weak', 20, 'wave', 0.1, 200, 'noMem'],
-                 ['R', 'SV', 'weak', 4, 'analytical', 0.1, 200, 'noMem', (3, 3)],
-                 ['R', 'SV', 'weak', 20, 'analytical', 0.1, 200, 'noMem', (1, 2)],
-                 ['R', 'SE', 'weak', 60, 'analytical', 0.1, 200, 'noMem', (1, 1)],
-                 ['R', 'SV', 'weak', 60, 'IC', 0.1, 100, 'noMem'],
-                 ['R', 'SM', 'weak', 60, 'IC', 0.1, 100, 'noMem'],
-                 ['S_1C', 'SV', 'weak', 40, 'IC', 0.1, 100, 'noMem']]
+    if caseName == 'test_cases':
+        # This is the quick test
+        caseArray = [['R', 'IE', 'weak', 40, 'wave', 0.1, 200, 'noMem'],
+                     ['R', 'EE', 'weak', 40, 'wave', 0.1, 200, 'noMem'],
+                     ['R', 'EH', 'weak', 40, 'wave', 0.1, 200, 'noMem'],
+                     ['R', 'SV', 'strong', 20, 'wave', 0.1, 200, 'noMem'],
+                     ['R', 'SV', 'weak', 20, 'wave', 0.1, 200, 'noMem'],
+                     ['R', 'SV', 'weak', 4, 'analytical', 0.1, 200, 'noMem', (3, 3)],
+                     ['R', 'SV', 'weak', 20, 'analytical', 0.1, 200, 'noMem', (1, 2)],
+                     ['R', 'SE', 'weak', 60, 'analytical', 0.1, 200, 'noMem', (1, 1)],
+                     ['R', 'SV', 'weak', 60, 'IC', 0.1, 100, 'noMem'],
+                     ['R', 'SM', 'weak', 60, 'IC', 0.1, 100, 'noMem'],
+                     ['S_1C', 'SV', 'weak', 40, 'IC', 0.1, 100, 'noMem']]
+
+    elif caseName == 'test_cases_long':
+        # This is the old long tests for cases that are in the paper
+        caseArray = [['R', 'IE', 'weak', 80, 'wave', 1.5, 3000, 'noMem'],
+                      ['R', 'EE', 'weak', 80, 'wave', 1.5, 3000, 'noMem'],
+                      ['R', 'EH', 'weak', 80, 'wave', 1.5, 3000, 'noMem'],
+                      ['R', 'SV', 'strong', 20, 'wave', 1.5, 3000, 'noMem'],
+                      ['R', 'SV', 'weak', 20, 'wave', 1.5, 3000, 'noMem'],
+                      ['R', 'SV', 'weak', 4, 'analytical', 1.5, 3000, 'noMem', (3, 3)],
+                      ['R', 'SV', 'weak', 20, 'analytical', 1.5, 3000, 'noMem', (1, 2)],
+                      ['R', 'SE', 'weak', 80, 'analytical', 1.5, 3000, 'noMem', (3, 3)],
+                      ['R', 'SV', 'weak', 120, 'IC', 4.5, 3000, 'noMem'],
+                      ['R', 'SM', 'weak', 120, 'IC', 4.5, 3000, 'noMem'],
+                      ['S_1C', 'SV', 'weak', 60, 'IC', 8, 16000, 'noMem']]
+    else:
+        print(caseName + ' not implemented')
+        exit()
+
 
     for caseVec in caseArray:
         domainShape = caseVec[0]
@@ -54,7 +61,7 @@ if __name__ == '__main__':
         # ------------------------------# Setup Directories #-------------------------------#
 
         # Create output dir
-        outputDir = os.path.join('output', caseName)
+        outputDir = os.path.join('test_output', caseName)
         IC_BOOL = False
         if not os.path.exists(outputDir):
             os.mkdir(outputDir)
@@ -128,7 +135,7 @@ if __name__ == '__main__':
     print('now running test case check')
 
     # now compare results with ground truth
-    test_case_check.check_cases()
+    test_case_check.check_cases(caseName)
 
 
 

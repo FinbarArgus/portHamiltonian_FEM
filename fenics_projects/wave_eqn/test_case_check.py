@@ -7,36 +7,39 @@ import os
 
 
 # This script checks the output of the test_cases run in
-def check_cases():
+def check_cases(caseName):
     # fast test cases
-    caseName = 'test_cases'
-    caseArray = [['R', 'IE', 'weak', 40, 'wave', 0.1, 200, 'noMem'],
-                 ['R', 'EE', 'weak', 40, 'wave', 0.1, 200, 'noMem'],
-                 ['R', 'EH', 'weak', 40, 'wave', 0.1, 200, 'noMem'],
-                 ['R', 'SV', 'strong', 20, 'wave', 0.1, 200, 'noMem'],
-                 ['R', 'SV', 'weak', 20, 'wave', 0.1, 200, 'noMem'],
-                 ['R', 'SV', 'weak', 4, 'analytical', 0.1, 200, 'noMem', (3, 3)],
-                 ['R', 'SV', 'weak', 20, 'analytical', 0.1, 200, 'noMem', (1, 2)],
-                 ['R', 'SE', 'weak', 60, 'analytical', 0.1, 200, 'noMem', (1, 1)],
-                 ['R', 'SV', 'weak', 60, 'IC', 0.1, 100, 'noMem'],
-                 ['R', 'SM', 'weak', 60, 'IC', 0.1, 100, 'noMem'],
-                 ['S_1C', 'SV', 'weak', 40, 'IC', 0.1, 100, 'noMem']]
+    if caseName == 'test_cases':
+        caseArray = [['R', 'IE', 'weak', 40, 'wave', 0.1, 200, 'noMem'],
+                     ['R', 'EE', 'weak', 40, 'wave', 0.1, 200, 'noMem'],
+                     ['R', 'EH', 'weak', 40, 'wave', 0.1, 200, 'noMem'],
+                     ['R', 'SV', 'strong', 20, 'wave', 0.1, 200, 'noMem'],
+                     ['R', 'SV', 'weak', 20, 'wave', 0.1, 200, 'noMem'],
+                     ['R', 'SV', 'weak', 4, 'analytical', 0.1, 200, 'noMem', (3, 3)],
+                     ['R', 'SV', 'weak', 20, 'analytical', 0.1, 200, 'noMem', (1, 2)],
+                     ['R', 'SE', 'weak', 60, 'analytical', 0.1, 200, 'noMem', (1, 1)],
+                     ['R', 'SV', 'weak', 60, 'IC', 0.1, 100, 'noMem'],
+                     ['R', 'SM', 'weak', 60, 'IC', 0.1, 100, 'noMem'],
+                     ['S_1C', 'SV', 'weak', 40, 'IC', 0.1, 100, 'noMem']]
 
-#   test cases for cases that are in the paper
-#    caseName = 'test_cases_long'
-#    caseArray = [['R', 'IE', 'weak', 80, 'wave', 1.5, 3000, 'noMem'],
-#                 ['R', 'EE', 'weak', 80, 'wave', 1.5, 3000, 'noMem'],
-#                 ['R', 'EH', 'weak', 80, 'wave', 1.5, 3000, 'noMem'],
-#                 ['R', 'SV', 'strong', 20, 'wave', 1.5, 3000, 'noMem'],
-#                 ['R', 'SV', 'weak', 20, 'wave', 1.5, 3000, 'noMem'],
-#                 ['R', 'SV', 'weak', 4, 'analytical', 1.5, 3000, 'noMem', (3, 3)],
-#                 ['R', 'SV', 'weak', 20, 'analytical', 1.5, 3000, 'noMem', (1, 2)],
-#                 ['R', 'SE', 'weak', 80, 'analytical', 1.5, 3000, 'noMem', (3, 3)],
-#                 ['R', 'SV', 'weak', 120, 'IC', 4.5, 3000, 'noMem'],
-#                 ['R', 'SM', 'weak', 120, 'IC', 4.5, 3000, 'noMem'],
-#                 ['S_1C', 'SV', 'weak', 60, 'IC', 8, 16000, 'noMem']]
+    elif caseName == 'test_cases_long':
+        # test cases for cases that are in the paper
+        caseArray = [['R', 'IE', 'weak', 80, 'wave', 1.5, 3000, 'noMem'],
+                    ['R', 'EE', 'weak', 80, 'wave', 1.5, 3000, 'noMem'],
+                    ['R', 'EH', 'weak', 80, 'wave', 1.5, 3000, 'noMem'],
+                    ['R', 'SV', 'strong', 20, 'wave', 1.5, 3000, 'noMem'],
+                    ['R', 'SV', 'weak', 20, 'wave', 1.5, 3000, 'noMem'],
+                    ['R', 'SV', 'weak', 4, 'analytical', 1.5, 3000, 'noMem', (3, 3)],
+                    ['R', 'SV', 'weak', 20, 'analytical', 1.5, 3000, 'noMem', (1, 2)],
+                    ['R', 'SE', 'weak', 80, 'analytical', 1.5, 3000, 'noMem', (3, 3)],
+                    ['R', 'SV', 'weak', 120, 'IC', 4.5, 3000, 'noMem'],
+                    ['R', 'SM', 'weak', 120, 'IC', 4.5, 3000, 'noMem'],
+                    ['S_1C', 'SV', 'weak', 60, 'IC', 8, 16000, 'noMem']]
+    else:
+        print(caseName + ' not implemented')
+        exit()
 
-    outputDir = os.path.join('output', caseName)
+    outputDir = os.path.join('test_output', caseName)
     if not os.path.exists(outputDir):
         print('The output dir {} doesn\'t exist'.format(outputDir))
         quit()
@@ -130,7 +133,9 @@ def check_cases():
                 print('Energy res total diff   : {}'.format(resDiff))
 
 if __name__ == '__main__':
-    check_cases()
+    # caseName = 'test_cases'
+    caseName = 'test_cases_long'
+    check_cases(caseName)
 
 
 
