@@ -42,7 +42,7 @@ def check_cases(caseName):
     outputDir = os.path.join('test_output', caseName)
     if not os.path.exists(outputDir):
         print('The output dir {} doesn\'t exist'.format(outputDir))
-        quit()
+        exit()
 
     for caseVec in caseArray:
         domainShape = caseVec[0]
@@ -51,13 +51,6 @@ def check_cases(caseName):
 
         assert len(caseVec) in [7, 8, 9], 'caseArray should be vectors of length 7, 8, or 9'
         # ------------------------------# Setup Directories #-------------------------------#
-
-        # check output dir exists
-        outputDir = os.path.join('output', caseName)
-        IC_BOOL = False
-        if not os.path.exists(outputDir):
-            print('output directory doesn\'t exist')
-            exit
 
         subDir = domainShape + '_' + timeIntScheme + '_' + dirichletImp
         # we have a nx value to set
@@ -90,18 +83,18 @@ def check_cases(caseName):
         data_array = np.load(os.path.join(outputSubDir, 'H_array.npy'))
         gt_array = np.load(os.path.join(groundTruthSubDir, 'H_array.npy'))
 
-        eps = 1e-14
+        eps = 1e-10
         # Get difference in Hamiltonian percent
 
         hamDiff = max(abs((data_array[:, 1] - gt_array[:, 1])))
         resDiff = max(abs((data_array[:, 2] - gt_array[:, 2])))
-        hamDiffPerc = max(abs((data_array[:, 1] - gt_array[:, 1])/(abs(gt_array[:, 1])+eps)))
-        resDiffPerc = max(abs((data_array[:, 2] - gt_array[:, 2])/(abs(gt_array[:, 2])+eps)))
+        hamDiffPerc = 100*max(abs((data_array[:, 1] - gt_array[:, 1])/(abs(gt_array[:, 1])+eps)))
+        resDiffPerc = 100*max(abs((data_array[:, 2] - gt_array[:, 2])/(abs(gt_array[:, 2])+eps)))
         if ANALYTICAL_BOOL:
             analyticDiff = max(abs(data_array[:, 8] - gt_array[:, 8]))
-            analyticDiffPerc = max(abs((data_array[:, 8] - gt_array[:, 8])/(abs(gt_array[:, 8]) + eps)))
+            analyticDiffPerc = 100*max(abs((data_array[:, 8] - gt_array[:, 8])/(abs(gt_array[:, 8]) + eps)))
 
-        if hamDiffPerc > 1e-7 or resDiffPerc > 1e-7 :
+        if hamDiffPerc > 1e-5 or resDiffPerc > 1e-5 :
             print('{} test FAILED'.format(subDir))
             print('Hamiltonian max diff    : {}%'.format(hamDiffPerc))
             print('Energy res max diff     : {}%'.format(resDiffPerc))
@@ -133,8 +126,8 @@ def check_cases(caseName):
                 print('Energy res total diff   : {}'.format(resDiff))
 
 if __name__ == '__main__':
-    # caseName = 'test_cases'
-    caseName = 'test_cases_long'
+    caseName = 'test_cases'
+    # caseName = 'test_cases_long'
     check_cases(caseName)
 
 
