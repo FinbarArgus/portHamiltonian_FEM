@@ -19,7 +19,7 @@ if __name__ == '__main__':
     rho = 2.0 # 2.0
 
     # caseName = 'test_cases'
-    caseName = 'test_cases'
+    caseName = 'test_cases_long'
     if caseName == 'test_cases':
         # This is the quick test
         caseArray = [['R', 'IE', 'weak', 40, 'wave', 0.1, 200, 'noMem'],

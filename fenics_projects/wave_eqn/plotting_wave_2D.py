@@ -400,17 +400,17 @@ print(table3)
 
 #create quadratic line to plot
 xQuad = np.linspace(numCell_Res[0,2], numCell_Res[5,2], 1000)
-scale = 10000
+scale = 20000
 yQuad = scale*np.square(xQuad)
 plt.plot(xQuad, yQuad, lw=1.0, color='k', linestyle='--', label='Quadratic Trend ({}$x^2$)'.format(scale))
 
 xCubic = np.linspace(numCell_Res[6,2], numCell_Res[11,2], 1000)
-scale = 20000
+scale = 40000
 yCubic = scale*np.power(xCubic, 3)
 plt.plot(xCubic, yCubic , lw=1.0, color='k', linestyle=':', label='Cubic Trend ({}$x^3$)'.format(scale))
 
 xQuartic = np.linspace(numCell_Res[24,2], numCell_Res[29,2], 1000)
-scale = 7000
+scale = 14000
 yQuartic = scale*np.power(xQuartic, 4)
 plt.plot(xQuartic, yQuartic, lw=1.0, color='k', linestyle='-', label='Quartic Trend ({}$x^4$)'.format(scale))
 
@@ -451,16 +451,16 @@ if not os.path.exists(plotDir):
     os.mkdir(plotDir)
 
 
-caseArray = [['R', 'SE', 'weak', 80, 'analytical', tFinal, 3000, 'noMem'],
-            ['R', 'SE', 'weak', 80, 'analytical', tFinal, 3500, 'noMem'],
-            ['R', 'SE', 'weak', 80, 'analytical', tFinal, 4250, 'noMem'],
-            ['R', 'SE', 'weak', 80, 'analytical', tFinal, 5000, 'noMem'],
-            ['R', 'SE', 'weak', 80, 'analytical', tFinal, 6000, 'noMem'],
-            ['R', 'SV', 'weak', 80, 'analytical', tFinal, 3000, 'noMem'],
-            ['R', 'SV', 'weak', 80, 'analytical', tFinal, 4250, 'noMem'],
-            ['R', 'SV', 'weak', 80, 'analytical', tFinal, 3500, 'noMem'],
-            ['R', 'SV', 'weak', 80, 'analytical', tFinal, 5000, 'noMem'],
-            ['R', 'SV', 'weak', 80, 'analytical', tFinal, 6000, 'noMem']]
+caseArray = [['R', 'SE', 'weak', 80, 'analytical', tFinal, 3000, 'noMem', (3, 3)],
+            ['R', 'SE', 'weak', 80, 'analytical', tFinal, 3500, 'noMem', (3, 3)],
+            ['R', 'SE', 'weak', 80, 'analytical', tFinal, 4250, 'noMem', (3, 3)],
+            ['R', 'SE', 'weak', 80, 'analytical', tFinal, 5000, 'noMem', (3, 3)],
+            ['R', 'SE', 'weak', 80, 'analytical', tFinal, 6000, 'noMem', (3, 3)],
+            ['R', 'SV', 'weak', 80, 'analytical', tFinal, 3000, 'noMem', (3, 3)],
+            ['R', 'SV', 'weak', 80, 'analytical', tFinal, 4250, 'noMem', (3, 3)],
+            ['R', 'SV', 'weak', 80, 'analytical', tFinal, 3500, 'noMem', (3, 3)],
+            ['R', 'SV', 'weak', 80, 'analytical', tFinal, 5000, 'noMem', (3, 3)],
+            ['R', 'SV', 'weak', 80, 'analytical', tFinal, 6000, 'noMem', (3, 3)]]
 
 colorVec = ['c', 'b', 'g', 'm', 'r', 'k', 'c', 'b', 'g', 'm', 'r', 'k']
 lineStyleArray = ['--', '--', '--', '--', '--', '--', '-', '-', '-', '-', '-', '-']
@@ -470,6 +470,10 @@ for caseVec in caseArray:
     subDir = caseVec[0] + '_' + caseVec[1] + '_' +caseVec[2] + \
              '_nx' + str(caseVec[3]) + '_' + caseVec[4] + '_t' + \
              str(caseVec[5]).replace('.','_') + '_steps' + str(caseVec[6])
+
+    if len(caseVec) > 8:
+        basis_order = caseVec[8]
+        subDir = subDir + '_P{}_RT{}'.format(basis_order[0], basis_order[1])
 
     outputSubDirArray.append(os.path.join(outputDir, subDir))
 
@@ -560,13 +564,13 @@ plt.plot(numStepsRes[5:10, 0], numStepsRes[5:10, 1], lw=1.5, color='r', linestyl
 #create linear line to plot
 xLin = np.linspace(numStepsRes[0,0], numStepsRes[len(caseArray)-1,0], 1000)
 
-scale = 115
+scale = 230
 #scale = 40
 yLin = scale*xLin
 plt.plot(xLin, yLin, lw=1.0, color='k', label='Linear Trend ({}$x$)'.format(scale))
 ##create quadratic line to plot
 xQuad = np.linspace(numStepsRes[0,0], numStepsRes[len(caseArray)-1,0], 1000)
-scale = 13000
+scale = 26000
 yQuad = scale*np.square(xQuad)
 plt.plot(xQuad, yQuad, lw=1.0, color='k', linestyle='--', label='Quadratic Trend ({}$x^2$)'.format(scale))
 ##create Cubic line to plot
@@ -584,7 +588,7 @@ if plotPNG:
 if plotEPS:
     plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsStepSize.eps'))
 plt.xlim(1e-4, 1e-3)
-plt.ylim(1e-4, 1e-1)
+plt.ylim(1e-4, 1)
 plt.xscale('log')
 plt.yscale('log')
 if plotPNG:
@@ -606,11 +610,11 @@ if not os.path.exists(plotDir):
     os.mkdir(plotDir)
 
 tFinal = 10.0
-caseArray = [['R', 'EH', 'weak', 80, 'analytical', 5.0, 40000],
-            ['R', 'IE', 'weak', 80, 'analytical', 10.0, 40000],
-            #['R', 'SE', 'weak', 80, 'analytical', 10.0, 40000],
-            ['R', 'SM', 'weak', 80, 'analytical', 10.0, 40000],
-            ['R', 'SV', 'weak', 80, 'analytical', 10.0, 20000]]
+caseArray = [['R', 'EH', 'weak', 80, 'analytical', 1.5, 12000, (3, 3)],
+            ['R', 'IE', 'weak', 80, 'analytical', 1.5, 6000, (3, 3)],
+            ['R', 'SM', 'weak', 80, 'analytical', 10.0, 40000, (3, 3)],
+            ['R', 'SV', 'weak', 80, 'analytical', 10.0, 20000, (3, 3)]]
+# ['R', 'SE', 'weak', 80, 'analytical', 10.0, 40000],
 
 colorVec = ['g', 'b', 'k', 'r', 'cyan']
 lineStyleArray = ['-', '-', '-', '-', '-']
@@ -620,6 +624,9 @@ for caseVec in caseArray:
     subDir = caseVec[0] + '_' + caseVec[1] + '_' +caseVec[2] + \
              '_nx' + str(caseVec[3]) + '_' + caseVec[4] + '_t' + \
              str(caseVec[5]).replace('.','_') + '_steps' + str(caseVec[6])
+    if len(caseVec) > 7:
+        basis_order = caseVec[7]
+        subDir = subDir + '_P{}_RT{}'.format(basis_order[0], basis_order[1])
 
     outputSubDirArray.append(os.path.join(outputDir, subDir))
 
@@ -634,7 +641,7 @@ for count, dir in enumerate(outputSubDirArray):
 plt.xlabel('Time [s]')
 plt.ylabel('$L^2$ Error Norm')
 plt.xlim(0.0, tFinal)
-plt.ylim(0, 0.15)
+plt.ylim(0, 0.3)
 
 plt.legend()
 if plotPNG:
@@ -788,6 +795,7 @@ for count, dir in enumerate(outputSubDirArray):
     # plt.plot(dataArray[:, 0], totalResid2, lw=0.5, color='c', linestyle=lineStyleArray[count],
     #         label='check TotalResidual')
 
+ax.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
 ax.legend()
 # plt.show()
 if plotPNG:
@@ -908,9 +916,9 @@ plt.plot(numStepsRes[5:10, 0], numStepsRes[5:10, 1], lw=1.5, color='b', linestyl
 #plt.plot(xLin, yLin, lw=1.0, color='k', label='Linear Trend ($800x$)')
 #create quadratic line to plot
 xQuad = np.linspace(numStepsRes[0,0], numStepsRes[len(caseArray)-1,0], 1000)
-scale = 400
+scale = 100
 yQuad = scale*np.square(xQuad)
-plt.plot(xQuad, yQuad, lw=1.0, color='k',linestyle='--', label='Quadratic Trend ($400x^2$)')
+plt.plot(xQuad, yQuad, lw=1.0, color='k',linestyle='--', label='Quadratic Trend ({}$x^2$)'.format(scale))
 #create Cubic line to plot
 #xCubic = np.linspace(numStepsRes[0,0], numStepsRes[5,0], 1000)
 #scale = 4000
@@ -976,6 +984,7 @@ for count, dir in enumerate(outputSubDirArray):
     # plt.plot(dataArray[:, 0], totalResid2, lw=0.5, color='c', linestyle=lineStyleArray[count],
     #         label='check TotalResidual')
 
+ax.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
 ax.legend()
 # plt.show()
 if plotPNG:

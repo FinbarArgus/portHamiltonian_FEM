@@ -61,14 +61,14 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
     rank = comm.Get_rank()
 
     # check case combinations
-    if controlType is 'lqr':
+    if controlType == 'lqr':
         print('lqr no longer implemented')
         quit()
-    if controlType is 'passivity':
-        if interConnection is not 'IC':
+    if controlType == 'passivity':
+        if interConnection != 'IC':
             print('passivity control only implemented for IC interconnection')
             quit()
-    if controlType is 'casimir':
+    if controlType == 'casimir':
         if interConnection is not None:
             print('casimir control not implemented for IC interconnection')
             quit()
@@ -139,9 +139,11 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
     c_squared = Constant(K_wave/rho)
     c_squared_float = K_wave/rho
     c = np.sqrt(K_wave/rho)
+    K_wave_val = K_wave
     K_wave = Constant(K_wave)
     rho_val = rho
-    # rho = Constant(rho)
+    rho = Constant(rho)
+
 
     if interConnection == 'IC':
         if timeIntScheme not in ['SV', 'SE', 'SM']:
@@ -322,7 +324,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         p1 = 0.5 * (p_m + p_temp)
 
     # ___Top Boundary__
-    if controlType is 'casimir':
+    if controlType == 'casimir':
         # TODO this top boundary will be the control
         # Neumann Impedance condition
         qTopBoundary1 = 0.5*(p_m + p)
@@ -342,7 +344,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         pTopBoundary1 = p1
 
     # ___Right Boundary__
-    if controlType is 'casimir':
+    if controlType == 'casimir':
         # set right boundary to be an impedance boundary
         # This boundary dissipates energy and should model the waves leaving the domain
         pRightBoundary1 = dot(0.5*(q_m + q), n)
@@ -371,13 +373,15 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
     if not interConnection:
         if analytical:
             cSqrtConst = c*np.sqrt(pi**2/(4*xLength**2) + 4*pi**2/yLength**2)
-            pLeftBoundary1 = Expression('cSqrtConst*sin(2*pi*x[1]/(yLength) + pi/2)*cos(t*cSqrtConst)',
-                       degree=8, t=0, yLength=yLength, cSqrtConst=cSqrtConst)
+            pLeftBoundary1 = Expression('rho*cSqrtConst*sin(2*pi*x[1]/(yLength) + pi/2)*cos(t*cSqrtConst)',
+                       degree=8, t=0, yLength=yLength, rho=rho_val, cSqrtConst=cSqrtConst)
         else:
-            if controlType is 'casimir':
+            if controlType == 'casimir':
                 pLeftBoundary1 = Expression('3*sin(8*pi*t)', degree=2, t=0)
             else:
-                pLeftBoundary1 = Expression('(t<0.25) ? 5*sin(8*pi*t) : 0.0', degree=2, t=0)
+                # we doubled this from previous paper review to give same energy results
+                # pLeftBoundary1 = Expression('(t<0.25) ? 5*sin(8*pi*t) : 0.0', degree=2, t=0)
+                pLeftBoundary1 = Expression('(t<0.25) ? 10*sin(8*pi*t) : 0.0', degree=2, t=0)
 
 
         pLeftBoundary0 = pLeftBoundary1
@@ -385,16 +389,16 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         pLeftBoundary1_ = pLeftBoundary1
     else:
         if timeIntScheme == 'SV':
-            pLeftBoundary0 = xode_m[1]/(m_em)
-            pLeftBoundary1 = xode[1]/(m_em)
-            pLeftBoundary0_ = xode_m[1]/(m_em)
-            pLeftBoundary1_ = xode_[1]/(m_em)
+            pLeftBoundary0 = rho*xode_m[1]/(m_em)
+            pLeftBoundary1 = rho*xode[1]/(m_em)
+            pLeftBoundary0_ = rho*xode_m[1]/(m_em)
+            pLeftBoundary1_ = rho*xode_[1]/(m_em)
         elif timeIntScheme == 'SE':
-            pLeftBoundary1 = xode[1]/(m_em)
-            pLeftBoundary1_ = xode_[1]/(m_em)
+            pLeftBoundary1 = rho*xode[1]/(m_em)
+            pLeftBoundary1_ = rho*xode_[1]/(m_em)
         elif timeIntScheme == 'SM':
-            pLeftBoundary1 = 0.5*(xode_m[1] + xode[1])/(m_em)
-            pLeftBoundary1_ = 0.5*(xode_m[1] + xode_[1])/(m_em)
+            pLeftBoundary1 = 0.5*rho*(xode_m[1] + xode[1])/(m_em)
+            pLeftBoundary1_ = 0.5*rho*(xode_m[1] + xode_[1])/(m_em)
 
         else:
             print('only SV and SE time int schemes have been implemented for interconnection')
@@ -423,7 +427,10 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
     if interConnection:
         if domainShape == 'R':
             if controlType == None:
-                uInput = Expression('(t<0.25) ? 10*sin(8*pi*t) : 0.0', degree=2, t=0)
+                # TODO we are trying halving this to give the same results
+                # uInput = Expression('(t<0.25) ? 10*sin(8*pi*t) : 0.0', degree=2, t=0)
+                # This should give the same p
+                uInput = Expression('(t<0.25) ? 5*sin(8*pi*t) : 0.0', degree=2, t=0)
             elif controlType == 'passivity':
                 # cpp_code = '''
                 #     (t<input_stop_t) ? 10*sin(8*pi*t) : (t<control_start_t) ? 0.0 : (h_1>1) ? -10.0 : 10.0
@@ -432,42 +439,44 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
                                                input_stop_t=input_stop_t, control_start_t=control_start_t)
 
         elif domainShape == 'S_1C':
-            uInput = Expression('(t<0.25) ? 10*sin(8*pi*t) : 0.0', degree=2, t=0)
+            # TODO we are trying halving this to give the same results
+            # uInput = Expression('(t<0.25) ? 10*sin(8*pi*t) : 0.0', degree=2, t=0)
+            uInput = Expression('(t<0.25) ? 5*sin(8*pi*t) : 0.0', degree=2, t=0)
 
     # -------------------------------# Problem Definition #---------------------------------#
 
     # Define variational problem
-    if timeIntScheme is 'SV':
+    if timeIntScheme == 'SV':
         if dirichletImp == 'strong':
             if numIntSubSteps > 1:
-                F_temp = (p - p_m)*v_p*dx + 0.5*dt*c_squared*(-dot(q0, grad(v_p))*dx +
+                F_temp = (p - p_m)*v_p*dx + 0.5*dt*K_wave*(-dot(q0, grad(v_p))*dx +
                                                                  qTopBoundary0*v_p*ds(1) +
                                                                  qGenBoundary0*v_p*ds(3)) + \
-                         dot(q - q_m, v_q)*dx + 0.5*dt*(dot(grad(p0), v_q))*dx
+                         dot(q - q_m, v_q)*dx + 0.5*dt/rho*(dot(grad(p0), v_q))*dx
 
-            F = (p - p_m)*v_p*dx + dt*c_squared*(-dot(q1, grad(v_p))*dx +
+            F = (p - p_m)*v_p*dx + dt*K_wave*(-dot(q1, grad(v_p))*dx +
                                                  qTopBoundary1*v_p*ds(1) +
                                                  qGenBoundary1*v_p*ds(3)) + \
-                dot(q - q_temp, v_q)*dx + 0.5*dt*(dot(grad(p1), v_q))*dx
+                dot(q - q_temp, v_q)*dx + 0.5*dt/rho*(dot(grad(p1), v_q))*dx
         elif dirichletImp == 'weak':
             if numIntSubSteps > 1:
-                F_temp = (p - p_m)*v_p*dx + 0.5*dt*c_squared*(-dot(q0, grad(v_p))*dx +
+                F_temp = (p - p_m)*v_p*dx + 0.5*dt*K_wave*(-dot(q0, grad(v_p))*dx +
                                                               qLeftBoundary0*v_p*ds(0) +
                                                               qTopBoundary0*v_p*ds(1) +
                                                               qRightBoundary0*v_p*ds(2) +
                                                               qGenBoundary0*v_p*ds(3)) + \
-                         dot(q - q_m, v_q)*dx + 0.5*dt*(-div(v_q)*p0*dx +
+                         dot(q - q_m, v_q)*dx + 0.5*dt/rho*(-div(v_q)*p0*dx +
                                                               dot(v_q, n)*pLeftBoundary0*ds(0) +
                                                               dot(v_q, n)*pTopBoundary0*ds(1) +
                                                               dot(v_q, n)*pRightBoundary0*ds(2) +
                                                               dot(v_q, n)*pGenBoundary0*ds(3))
 
-            F = (p - p_m)*v_p*dx + dt*c_squared*(-dot(q1, grad(v_p))*dx +
+            F = (p - p_m)*v_p*dx + dt*K_wave*(-dot(q1, grad(v_p))*dx +
                                                  qLeftBoundary1*v_p*ds(0) +
                                                  qTopBoundary1*v_p*ds(1) +
                                                  qRightBoundary1*v_p*ds(2) +
                                                  qGenBoundary1*v_p*ds(3)) + \
-                dot(q - q_temp, v_q)*dx + 0.5*dt*(-div(v_q)*p1*dx +
+                dot(q - q_temp, v_q)*dx + 0.5*dt/rho*(-div(v_q)*p1*dx +
                                                  dot(v_q, n)*pLeftBoundary1*ds(0) +
                                                  dot(v_q, n)*pTopBoundary1*ds(1) +
                                                  dot(v_q, n)*pRightBoundary1*ds(2) +
@@ -475,34 +484,34 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
     elif timeIntScheme in ['IE', 'EE', 'SE', 'SM', 'EH']:
         if dirichletImp == 'strong':
             if numIntSubSteps >1:
-                F_temp = (p - p_m)*v_p*dx + dt*c_squared*(-dot(q0, grad(v_p))*dx +
+                F_temp = (p - p_m)*v_p*dx + dt*K_wave*(-dot(q0, grad(v_p))*dx +
                                                      qTopBoundary0*v_p*ds(1) +
                                                      qGenBoundary0*v_p*ds(3)) + \
-                    dot(q - q_m, v_q)*dx + dt*(dot(grad(p0), v_q))*dx
+                    dot(q - q_m, v_q)*dx + dt/rho*(dot(grad(p0), v_q))*dx
 
-            F = (p - p_m)*v_p*dx + dt*c_squared*(-dot(q1, grad(v_p))*dx +
+            F = (p - p_m)*v_p*dx + dt*K_wave*(-dot(q1, grad(v_p))*dx +
                                                  qTopBoundary1*v_p*ds(1) +
                                                  qGenBoundary1*v_p*ds(3)) + \
-                dot(q - q_m, v_q)*dx + dt*(dot(grad(p1), v_q))*dx
+                dot(q - q_m, v_q)*dx + dt/rho*(dot(grad(p1), v_q))*dx
         elif dirichletImp == 'weak':
             if numIntSubSteps >1:
-                F_temp = (p - p_m)*v_p*dx + dt*c_squared*(-dot(q0, grad(v_p))*dx +
+                F_temp = (p - p_m)*v_p*dx + dt*K_wave*(-dot(q0, grad(v_p))*dx +
                                                      qLeftBoundary0*v_p*ds(0) +
                                                      qTopBoundary0*v_p*ds(1) +
                                                      qRightBoundary0*v_p*ds(2) +
                                                      qGenBoundary0*v_p*ds(3)) + \
-                    dot(q - q_m, v_q)*dx + dt*(-div(v_q)*p0*dx +
+                    dot(q - q_m, v_q)*dx + dt/rho*(-div(v_q)*p0*dx +
                                                      dot(v_q, n)*pLeftBoundary0*ds(0) +
                                                      dot(v_q, n)*pTopBoundary0*ds(1) +
                                                      dot(v_q, n)*pRightBoundary0*ds(2) +
                                                      dot(v_q, n)*pGenBoundary0*ds(3))
 
-            F = (p - p_m)*v_p*dx + dt*c_squared*(-dot(q1, grad(v_p))*dx +
+            F = (p - p_m)*v_p*dx + dt*K_wave*(-dot(q1, grad(v_p))*dx +
                                                  qLeftBoundary1*v_p*ds(0) +
                                                  qTopBoundary1*v_p*ds(1) +
                                                  qRightBoundary1*v_p*ds(2) +
                                                  qGenBoundary1*v_p*ds(3)) + \
-                dot(q - q_m, v_q)*dx + dt*(-div(v_q)*p1*dx +
+                dot(q - q_m, v_q)*dx + dt/rho*(-div(v_q)*p1*dx +
                                                  dot(v_q, n)*pLeftBoundary1*ds(0) +
                                                  dot(v_q, n)*pTopBoundary1*ds(1) +
                                                  dot(v_q, n)*pRightBoundary1*ds(2) +
@@ -517,7 +526,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
         quit()
 
     if interConnection == 'IC':
-        if timeIntScheme is 'SV':
+        if timeIntScheme == 'SV':
             F_temp_em = (-dot(v_xode, xode - xode_m)/(0.5*dt) +
                          v_xode[0]*(A_em[0, 0]*xode_m[0] + A_em[0, 1]*xode_m[1] + A_em[0, 2]*xode[2]) +
                          v_xode[1]*(A_em[1, 0]*xode_m[0] + A_em[1, 1]*xode_m[1] + A_em[1, 2]*xode[2]) +
@@ -538,7 +547,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             # don't multiply the input by a half because it is for a full step
 
             F += F_em
-        elif timeIntScheme is 'SE':
+        elif timeIntScheme == 'SE':
 
             F_em = (-dot(v_xode, xode - xode_m)/dt +
                         v_xode[0]*(A_em[0, 0]*xode[0] + A_em[0, 1]*xode[1] + A_em[0, 2]*xode_m[2]) +
@@ -548,7 +557,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
 
             F += F_em
 
-        elif timeIntScheme is 'SM':
+        elif timeIntScheme == 'SM':
 
             F_em = (-dot(v_xode, xode - xode_m)/dt +
                     0.5*v_xode[0]*(A_em[0, 0]*xode[0] + A_em[0, 0]*xode_m[0] +
@@ -610,24 +619,24 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
 
     if numIntSubSteps >1:
         # These are the energy contributions from the left and top boundaries for the first half timestep
-        pT_L_q_temp_left = 0.5*dt*K_wave*dot(q0_, n)*pLeftBoundary0_*ds(0)
+        pT_L_q_temp_left = 0.5*dt*c_squared*dot(q0_, n)*pLeftBoundary0_*ds(0)
 
         # These are the energy contributions from the left, general and right boundaries for the second half timestep
-        pT_L_q_left = 0.5*dt*K_wave*dot(q1_, n)*pLeftBoundary1_*ds(0)
+        pT_L_q_left = 0.5*dt*c_squared*dot(q1_, n)*pLeftBoundary1_*ds(0)
 
         # Total energy contribution from the boundaries for the time step
         pT_L_q = pT_L_q_temp_left + pT_L_q_left  # + pT_L_q_gen + pT_L_q_right
 
     else:
-        pT_L_q_left = dt*K_wave*dot(q1_, n)*pLeftBoundary1_*ds(0)
+        pT_L_q_left = dt*c_squared*dot(q1_, n)*pLeftBoundary1_*ds(0)
         if controlType == 'casimir':
-            pT_L_q_top = dt*K_wave*qTopBoundary1_*p1_*ds(1)
-            pT_L_q_right = dt*K_wave*dot(q1_, n)*pRightBoundary1_*ds(2)
+            pT_L_q_top = dt*c_squared*qTopBoundary1_*p1_*ds(1)
+            pT_L_q_right = dt*c_squared*dot(q1_, n)*pRightBoundary1_*ds(2)
         else:
             pT_L_q_top = 0.0
             pT_L_q_right = 0.0
-        # pT_L_q_gen = dt*K_wave*q_bNormal*p1*ds(1)
-        # pT_L_q_right = dt*K_wave*dot(q1, n)*pRightBoundary*ds(2)
+        # pT_L_q_gen = dt*c_squared*q_bNormal*p1*ds(1)
+        # pT_L_q_right = dt*c_squared*dot(q1, n)*pRightBoundary*ds(2)
 
         pT_L_q = pT_L_q_left + pT_L_q_top + pT_L_q_right
 
@@ -693,7 +702,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
                     ax.set_ylim(-0.03, 0.05)
                     if dirichletImp == 'weak' and timeIntScheme in ['SV', 'SE', 'EH']:
                         ax.set_ylim(-0.0005, 0.0008)
-                elif controlType is 'casimir':
+                elif controlType == 'casimir':
                     ax.set_ylim(0, 3.5)
                 else:
                     ax.set_ylim(0, 0.4)
@@ -722,17 +731,19 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
 
     #set initial condition if doing analytical solution
     if analytical:
-        p_init = Expression('cSqrtConst*sin(pi*x[0]/(2*xLength) + pi/2)*sin(2*pi*x[1]/yLength + pi/2)',
-                   degree=8, xLength=xLength, yLength=yLength, cSqrtConst=cSqrtConst)
+        p_init = Expression('rho*cSqrtConst*sin(pi*x[0]/(2*xLength) + pi/2)*sin(2*pi*x[1]/yLength + pi/2)',
+                   degree=8, xLength=xLength, yLength=yLength, rho=rho_val, cSqrtConst=cSqrtConst)
         p_init_interp = interpolate(p_init, U.sub(0).collapse())
         q_init_interp = interpolate(Constant([0.0, 0.0]), U.sub(1).collapse())
         assign(u_m,[p_init_interp, q_init_interp])
 
         #expression for exact solution
-        p_exact = Expression('cSqrtConst*sin(pi*x[0]/(2*xLength) + pi/2)*sin(2*pi*x[1]/yLength + pi/2)*cos(t*cSqrtConst)',
-                            degree=8, t=0, xLength=xLength, yLength=yLength, cSqrtConst=cSqrtConst)
+        p_exact = Expression('rho*cSqrtConst*sin(pi*x[0]/(2*xLength) + pi/2)*sin(2*pi*x[1]/yLength + pi/2)*cos(t*cSqrtConst)',
+                            degree=8, t=0, xLength=xLength, yLength=yLength, rho=rho_val, cSqrtConst=cSqrtConst)
 
-        H_init = assemble((0.5*p_m*p_m + 0.5*c_squared*inner(q_m, q_m))*dx)*rho_val
+        # OLD
+        # H_init = assemble((0.5*p_m*p_m + 0.5*c_squared*inner(q_m, q_m))*dx)*rho_val
+        H_init = assemble((0.5*p_m*p_m/rho + 0.5*K_wave*inner(q_m, q_m))*dx)
 
         p_e = interpolate(p_exact, U.sub(0).collapse())
         out_p, out_q = u_m.split(True)
@@ -744,7 +755,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             print('Initial L2 Error = {}'.format(err_L2))
             print('Initial Int Error = {}'.format(err_integral))
     else:
-        if controlType is 'passivity':
+        if controlType == 'passivity':
             p_init = Expression('sin(4*pi*x[0]/(xLength))',
                                 degree=8, xLength=xLength)
             q_init = Expression(('sin(4*pi*x[0]/(xLength))', '0.0'),
@@ -868,7 +879,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
             else:
                 boundaryEnergy += assemble(pT_L_q_left)
 
-            H_wave = assemble((0.5*p_*p_ + 0.5*c_squared*inner(q_, q_))*dx)*rho_val
+            H_wave = assemble((0.5*p_*p_/rho + 0.5*K_wave*inner(q_, q_))*dx)
 
             E = H_wave + boundaryEnergy - H_init
             H = H_wave
@@ -893,7 +904,7 @@ def wave_2D_solve(tFinal, numSteps, outputDir,
 
             # get Hamiltonian of the wave domain
             # Multiply H_wave by rho to get units of energy
-            H_wave = assemble((0.5*p_*p_ + 0.5*c_squared*inner(q_, q_))*dx)*rho_val
+            H_wave = assemble((0.5*p_*p_/rho + 0.5*K_wave*inner(q_, q_))*dx)
 
             # get Hamiltonian from electromechanical system
             if interConnection == 'IC':
