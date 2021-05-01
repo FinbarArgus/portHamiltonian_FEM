@@ -19,12 +19,18 @@ rho = 2.0  # 2.0
 
 caseName = 'eigenValue_spaceVariation'
 CALCULATE_EIGENS = True
-caseArray = [['R', 'SE', 'weak', 5, 'analytical', 0.5, 1000, 'noMem', (1, 1)],
-             ['R', 'SE', 'weak', 10, 'analytical', 0.5, 1000, 'noMem', (1, 1)],
-             ['R', 'SE', 'weak', 15, 'analytical', 0.5, 1000, 'noMem', (1, 1)],
-             ['R', 'SE', 'weak', 20, 'analytical', 0.5, 1000, 'noMem', (1, 1)],
-             ['R', 'SE', 'weak', 25, 'analytical', 0.5, 1000, 'noMem', (1, 1)],
-             ['R', 'SE', 'weak', 30, 'analytical', 0.5, 1000, 'noMem', (1, 1)]]
+# caseArray = [['R', 'SE', 'weak', 5, 'analytical', 0.5, 1000, 'noMem', (1, 1)],
+#              ['R', 'SE', 'weak', 10, 'analytical', 0.5, 1000, 'noMem', (1, 1)],
+#              ['R', 'SE', 'weak', 15, 'analytical', 0.5, 1000, 'noMem', (1, 1)],
+#              ['R', 'SE', 'weak', 20, 'analytical', 0.5, 1000, 'noMem', (1, 1)],
+#              ['R', 'SE', 'weak', 25, 'analytical', 0.5, 1000, 'noMem', (1, 1)],
+#              ['R', 'SE', 'weak', 30, 'analytical', 0.5, 1000, 'noMem', (1, 1)]]
+
+caseArray = [['R', 'SE', 'weak', 5, 'analytical', 0.5, 1000, 'noMem', (2, 2)],
+             ['R', 'SE', 'weak', 10, 'analytical', 0.5, 1000, 'noMem', (2, 2)],
+             ['R', 'SE', 'weak', 15, 'analytical', 0.5, 1000, 'noMem', (2, 2)],
+             ['R', 'SE', 'weak', 20, 'analytical', 0.5, 1000, 'noMem', (2, 2)],
+             ['R', 'SE', 'weak', 25, 'analytical', 0.5, 1000, 'noMem', (2, 2)]]
 
 for caseVec in caseArray:
     domainShape = caseVec[0]

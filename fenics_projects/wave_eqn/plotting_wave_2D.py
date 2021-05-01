@@ -5,6 +5,7 @@ import numpy as np
 import time
 import os
 import paperPlotSetup
+from tabulate import tabulate
 
 paperPlotSetup.Setup_Plot(3)
 plotPNG = False
@@ -354,40 +355,62 @@ plt.plot(numCell_Res[24:30, 2], numCell_Res[24:30, 3], lw=1.5, color='c', linest
 # plt.plot(numCell_Res[6:12, 2], numCell_Res[6:12, 3], lw=1.5, color='b', linestyle='', marker='o',
 #         label='SE, $\Delta t$ = {:.1E}'.format(caseArray[6][5]/caseArray[6][6]))
 
-print('1st order elements, the following should be 2')
-print(numCell_Res[0:6, 2])
-print(numCell_Res[0:6, 3])
-print((np.log10(numCell_Res[0:5, 3]) - np.log10(numCell_Res[1:6, 3])) / (np.log10(numCell_Res[0:5, 2]) - np.log10(numCell_Res[1:6, 2])))
-print('2nd order elements, the following should be 3')
-print(numCell_Res[6:12, 2])
-print(numCell_Res[6:12, 3])
-print((np.log10(numCell_Res[6:11, 3]) - np.log10(numCell_Res[7:12, 3])) / (np.log10(numCell_Res[6:11, 2]) - np.log10(numCell_Res[7:12, 2])))
-print('P2RT1')
-print(numCell_Res[12:18, 2])
-print(numCell_Res[12:18, 3])
-print((np.log10(numCell_Res[12:17, 3]) - np.log10(numCell_Res[13:18, 3])) / (np.log10(numCell_Res[12:17, 2]) - np.log10(numCell_Res[13:18, 2])))
-print('P1RT2')
-print(numCell_Res[18:24, 2])
-print(numCell_Res[18:24, 3])
-print((np.log10(numCell_Res[18:23, 3]) - np.log10(numCell_Res[19:24, 3])) / (np.log10(numCell_Res[18:23, 2]) - np.log10(numCell_Res[19:24, 2])))
-print('P3RT3')
-print(numCell_Res[24:30, 2])
-print(numCell_Res[24:30, 3])
-print((np.log10(numCell_Res[24:29, 3]) - np.log10(numCell_Res[25:30, 3])) / (np.log10(numCell_Res[24:29, 2]) - np.log10(numCell_Res[25:30, 2])))
+# Create a table with tabulate to output in latex
+# First create array with values for P1RT1, P2RT2 and P3RT3
+tableArray = np.zeros((6, 9))
+tableArray[:, 0] = range(6)
+tableArray[:, 1] = numCell_Res[0:6, 0]
+tableArray[:, 2] = numCell_Res[0:6, 2]
+tableArray[:, 3] = numCell_Res[0:6, 3]
+tableArray[1:, 4] = (np.log10(numCell_Res[0:5, 3]) - np.log10(numCell_Res[1:6, 3])) / (np.log10(numCell_Res[0:5, 2]) - np.log10(numCell_Res[1:6, 2]))
+tableArray[:, 5] = numCell_Res[12:18, 3]
+tableArray[1:, 6] = (np.log10(numCell_Res[12:17, 3]) - np.log10(numCell_Res[13:18, 3])) / (np.log10(numCell_Res[12:17, 2]) - np.log10(numCell_Res[13:18, 2]))
+tableArray[:, 7] = numCell_Res[18:24, 3]
+tableArray[1:, 8] = (np.log10(numCell_Res[18:23, 3]) - np.log10(numCell_Res[19:24, 3])) / (np.log10(numCell_Res[18:23, 2]) - np.log10(numCell_Res[19:24, 2]))
+
+# df = pd.DataFrame(data=tableArray, index=['RL', 'NoE', 'CEL [$m$]', 'L^2', 'OoC', 'L^2', 'OoC', 'L^2', 'OOC'])
+headers = ['RL', 'NoE', 'CEL [$m$]', 'L^2', 'OoC', 'L^2', 'OoC', 'L^2', 'OOC']
+table1 = tabulate(tableArray, headers=headers, tablefmt='latex', floatfmt=('g', 'g', '.4f', '.2f', '.2f',
+                                                                           '.2f', '.2f', '.2f', '.2f'))
+print(table1)
+
+# create table for P2RT2
+tableArray2 = np.zeros((6, 5))
+tableArray2[:, 0] = range(6)
+tableArray2[:, 1] = numCell_Res[6:12, 0]
+tableArray2[:, 2] = numCell_Res[6:12, 2]
+tableArray2[:, 3] = numCell_Res[6:12, 3]
+tableArray2[1:, 4] = (np.log10(numCell_Res[6:11, 3]) - np.log10(numCell_Res[7:12, 3])) / (np.log10(numCell_Res[6:11, 2]) - np.log10(numCell_Res[7:12, 2]))
+
+headers2 = ['RL', 'NoE', 'CEL [$m$]', 'L^2', 'OoC']
+table2 = tabulate(tableArray2, headers=headers2, tablefmt='latex', floatfmt=('g', 'g', '.4f', '.2f', '.2f'))
+print(table2)
+
+# create table for P3RT3
+tableArray3 = np.zeros((6, 5))
+tableArray3[:, 0] = range(6)
+tableArray3[:, 1] = numCell_Res[24:30, 0]
+tableArray3[:, 2] = numCell_Res[24:30, 2]
+tableArray3[:, 3] = numCell_Res[24:30, 3]
+tableArray3[1:, 4] = (np.log10(numCell_Res[24:29, 3]) - np.log10(numCell_Res[25:30, 3])) / (np.log10(numCell_Res[24:29, 2]) - np.log10(numCell_Res[25:30, 2]))
+
+headers3 = ['RL', 'NoE', 'CEL [$m$]', 'L^2', 'OoC']
+table3 = tabulate(tableArray3, headers=headers3, tablefmt='latex', floatfmt=('g', 'g', '.4f', '.3f', '.3f'))
+print(table3)
 
 #create quadratic line to plot
 xQuad = np.linspace(numCell_Res[0,2], numCell_Res[5,2], 1000)
-scale = 10000
+scale = 20000
 yQuad = scale*np.square(xQuad)
 plt.plot(xQuad, yQuad, lw=1.0, color='k', linestyle='--', label='Quadratic Trend ({}$x^2$)'.format(scale))
 
 xCubic = np.linspace(numCell_Res[6,2], numCell_Res[11,2], 1000)
-scale = 20000
+scale = 40000
 yCubic = scale*np.power(xCubic, 3)
 plt.plot(xCubic, yCubic , lw=1.0, color='k', linestyle=':', label='Cubic Trend ({}$x^3$)'.format(scale))
 
 xQuartic = np.linspace(numCell_Res[24,2], numCell_Res[29,2], 1000)
-scale = 7000
+scale = 14000
 yQuartic = scale*np.power(xQuartic, 4)
 plt.plot(xQuartic, yQuartic, lw=1.0, color='k', linestyle='-', label='Quartic Trend ({}$x^4$)'.format(scale))
 
@@ -428,16 +451,16 @@ if not os.path.exists(plotDir):
     os.mkdir(plotDir)
 
 
-caseArray = [['R', 'SE', 'weak', 80, 'analytical', tFinal, 3000, 'noMem'],
-            ['R', 'SE', 'weak', 80, 'analytical', tFinal, 3500, 'noMem'],
-            ['R', 'SE', 'weak', 80, 'analytical', tFinal, 4250, 'noMem'],
-            ['R', 'SE', 'weak', 80, 'analytical', tFinal, 5000, 'noMem'],
-            ['R', 'SE', 'weak', 80, 'analytical', tFinal, 6000, 'noMem'],
-            ['R', 'SV', 'weak', 80, 'analytical', tFinal, 3000, 'noMem'],
-            ['R', 'SV', 'weak', 80, 'analytical', tFinal, 4250, 'noMem'],
-            ['R', 'SV', 'weak', 80, 'analytical', tFinal, 3500, 'noMem'],
-            ['R', 'SV', 'weak', 80, 'analytical', tFinal, 5000, 'noMem'],
-            ['R', 'SV', 'weak', 80, 'analytical', tFinal, 6000, 'noMem']]
+caseArray = [['R', 'SE', 'weak', 80, 'analytical', tFinal, 3000, 'noMem', (3, 3)],
+            ['R', 'SE', 'weak', 80, 'analytical', tFinal, 3500, 'noMem', (3, 3)],
+            ['R', 'SE', 'weak', 80, 'analytical', tFinal, 4250, 'noMem', (3, 3)],
+            ['R', 'SE', 'weak', 80, 'analytical', tFinal, 5000, 'noMem', (3, 3)],
+            ['R', 'SE', 'weak', 80, 'analytical', tFinal, 6000, 'noMem', (3, 3)],
+            ['R', 'SV', 'weak', 80, 'analytical', tFinal, 3000, 'noMem', (3, 3)],
+            ['R', 'SV', 'weak', 80, 'analytical', tFinal, 4250, 'noMem', (3, 3)],
+            ['R', 'SV', 'weak', 80, 'analytical', tFinal, 3500, 'noMem', (3, 3)],
+            ['R', 'SV', 'weak', 80, 'analytical', tFinal, 5000, 'noMem', (3, 3)],
+            ['R', 'SV', 'weak', 80, 'analytical', tFinal, 6000, 'noMem', (3, 3)]]
 
 colorVec = ['c', 'b', 'g', 'm', 'r', 'k', 'c', 'b', 'g', 'm', 'r', 'k']
 lineStyleArray = ['--', '--', '--', '--', '--', '--', '-', '-', '-', '-', '-', '-']
@@ -447,6 +470,10 @@ for caseVec in caseArray:
     subDir = caseVec[0] + '_' + caseVec[1] + '_' +caseVec[2] + \
              '_nx' + str(caseVec[3]) + '_' + caseVec[4] + '_t' + \
              str(caseVec[5]).replace('.','_') + '_steps' + str(caseVec[6])
+
+    if len(caseVec) > 8:
+        basis_order = caseVec[8]
+        subDir = subDir + '_P{}_RT{}'.format(basis_order[0], basis_order[1])
 
     outputSubDirArray.append(os.path.join(outputDir, subDir))
 
@@ -537,13 +564,13 @@ plt.plot(numStepsRes[5:10, 0], numStepsRes[5:10, 1], lw=1.5, color='r', linestyl
 #create linear line to plot
 xLin = np.linspace(numStepsRes[0,0], numStepsRes[len(caseArray)-1,0], 1000)
 
-scale = 115
+scale = 230
 #scale = 40
 yLin = scale*xLin
 plt.plot(xLin, yLin, lw=1.0, color='k', label='Linear Trend ({}$x$)'.format(scale))
 ##create quadratic line to plot
 xQuad = np.linspace(numStepsRes[0,0], numStepsRes[len(caseArray)-1,0], 1000)
-scale = 13000
+scale = 26000
 yQuad = scale*np.square(xQuad)
 plt.plot(xQuad, yQuad, lw=1.0, color='k', linestyle='--', label='Quadratic Trend ({}$x^2$)'.format(scale))
 ##create Cubic line to plot
@@ -561,7 +588,7 @@ if plotPNG:
 if plotEPS:
     plt.savefig(os.path.join(plotDir, 'analyticL2ErrorVsStepSize.eps'))
 plt.xlim(1e-4, 1e-3)
-plt.ylim(1e-4, 1e-1)
+plt.ylim(1e-4, 1)
 plt.xscale('log')
 plt.yscale('log')
 if plotPNG:
@@ -583,11 +610,11 @@ if not os.path.exists(plotDir):
     os.mkdir(plotDir)
 
 tFinal = 10.0
-caseArray = [['R', 'EH', 'weak', 80, 'analytical', 5.0, 40000],
-            ['R', 'IE', 'weak', 80, 'analytical', 10.0, 40000],
-            #['R', 'SE', 'weak', 80, 'analytical', 10.0, 40000],
-            ['R', 'SM', 'weak', 80, 'analytical', 10.0, 40000],
-            ['R', 'SV', 'weak', 80, 'analytical', 10.0, 20000]]
+caseArray = [['R', 'EH', 'weak', 80, 'analytical', 1.5, 12000, (3, 3)],
+            ['R', 'IE', 'weak', 80, 'analytical', 1.5, 6000, (3, 3)],
+            ['R', 'SM', 'weak', 80, 'analytical', 10.0, 40000, (3, 3)],
+            ['R', 'SV', 'weak', 80, 'analytical', 10.0, 20000, (3, 3)]]
+# ['R', 'SE', 'weak', 80, 'analytical', 10.0, 40000],
 
 colorVec = ['g', 'b', 'k', 'r', 'cyan']
 lineStyleArray = ['-', '-', '-', '-', '-']
@@ -597,6 +624,9 @@ for caseVec in caseArray:
     subDir = caseVec[0] + '_' + caseVec[1] + '_' +caseVec[2] + \
              '_nx' + str(caseVec[3]) + '_' + caseVec[4] + '_t' + \
              str(caseVec[5]).replace('.','_') + '_steps' + str(caseVec[6])
+    if len(caseVec) > 7:
+        basis_order = caseVec[7]
+        subDir = subDir + '_P{}_RT{}'.format(basis_order[0], basis_order[1])
 
     outputSubDirArray.append(os.path.join(outputDir, subDir))
 
@@ -611,7 +641,7 @@ for count, dir in enumerate(outputSubDirArray):
 plt.xlabel('Time [s]')
 plt.ylabel('$L^2$ Error Norm')
 plt.xlim(0.0, tFinal)
-plt.ylim(0, 0.15)
+plt.ylim(0, 0.3)
 
 plt.legend()
 if plotPNG:
@@ -639,6 +669,11 @@ caseArray = [['R', 'SE', 'weak', 5, 'analytical', 0.5, 1000, (1, 1)],
              ['R', 'SE', 'weak', 20, 'analytical', 0.5, 1000, (1, 1)],
              ['R', 'SE', 'weak', 25, 'analytical', 0.5, 1000, (1, 1)],
              ['R', 'SE', 'weak', 30, 'analytical', 0.5, 1000, (1, 1)]]
+#              ['R', 'SE', 'weak', 5, 'analytical', 0.5, 1000, (2, 2)],
+#              ['R', 'SE', 'weak', 10, 'analytical', 0.5, 1000, (2, 2)],
+#              ['R', 'SE', 'weak', 15, 'analytical', 0.5, 1000, (2, 2)],
+#              ['R', 'SE', 'weak', 20, 'analytical', 0.5, 1000, (2, 2)],
+#              ['R', 'SE', 'weak', 25, 'analytical', 0.5, 1000, (2, 2)]]
 
 outputSubDirArray = []
 for caseVec in caseArray:
@@ -661,8 +696,8 @@ for count, dir in enumerate(outputSubDirArray):
     avCellLength = np.sqrt(avCellSize)
     numCell_Res[count, :] = [numCells, avCellSize, avCellLength]
     # calculate the percentage error on the first eigenvalue
-    eig_error_array[count] = 100*(dataArray[0, 0] - dataArray[0, 1])/ \
-                    dataArray[0, 0]
+    eig_error_array[count] = 100*abs((dataArray[0, 0] - dataArray[0, 1])/
+                    dataArray[0, 0])
 
 # Plot the convergence of the first eigenvalue
 
@@ -670,9 +705,11 @@ fig, ax = plt.subplots(1, 1)
 # ax.set_xlim(0, 0.04)
 # ax.set_ylim(0, 0.16)
 ax.set_xlabel('Characteristic Element Length [$m$]')
-ax.set_ylabel('First Eigenvalue % Error')
+ax.set_ylabel('First Eigenfrequency % Error')
 plt.plot(numCell_Res[0:6, 2], eig_error_array[0:6], lw=1.5, color='r', linestyle='', marker='x',
          label='P1RT1')
+# plt.plot(numCell_Res[6:11, 2], eig_error_array[6:11], lw=1.5, color='b', linestyle='', marker='o',
+#          label='P2RT2')
 
 xQuad = np.linspace(numCell_Res[0,2], numCell_Res[-1,2], 1000)
 scale = 50
@@ -698,11 +735,13 @@ if plotEPS:
 plt.close(fig)
 
 fig, ax = plt.subplots(1, 1)
-ax.set_xlabel('Eigenvalue Number')
-ax.set_ylabel('Complex Eigenvalue')
-plt.plot(range(1, 52), data_list[5][:, 1], color='b', linestyle='', marker='o', markersize=5.0, label='P1RT1',
+ax.set_xlabel('Eigenfrequency Number')
+ax.set_ylabel('Complex Eigenfrequency')
+plt.plot(range(1, 52), data_list[5][:, 0], color='k', linestyle='', marker='x', markersize=5.0, label='Analytic')
+plt.plot(range(1, 52), data_list[5][:, 1], color='r', linestyle='', marker='x', markersize=5.0, label='P1RT1',
          markerfacecolor='none')
-plt.plot(range(1, 52), data_list[5][:, 0], color='r', linestyle='', marker='x', markersize=5.0, label='Analytic')
+# plt.plot(range(1, 52), data_list[10][:, 1], color='b', linestyle='', marker='^', markersize=5.0, label='P2RT2',
+#          markerfacecolor='none')
 ax.set_xlim(0, 50)
 ax.set_ylim(0, 80)
 ax.legend(loc='lower right')
@@ -756,6 +795,7 @@ for count, dir in enumerate(outputSubDirArray):
     # plt.plot(dataArray[:, 0], totalResid2, lw=0.5, color='c', linestyle=lineStyleArray[count],
     #         label='check TotalResidual')
 
+ax.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
 ax.legend()
 # plt.show()
 if plotPNG:
@@ -876,9 +916,9 @@ plt.plot(numStepsRes[5:10, 0], numStepsRes[5:10, 1], lw=1.5, color='b', linestyl
 #plt.plot(xLin, yLin, lw=1.0, color='k', label='Linear Trend ($800x$)')
 #create quadratic line to plot
 xQuad = np.linspace(numStepsRes[0,0], numStepsRes[len(caseArray)-1,0], 1000)
-scale = 400
+scale = 100
 yQuad = scale*np.square(xQuad)
-plt.plot(xQuad, yQuad, lw=1.0, color='k',linestyle='--', label='Quadratic Trend ($400x^2$)')
+plt.plot(xQuad, yQuad, lw=1.0, color='k',linestyle='--', label='Quadratic Trend ({}$x^2$)'.format(scale))
 #create Cubic line to plot
 #xCubic = np.linspace(numStepsRes[0,0], numStepsRes[5,0], 1000)
 #scale = 4000
@@ -944,6 +984,7 @@ for count, dir in enumerate(outputSubDirArray):
     # plt.plot(dataArray[:, 0], totalResid2, lw=0.5, color='c', linestyle=lineStyleArray[count],
     #         label='check TotalResidual')
 
+ax.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
 ax.legend()
 # plt.show()
 if plotPNG:

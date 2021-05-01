@@ -150,8 +150,6 @@ def calculate_eigen(tFinal, numSteps, outputDir,
     # q_bNormal = Constant(0.0)
 
     # calculate exact eigenvalues
-    #TODO make sure this is calculating all of the eigenvalues correctly, i.e am I doubling up on eigenvalues
-    # maybe II=0 and JJ=0 shouldn't be used?
     comp_eig_vals_exact = []
     for II in range(0, 15):
         for JJ in range(1, 40):
@@ -207,6 +205,7 @@ def calculate_eigen(tFinal, numSteps, outputDir,
             eig_vals_list_numpy.sort(key=lambda x: abs(x.imag), reverse=False)
             real_eig_vals_list_numpy = [x.real for x in eig_vals_list_numpy]
             comp_eig_vals_list_numpy = [x.imag for x in eig_vals_list_numpy]
+            # only look at the positive part of the complex pairs
             comp_eig_vals_pos_numpy = [x for x in comp_eig_vals_list_numpy if x>1e-8]
             # comp_eig_vals_pos_numpy.insert(0, 0.0)
 

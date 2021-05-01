@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 import time
 import os
 
-# This Script solves the analytic wave equation for a rectangle
+# This Script solves the analytic wave equation for a rectangle, 
+# see the book Polyanin: Handbook of linear partial differential equations for engineers and scientists
 
 L1 = 1.0 # xLength
 L2 = 0.25 # yLength
